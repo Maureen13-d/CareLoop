@@ -4,10 +4,12 @@
 set -e
 mk() { gh label create "$1" --color "$2" --description "$3" --force; }
 
-mk "ws:case-engine"        "1d76db" "Pathways module, escalation, audit"
-mk "ws:records-referrals"  "0e8a16" "Patients, screenings, referrals, tasks, notifications"
-mk "ws:frontend"           "5319e7" "Dashboard, review queue, patient view"
-mk "ws:data-ai"            "fbca04" "Synthetic data, risk score, assistant, evaluation"
+mk "ws:case-engine"        "1d76db" "Pathways, state machine, deadlines, tasks, audit"
+mk "ws:assistant"          "0e8a16" "Safety rules, Lite mode, knowledge base, retrieval, barriers"
+mk "ws:channels"           "0052cc" "USSD and SMS adapters, simulator, reminders"
+mk "ws:interop"            "006b75" "FHIR adapter and mock hospital"
+mk "ws:frontend"           "5319e7" "Navigator dashboard, patient web view"
+mk "ws:data-eval"          "fbca04" "Synthetic data, evaluation sets, safety tests"
 mk "ws:docs-governance"    "c5def5" "Documents, privacy, demo and pitch"
 mk "ws:platform"           "bfd4f2" "Repo setup, tests, run instructions"
 mk "type:feature"          "a2eeef" "New behaviour"
@@ -20,4 +22,5 @@ mk "P2-could"              "f9d0c4" "Nice to have"
 mk "blocked"               "000000" "Waiting on another task"
 mk "needs-review"          "fef2c0" "Ready for a teammate to review"
 mk "good-first-issue"      "7057ff" "Good for getting started"
+mk "idea"                  "ededed" "A proposal for the team to discuss"
 echo "Labels created."

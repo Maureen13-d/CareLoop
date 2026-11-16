@@ -1,44 +1,53 @@
-# Demo Pathway: Cervical Cancer Screening-to-Care (Kenya context)
+# Demo Pathway: Cervical Cancer Screening-to-Care Navigation (Kenya context)
 
-Status: **draft**. The stages follow the general shape of a screening-to-treatment pathway. **No stage deadline below has been sourced from a national guideline yet.** All deadlines are placeholders marked ASSUMED, to be replaced with guideline-sourced values (Ministry of Health national guidelines or the 2026 to 2030 elimination action plan) or kept and labelled as assumptions.
+Status: **draft**. This is the pre-hospital navigation pathway. It starts when a screener records a concerning finding and ends when the hospital's own systems have taken over and care has started. **No deadline below has been sourced from a national guideline.** All deadlines are placeholders marked ASSUMED, to be replaced with guideline-sourced values or kept and labelled as assumptions.
 
 ## Scope
 
-In scope: a woman with a positive or suspicious screening result, from result to confirmatory assessment, referral, treatment initiation and follow-up.
-Out of scope for the MVP: screening invitation and recall, negative-result routine recall, vaccination, branching clinical rules (for example same-day screen-and-treat), diagnosis and treatment decisions.
+In scope: a person with a concerning screening finding, from invitation to CareLoop through support, barrier detection, navigation, appointment request and reminders, arrival confirmation, handoff, and a light check that care started.
+
+Out of scope: diagnosis, treatment decisions, referrals between hospital departments, departmental tasks, clinical follow-up, screening invitation and recall, vaccination. After handoff CareLoop only watches a few coarse milestones.
 
 ## Stages
 
-| # | State | Meaning | Default owner (department) | Deadline to leave stage (ASSUMED) |
+| # | State | Meaning | Owner | Deadline to leave stage (ASSUMED) |
 |---|---|---|---|---|
-| 1 | `OPENED` | Positive or suspicious result recorded; case created | Screening clinic | Notify within 2 days |
-| 2 | `PATIENT_NOTIFIED` | Result communicated (draft approved and sent) | Care coordinator | Acknowledged within 3 days |
-| 3 | `PATIENT_ACKNOWLEDGED` | Patient confirmed they received the message | Care coordinator | Confirmation scheduled within 7 days |
-| 4 | `CONFIRMATION_SCHEDULED` | Confirmatory assessment booked | Gynaecology clinic | Completed within 14 days |
-| 5 | `CONFIRMATION_COMPLETED` | Confirmatory assessment done and documented | Gynaecology clinic | Referral or decision within 3 days |
-| 6 | `REFERRAL_SENT` | Referral to treatment unit sent | Referring clinician | Accepted within 3 days |
-| 7 | `REFERRAL_ACCEPTED` | Treatment unit accepted | Treatment unit | Treatment started within 14 days |
-| 8 | `TREATMENT_STARTED` | Treatment or surveillance plan begun and documented | Treatment unit | Follow-up date set within 7 days |
-| 9 | `FOLLOW_UP_DUE` | Post-treatment follow-up pending | Care coordinator | Follow-up completed on schedule |
-| 10 | `CLOSED` | Closed with evidence | n/a | n/a |
-| 11 | `LOST_TO_FOLLOW_UP` | Closed by a human decision after escalation steps | n/a | n/a |
+| 1 | `FLAGGED` | Screener recorded a concerning finding (not a diagnosis) | Screener | Person invited, with permission, within 2 days |
+| 2 | `ENGAGED` | Person joined on web chat, USSD or SMS | System (assistant) | Barriers asked about within 3 days |
+| 3 | `BARRIERS_ASSESSED` | Barriers confirmed by the person; only confirmed ones reach a navigator | System, then navigator | Navigator contact within 2 days |
+| 4 | `NAVIGATION` | Navigator helping with cost, transport or finding a clinic | Navigator | Appointment requested within 7 days |
+| 5 | `APPOINTMENT_BOOKED` | Clinic confirmed the request; discreet reminder sent | Clinic, navigator watching | Arrival within 14 days |
+| 6 | `ARRIVAL_CONFIRMED` | Clinic confirmed the person arrived | Clinic | Handoff recorded within 1 day |
+| 7 | `HANDED_OFF` | Hospital systems and staff own all clinical care; CareLoop watches milestones | Hospital | Milestone received within 21 days |
+| 8 | `CLOSED` | Closed with evidence | n/a | n/a |
+| 9 | `OPTED_OUT` | Person chose not to continue; recorded and respected | n/a | n/a |
+| 10 | `LOST_TO_FOLLOW_UP` | Closed by a human decision after navigator attempts | n/a | n/a |
 
-A confirmatory result that needs no further treatment may close the case with evidence (`confirmed_negative`). A rejected referral stays in `REFERRAL_SENT` with the referral marked rejected and an escalation raised; staff create a new referral.
+A person can move to `OPTED_OUT` from any stage. A missed appointment moves the case from `APPOINTMENT_BOOKED` back to `NAVIGATION` with a task. It is treated as a problem to solve, not a failure by the patient.
 
-## Escalation rules (draft)
+## Events and what happens
 
-1. First missed deadline: escalate to the care coordinator (review queue).
-2. Second missed deadline, or any case flagged urgent: escalate to a senior clinician or program manager.
-3. A case moves to `LOST_TO_FOLLOW_UP` only by a recorded human decision.
+| Event | Automatic | Human step |
+|---|---|---|
+| Reminder not confirmed in time | Navigator task | Navigator calls the person |
+| SMS undelivered | Navigator task | Navigator finds another way to reach the person |
+| Appointment missed | Case returns to `NAVIGATION`, task created | Navigator finds out why and helps rebook |
+| Stage deadline passed | Navigator task | Navigator checks in |
+| No hospital milestone for too long | Check-in task | Navigator checks that the person is not lost |
+| Crisis or alarming text | Assistant stops and hands over | Counsellor or navigator takes over |
+| STOP or "I do not want to continue" | Messages stop, state `OPTED_OUT` | None; the choice is respected |
 
-## Closure evidence (draft)
+Automatic: reminders, noticing late or missed steps, creating tasks, recording every step. Always a human: clinical decisions, handling distress, deciding someone is lost to follow-up, closing a case without evidence.
 
-`CLOSED` requires one of: documented treatment start or plan, confirmed negative confirmatory result, documented follow-up completion, or a recorded decision by an authorised clinician with a reason.
+## Closure evidence
+
+`CLOSED` requires one of: a hospital milestone showing care started, or a recorded decision by an authorised person with a reason. `LOST_TO_FOLLOW_UP` is only ever a recorded human decision.
 
 ## Needs sourcing before the demo
 
-- Real stage windows and follow-up timing from the national guideline.
-- Which confirmatory and treatment steps apply in the demo setting.
-- Whether a screen-and-treat branch should be modelled.
+- Real stage windows from the national guideline, or keep the assumptions labelled.
+- Which hospital milestones are realistic to receive (the demo uses `assessment_completed` and `care_started`).
+- A clinical reviewer for the safety wording and the knowledge base.
+- Helpline information to verify. Do not put a number in the repository until it has been checked.
 
-The same data lives in `pathways/cervical_cancer.yaml` (to be created) so the engine reads it from configuration.
+The same data will live in `pathways/cervical_cancer.yaml`, so the engine reads it from configuration. The file on the `feature/backend-case-engine` branch is the earlier hospital-side version and is replaced when the engine is adapted.

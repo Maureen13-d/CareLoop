@@ -18,5 +18,5 @@ Closes #
 - [ ] Tests pass locally (or "no tests yet" is explained above)
 - [ ] No real patient data and no secrets are included
 - [ ] Docs updated where behaviour or APIs changed
-- [ ] If AI is involved: it only drafts, a human approves, and no state changes happen without a person
+- [ ] If AI is involved: it never diagnoses, crisis or alarming text goes to a human, and no state changes happen without a person
 - [ ] I have not described anything as validated, integrated or working unless it is
