@@ -9,7 +9,7 @@
 
 Some people who receive concerning screening information, or who notice suggestive symptoms, never reach professional assessment. Clinicians we have spoken to report reasons such as fear of a diagnosis or of painful procedures, misconceptions, stigma, cost, not knowing where to go, and a lack of emotional support. **These are preliminary observations, not proven national findings.**
 
-Separately, published studies from Kenyan screening programmes report substantial loss to follow-up after a positive screen (one Western Kenya programme reported about 28% lost after a positive visual inspection result in 2013). These are regional studies, not current national figures. Sources will be listed in the evidence document once it is added to this repository.
+Separately, published studies from Kenyan screening programmes report substantial loss to follow-up after a positive screen (one western Kenya programme reported about 28% lost after a positive visual inspection result in 2013). These are regional studies, not current national figures. Sources will be listed in the evidence document once it is added to this repository.
 
 ## What CareLoop does, and where it stops
 
@@ -25,7 +25,7 @@ CareLoop complements hospital systems. It does not replace them.
 
 1. **Screening.** A person has a screening and the result is concerning. This is not a diagnosis. It means a proper check is needed.
 2. **Invitation.** The screener records the finding and, with the person's permission, invites them to CareLoop. They can say no.
-3. **Joining, on any phone.** On a smartphone, the person can chat in a web page. On a basic phone with no data they dial a short code and pick options from a menu, and receive text messages. The help is the same; the smartphone version is richer.
+3. **Joining, on any phone.** On a smartphone the person can chat in a web page. On a basic phone with no data they dial a short code and pick options from a menu, and receive text messages. The help is the same; the smartphone version is richer.
 4. **Support and answers.** The assistant answers questions in plain language from a library of approved information with visible sources, clears up myths and offers general reassurance. It never tells someone they have a disease, recommends treatment or discourages assessment. If the person seems distressed, or writes something alarming, it stops and hands over to a human.
 5. **Worries are picked up.** As the person talks or taps menu options, CareLoop notices what may be holding them back: fear, cost, transport, stigma or not knowing where to go. It asks them to confirm. Only what they agree to share reaches a human helper (a navigator).
 6. **A navigator steps in.** The navigator sees the confirmed worries and a suggested next step, and does what software cannot: calls the person, explains costs, helps with transport, finds a clinic.
@@ -67,24 +67,103 @@ CareLoop speaks FHIR R4. For the prototype, a **mock hospital system** exchanges
 - **Reliability rules:** an undelivered or unanswered reminder creates a navigator task; STOP is honoured immediately.
 - **In the prototype** both channels run through a **channel simulator** (a small page showing a feature-phone screen and a text inbox). A real short code requires licensing through the Communications Authority and mobile networks, which we have not obtained.
 
+## Development phases
+
+We build in phases so everyone can see how far we are. **Phases overlap, because several people work in parallel. A phase is done when its exit criteria are met, not when its date passes.** Dates are targets for the 20 November prototype deadline. Phases can be merged, split, added or dropped by team agreement; note the change and the reason in the technical decisions record.
+
+**Current focus: Phase 0 (foundation), moving into Phase 1.**
+
+| Phase | Goal | Target | Status |
+|---|---|---|---|
+| 0. Foundation and alignment | Shared scope, working repository, everyone able to contribute | 16 Nov | In progress |
+| 1. Core engine and data | A synthetic case moves through the pre-hospital pathway with owners, deadlines and an audit trail | 16 to 17 Nov | Not started |
+| 2. Support and navigation | Safe, grounded support, barrier flags and navigation tasks that work with no model | 17 Nov | Not started |
+| 3. Channels and follow-up | USSD and SMS (simulated), reminders, missed-step detection | 17 to 18 Nov | Not started |
+| 4. Interoperability and handoff | FHIR exchange with a mock hospital; handoff and loop closure | 18 Nov | Not started |
+| 5. Dashboard, evaluation and hardening | Navigator dashboard and funnel, evaluation results, safety testing | 18 to 19 Nov | Not started |
+| 6. Demo and submission | Fresh-machine test, video, description, final checks, submit | 19 to 20 Nov | Not started |
+
+Status values: **Not started**, **In progress**, **Done**, **Dropped**.
+
+### Phase 0: Foundation and alignment
+- [ ] Scope agreed: pre-hospital bridge, USSD and SMS channels, Lite mode
+- [ ] README merged and the repository About section updated
+- [ ] Labels, milestones, project board and the `idea` label created
+- [ ] Open decisions resolved or defaulted (see Team notes)
+- [ ] Backend foundation merged
+
+**Done when:** every teammate has cloned the repository, run it, and opened a pull request.
+
+### Phase 1: Core engine and data
+- [ ] Pre-hospital pathway definition (flagged, engaged, barriers assessed, navigation, appointment booked, arrival confirmed, handed off, closed)
+- [ ] Roles: patient, navigator, counsellor, clinician, program manager, admin
+- [ ] Consent purposes, including SMS contact and sharing barriers with a navigator
+- [ ] Synthetic seed data
+- [ ] Tests updated and passing
+
+**Done when:** a synthetic case can move from flagged to handed-off through the API, every step is in the audit log, and the tests pass.
+
+### Phase 2: Support and navigation
+- [ ] Knowledge base v1: about 20 to 30 passages, each with its source and review status
+- [ ] Safety rules (crisis language, requests for a diagnosis) with human handoff
+- [ ] Lite mode: menus, keyword lexicon, barrier flags
+- [ ] Grounded retrieval for web chat
+- [ ] Navigation tasks and a small synthetic facility directory
+
+**Done when:** a synthetic patient message produces either a cited, grounded reply or a confirmed barrier flag with a navigator task; a crisis message produces a human handoff; and all of this works with no language model installed.
+
+### Phase 3: Channels and follow-up
+- [ ] Channel layer and channel simulator (USSD menu, SMS inbox)
+- [ ] SMS outbox with approved templates, reply codes and STOP
+- [ ] Appointment requests and reminders
+- [ ] Missed-appointment and unreachable-by-SMS detection
+
+**Done when:** in the simulator someone can dial the placeholder code, flag a worry, receive a reminder and reply to confirm, and an undelivered reminder creates a navigator task.
+
+### Phase 4: Interoperability and handoff
+- [ ] FHIR mapping and the adapter interface
+- [ ] Mock hospital system running as a separate process
+- [ ] Appointment request sent out; arrival and milestones received back
+- [ ] Handoff and loop closure
+
+**Done when:** an appointment request travels as FHIR to the mock hospital, milestones come back and change the case, and an invalid message is rejected with a clear error.
+
+### Phase 5: Dashboard, evaluation and hardening
+- [ ] Navigator dashboard with a pathway funnel
+- [ ] Patient web view (chat and journey)
+- [ ] Evaluation sets and written-up results (Lite mode precision and recall, crisis detection recall, USSD and SMS length limits)
+- [ ] Safety and refusal tests documented, including failures
+- [ ] Documents consistent with the code; Status table accurate
+
+**Done when:** the demo flow runs from start to finish with no manual database edits, and the evaluation results are written up.
+
+### Phase 6: Demo and submission
+- [ ] Run instructions tested on a clean machine
+- [ ] Demo script and video (under 3 minutes, public on YouTube)
+- [ ] Text description and tools list
+- [ ] Final repository checks: licence visible, no secrets, links working, Team notes removed
+- [ ] Submitted early
+
+**Done when:** the submission form is complete and confirmed.
+
 ## Status
 
-This table is the single place that shows progress. Update it in the same pull request that finishes a piece of work.
+This table is the single place that shows progress by component. Update it in the same pull request that finishes a piece of work, and update the phase tracker above at each milestone check.
 
-| Component | Status | Notes |
-|---|---|---|
-| Case engine: stages, owners, deadlines, escalation, audit | In progress | Prototype built; being adapted to the pre-hospital pathway |
-| Patient onboarding and consent | Planned | |
-| Knowledge base with cited sources | Planned | Pending clinical review |
-| Safety rules and human handoff | Planned | Wording needs clinical review |
-| Lite mode: menus, keywords, barrier flags | Planned | English first |
-| Grounded retrieval assistant (web chat) | Planned | |
-| Channel layer and channel simulator (USSD and SMS) | Planned | Simulated, no live short code |
-| SMS outbox, reminders, missed-step detection | Planned | |
-| Barrier detection and navigation tasks | Planned | |
-| Navigator dashboard and pathway funnel | Planned | |
-| Mock hospital FHIR exchange | Planned | Simulated |
-| Safety and quality evaluation | Planned | Our own synthetic test sets |
+| Component | Phase | Status | Notes |
+|---|---|---|---|
+| Case engine: stages, owners, deadlines, escalation, audit | 1 | In progress | Prototype built; being adapted to the pre-hospital pathway |
+| Patient onboarding and consent | 1 | Planned | |
+| Knowledge base with cited sources | 2 | Planned | Pending clinical review |
+| Safety rules and human handoff | 2 | Planned | Wording needs clinical review |
+| Lite mode: menus, keywords, barrier flags | 2 | Planned | English first |
+| Grounded retrieval assistant (web chat) | 2 | Planned | |
+| Barrier detection and navigation tasks | 2 | Planned | |
+| Channel layer and channel simulator (USSD and SMS) | 3 | Planned | Simulated, no live short code |
+| SMS outbox, reminders, missed-step detection | 3 | Planned | |
+| Mock hospital FHIR exchange | 4 | Planned | Simulated |
+| Navigator dashboard and pathway funnel | 5 | Planned | |
+| Safety and quality evaluation | 5 | Planned | Our own synthetic test sets |
 
 Status values: **Planned**, **In progress**, **Working** (runs and has tests), **Dropped**.
 
@@ -163,6 +242,7 @@ A full contribution guide is coming. Until then: work on a branch, open a pull r
 ## Team notes (delete this section before submission)
 
 - Open decisions: database default, language model access, clinical reviewer for the knowledge base and safety wording, Kiswahili reviewer, helpline information to verify, human roles, where consent is captured, simulator only or also a provider sandbox.
+- At each milestone check, update the phase tracker and the Status table.
 - Before submitting: working run instructions in "Getting started", links in "Documentation" all working, Status table up to date, licence visible in the repository's About section, demo video public on YouTube, no secrets in the repository history.
 
 ## Licence
