@@ -31,7 +31,7 @@ body:
     id: workstream
     attributes:
       label: Workstream
-      options: [case-engine, records-referrals, frontend, data-ai, docs-governance, platform]
+      options: [case-engine, assistant, channels, interop, frontend, data-eval, docs-governance, platform]
     validations:
       required: true
   - type: dropdown

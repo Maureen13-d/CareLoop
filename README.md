@@ -9,7 +9,7 @@
 
 Some people who receive concerning screening information, or who notice suggestive symptoms, never reach professional assessment. Clinicians we have spoken to report reasons such as fear of a diagnosis or of painful procedures, misconceptions, stigma, cost, not knowing where to go, and a lack of emotional support. **These are preliminary observations, not proven national findings.**
 
-Separately, published studies from Kenyan screening programmes report substantial loss to follow-up after a positive screen (one western Kenya programme reported about 28% lost after a positive visual inspection result in 2013). These are regional studies, not current national figures. Sources will be listed in the evidence document once it is added to this repository.
+Separately, published studies from Kenyan screening programmes report substantial loss to follow-up after a positive screen (one western Kenya programme reported about 28% lost after a positive visual inspection result in 2013). These are regional studies, not current national figures. Sources are listed in [docs/evidence/problem-and-gap.md](docs/evidence/problem-and-gap.md).
 
 ## What CareLoop does, and where it stops
 
@@ -197,7 +197,7 @@ New ideas are welcome. See "Designed to grow" below.
 - **Testing:** pytest, with frontend tests where useful
 - **Optional:** Docker
 
-Technical decisions and their reasons are recorded in `docs/TECHNICAL_DECISIONS.md` once added. A decision can change; the record should say why.
+Technical decisions and their reasons are recorded in [docs/TECHNICAL_DECISIONS.md](docs/TECHNICAL_DECISIONS.md). A decision can change; the record should say why.
 
 ## Designed to grow
 
@@ -233,7 +233,15 @@ Run instructions will be added here as soon as the first runnable version is mer
 
 ## Documentation
 
-Planned documents, linked as they are added: architecture, system requirements, database design, API documentation, security and privacy, technical decisions, the care pathway definition, evidence and sources, work breakdown, milestones, dependencies.
+- [Architecture](docs/ARCHITECTURE.md)
+- [System requirements](docs/SYSTEM_REQUIREMENTS.md)
+- [Database design](docs/DATABASE_DESIGN.md)
+- [API documentation](docs/API_DOCUMENTATION.md)
+- [Security and privacy](docs/SECURITY_AND_PRIVACY.md)
+- [Technical decisions](docs/TECHNICAL_DECISIONS.md)
+- [Care pathway definition](docs/pathways/cervical-cancer.md)
+- [Evidence and sources](docs/evidence/problem-and-gap.md)
+- [Work breakdown](project-management/WORK_BREAKDOWN_STRUCTURE.md), [milestones](project-management/MILESTONES.md) and [dependencies](project-management/DEPENDENCIES.md)
 
 ## Contributing
 

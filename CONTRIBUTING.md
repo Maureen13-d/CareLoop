@@ -72,13 +72,13 @@ If `git pull` or a PR reports a **merge conflict**, two people edited the same l
 
 | Family | Labels |
 |---|---|
-| Workstream | `ws:case-engine`, `ws:records-referrals`, `ws:frontend`, `ws:data-ai`, `ws:docs-governance`, `ws:platform` |
+| Workstream | `ws:case-engine`, `ws:assistant`, `ws:channels`, `ws:interop`, `ws:frontend`, `ws:data-eval`, `ws:docs-governance`, `ws:platform` |
 | Type | `type:feature`, `type:bug`, `type:task`, `type:docs` |
 | Priority | `P0-must`, `P1-should`, `P2-could` |
-| Other | `blocked`, `needs-review`, `good-first-issue` |
+| Other | `blocked`, `needs-review`, `good-first-issue`, `idea` |
 
 `scripts/create_labels.sh` creates them if you have the GitHub CLI (`gh`) installed and logged in. Otherwise create them by hand under **Issues > Labels**.
 
 ## Milestones
 
-M1 Foundation (15 Nov), M2 Core loop (17 Nov), M3 Demo-ready (19 Nov), M4 Submission (20 Nov). See [project-management/MILESTONES.md](project-management/MILESTONES.md).
+M1 Foundation and core engine (17 Nov), M2 Support and channels (18 Nov), M3 Interop and demo-ready (19 Nov), M4 Submission (20 Nov). See [project-management/MILESTONES.md](project-management/MILESTONES.md).
