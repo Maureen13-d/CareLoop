@@ -3,10 +3,10 @@ from sqlalchemy.orm import Session
 from app.core import clock
 from app.core.config import settings
 from app.modules.audit import service as audit
-from app.modules.patients import service as patients
-from app.modules.patients.models import CONSENT_PURPOSE_COORDINATION, Patient
 from app.modules.pathways import service as pathways
 from app.modules.pathways.loader import load_pathway
+from app.modules.patients import service as patients
+from app.modules.patients.models import CONSENT_PURPOSE_COORDINATION, Patient
 from app.modules.screenings.models import Screening
 from app.modules.screenings.schemas import ScreeningIn
 

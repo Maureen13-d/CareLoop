@@ -12,8 +12,20 @@ from app.modules.pathways import service
 from app.modules.pathways.loader import PathwayError, load_pathway
 from app.modules.pathways.models import Escalation
 from app.modules.pathways.schemas import (
-    AdvanceClockIn, CaseOut, ClockOut, CloseIn, DeadlineCheckOut, EscalationOut, EventOut, EvidenceIn,
-    EvidenceOut, LostIn, PathwayOut, PathwayStateOut, ResolveIn, TransitionIn,
+    AdvanceClockIn,
+    CaseOut,
+    ClockOut,
+    CloseIn,
+    DeadlineCheckOut,
+    EscalationOut,
+    EventOut,
+    EvidenceIn,
+    EvidenceOut,
+    LostIn,
+    PathwayOut,
+    PathwayStateOut,
+    ResolveIn,
+    TransitionIn,
 )
 
 staff = require_roles(ROLE_COORDINATOR, ROLE_CLINICIAN)
