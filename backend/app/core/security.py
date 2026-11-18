@@ -3,7 +3,7 @@ import base64
 import hashlib
 import hmac
 import os
-from datetime import timedelta
+from datetime import UTC, timedelta
 
 import jwt
 
@@ -35,9 +35,9 @@ def verify_password(password: str, stored: str) -> bool:
 
 def create_access_token(user_id: int, role: str) -> str:
     # Token expiry uses real time, not the demo clock.
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    expires = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    expires = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
     return jwt.encode({"sub": str(user_id), "role": role, "exp": expires}, settings.secret_key, algorithm=ALGORITHM)
 
 

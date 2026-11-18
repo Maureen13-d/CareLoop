@@ -17,9 +17,9 @@ from app.core import clock
 from app.core.errors import DomainError
 from app.modules.audit import service as audit
 from app.modules.auth.models import Department, User
-from app.modules.patients.models import Patient
 from app.modules.pathways.loader import Pathway, load_pathway
 from app.modules.pathways.models import CareCase, CaseEvent, Escalation, Evidence
+from app.modules.patients.models import Patient
 
 
 # ----------------------------------------------------------------- helpers
