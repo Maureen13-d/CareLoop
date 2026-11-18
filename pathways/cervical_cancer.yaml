@@ -1,0 +1,88 @@
+# Care pathway definition: cervical cancer screening-to-care (demo, Kenya context)
+#
+# IMPORTANT: every deadline_hours value below is ASSUMED. None has been sourced from a
+# national guideline yet. Replace them (or keep them and label them as assumptions in the
+# submission) once the Ministry of Health guideline has been read.
+#
+# "roles" lists who may move a case INTO that state.
+# "owner_department" is the department that owns the case while it is in that state.
+# "deadline_hours" is how long the case may stay in the state before it is overdue.
+
+id: cervical_cancer
+name: Cervical cancer screening-to-care
+version: "0.1-draft"
+deadlines_status: ASSUMED
+initial_state: OPENED
+
+escalation:
+  second_level_after_hours: 48     # level 2 if still overdue this long after the deadline
+  urgent_starts_at_level: 2        # urgent cases skip level 1
+
+closure:
+  closable_from: [CONFIRMATION_COMPLETED, TREATMENT_STARTED, FOLLOW_UP_DUE]
+  evidence_types: [confirmed_negative, treatment_documented, follow_up_completed, clinician_decision]
+  roles: [clinician]
+
+lost_to_follow_up:
+  roles: [coordinator, clinician]
+  requires_prior_escalation: true
+
+terminal_states:
+  CLOSED: Closed with evidence
+  LOST_TO_FOLLOW_UP: Closed by a recorded human decision after escalation
+
+states:
+  OPENED:
+    label: Positive or suspicious result recorded
+    owner_department: screening_clinic
+    deadline_hours: 48
+    next: [PATIENT_NOTIFIED]
+    roles: [clinician, coordinator]
+  PATIENT_NOTIFIED:
+    label: Result communicated to the patient
+    owner_department: care_coordination
+    deadline_hours: 72
+    next: [PATIENT_ACKNOWLEDGED]
+    roles: [coordinator, clinician]
+  PATIENT_ACKNOWLEDGED:
+    label: Patient confirmed receipt
+    owner_department: care_coordination
+    deadline_hours: 168
+    next: [CONFIRMATION_SCHEDULED]
+    roles: [coordinator, clinician]
+  CONFIRMATION_SCHEDULED:
+    label: Confirmatory assessment booked
+    owner_department: gynaecology_clinic
+    deadline_hours: 336
+    next: [CONFIRMATION_COMPLETED]
+    roles: [coordinator, clinician]
+  CONFIRMATION_COMPLETED:
+    label: Confirmatory assessment done and documented
+    owner_department: gynaecology_clinic
+    deadline_hours: 72
+    next: [REFERRAL_SENT]
+    roles: [clinician]
+  REFERRAL_SENT:
+    label: Referral to treatment unit sent
+    owner_department: treatment_unit
+    deadline_hours: 72
+    next: [REFERRAL_ACCEPTED]
+    roles: [clinician]
+  REFERRAL_ACCEPTED:
+    label: Treatment unit accepted the referral
+    owner_department: treatment_unit
+    deadline_hours: 336
+    next: [TREATMENT_STARTED]
+    roles: [clinician]
+  TREATMENT_STARTED:
+    label: Treatment or surveillance plan begun and documented
+    owner_department: treatment_unit
+    deadline_hours: 168
+    next: [FOLLOW_UP_DUE]
+    roles: [clinician]
+  FOLLOW_UP_DUE:
+    label: Post-treatment follow-up pending
+    owner_department: care_coordination
+    deadline_hours: 720
+    next: []
+    roles: [coordinator, clinician]
