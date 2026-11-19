@@ -6,6 +6,7 @@ from app.core.deps import get_current_user
 from app.modules.assistant import service
 from app.modules.assistant.schemas import AssistantRequest, AssistantResponse
 from app.modules.audit import service as audit
+from app.modules.tasks.service import create_task, should_open_task
 
 router = APIRouter(prefix="/assistant", tags=["assistant"])
 
@@ -15,6 +16,15 @@ def post_message(
     data: AssistantRequest, db: Session = Depends(get_db), user=Depends(get_current_user)
 ):
     response = service.handle_message(data)
+    if should_open_task(response) and response.suggested_task:
+        create_task(
+            db,
+            task_type=response.suggested_task.type,
+            priority=response.suggested_task.priority,
+            case_id=data.case_id,
+            source="assistant",
+            actor=user,
+        )
     # The audit record keeps labels only. The patient's own words are never written to the audit log.
     audit.record(
         db,
