@@ -62,7 +62,7 @@ export default async function OutreachPage() {
           role="note"
           className="rounded-md bg-amber-100 p-2 text-sm text-amber-900 dark:bg-amber-900/40 dark:text-amber-100"
         >
-          Synthetic data only. Contacts are simulated; nothing is actually sent.
+          Synthetic data only. Contacts are simulated; nothing is actually sent. Pathway timings are unreviewed placeholders pending clinical review.
         </p>
       </header>
 

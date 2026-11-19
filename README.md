@@ -266,3 +266,10 @@ of one case that received at least one contact. Rates are associations, not caus
 contacted vs uncontacted cases are deliberately not compared (outreach only starts once a case is
 already late). Stage changes happen only through `POST /outreach/cases/{id}/respond`, so every
 change is recorded and counted. All figures are computed from synthetic data.
+
+## Clinical review status
+**Unreviewed.** Stage timeframes, the outreach ladder, the contact gap and the message wording are
+engineering placeholders. They have not been checked by a clinician and must not be used for any
+clinical or operational decision. The review brief is in
+[docs/CLINICAL_REVIEW.md](docs/CLINICAL_REVIEW.md); its parameter tables are generated from the code
+(`python -m app.clinical_params`) and a test fails if they drift apart.
