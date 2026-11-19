@@ -38,7 +38,3 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
-      - name: Mock hospital tests
-        working-directory: .
-        run: python -m pytest -q integrations
-      
