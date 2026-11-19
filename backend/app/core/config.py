@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     pathways_dir: str = str(REPO_ROOT / "pathways")
     ai_dir: str = str(REPO_ROOT / "ai")  # lexicons, templates, knowledge base
     demo_password: str = "careloop-demo"
+    hospital_base_url: str = "http://127.0.0.1:8100"
 
 
 settings = Settings()
