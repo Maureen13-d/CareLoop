@@ -6,6 +6,7 @@ os.environ["CARELOOP_DATABASE_URL"] = "sqlite://"
 os.environ["CARELOOP_DEMO_SCENARIO"] = "false"
 os.environ["CARELOOP_SEED_CASES"] = "25"
 os.environ["CARELOOP_SEED"] = "42"
+os.environ["CARELOOP_SEED_WORKSPACE"] = "false"
 
 import pytest
 from fastapi.testclient import TestClient

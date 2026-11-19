@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session
 
 from app.core.config import settings
-from app.core.db import init_db
+from app.core.db import SessionLocal, init_db
 from app.core.errors import register_error_handlers
 from app.db import engine as outreach_engine
 from app.db import init_db as init_outreach_db
@@ -14,18 +14,23 @@ from app.deps import get_repo
 from app.fhir import case_to_fhir_task
 from app.metrics_api import router as metrics_router
 from app.models import Case, CaseView
+from app.modules.analytics.router import router as analytics_router
 from app.modules.assistant.router import router as assistant_router
 from app.modules.audit.router import router as audit_router
 from app.modules.auth.router import router as auth_router
+from app.modules.channels.router import router as channels_router
+from app.modules.interop.router import router as hospital_router
 from app.modules.pathways.router import admin_router, escalation_router, pathway_router
 from app.modules.pathways.router import router as cases_router
 from app.modules.pathways.scheduler import scheduler_loop
 from app.modules.patients.router import router as patients_router
 from app.modules.screenings.router import router as screenings_router
+from app.modules.tasks.router import router as tasks_router
 from app.outreach_api import router as outreach_router
 from app.pathway import Stage, is_overdue
 from app.repository import Repository
 from app.seed import seed_if_empty
+from app.workspace_seed import seed_workspace_if_empty
 
 
 @asynccontextmanager
@@ -34,6 +39,8 @@ async def lifespan(_app: FastAPI):
     init_outreach_db()  # create outreach tables if missing; never drops anything
     with Session(outreach_engine) as session:
         seed_if_empty(session)  # first run only
+    with SessionLocal() as session:
+        seed_workspace_if_empty(session)
     task = None
     if settings.enable_scheduler:
         task = asyncio.create_task(scheduler_loop(settings.scheduler_interval_seconds))
@@ -75,6 +82,10 @@ for module_router in (
     assistant_router,
     audit_router,
     admin_router,
+    analytics_router,
+    tasks_router,
+    channels_router,
+    hospital_router,
 ):
     api.include_router(module_router)
 
