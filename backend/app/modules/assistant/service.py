@@ -1,11 +1,12 @@
 """The assistant: safety rules first, then Lite mode. Pure functions with no database or
 network access, so USSD, SMS and web chat can all call it, and tests can run it quickly.
 
-Later tiers (grounded retrieval, optional language model) will be added above Lite mode
-and must fall back to it on any failure."""
+Web chat may quote one approved passage after Lite mode. SMS and USSD stay on the
+short templates. An optional language model is not part of this build."""
 
 from app.modules.assistant.lexicon import get_template, load_barriers
 from app.modules.assistant.lite import confidence, match_lite
+from app.modules.assistant.retrieve import search_passages
 from app.modules.assistant.safety import check_safety
 from app.modules.assistant.schemas import (
     AssistantRequest,
@@ -53,9 +54,35 @@ def _handle_menu(req: AssistantRequest) -> AssistantResponse:
     )
 
 
+def _handle_confirm(req: AssistantRequest) -> AssistantResponse:
+    flag = req.confirm_flag or ""
+    if flag not in load_barriers().flags:
+        return _respond("lite.clarify", tier="lite")
+    return _respond(
+        f"lite.barrier.{flag}",
+        tier="lite",
+        flags=[BarrierFlag(flag=flag, confidence=1.0, status="confirmed", source="menu")],
+        task=SuggestedTask(type="navigator_followup", priority="normal"),
+    )
+
+
+def _from_passage(passage: dict) -> AssistantResponse:
+    citation = f"{passage['source_title']} {passage['source_url']}".strip()
+    return AssistantResponse(
+        reply_text=str(passage["text"]).strip(),
+        source_ids=[passage["id"]],
+        sources=[citation],
+        template_id=f"kb.{passage['id']}",
+        tier="retrieval",
+        review_status=passage.get("review_status", "draft_pending_clinical_review"),
+    )
+
+
 def handle_message(req: AssistantRequest) -> AssistantResponse:
     if req.menu_choice and req.menu_context == "worry_menu":
         return _handle_menu(req)
+    if req.confirm_flag and not (req.text and req.text.strip()):
+        return _handle_confirm(req)
 
     norm = normalise(req.text)
     safety = check_safety(norm)
@@ -126,4 +153,9 @@ def handle_message(req: AssistantRequest) -> AssistantResponse:
         )
     if "greeting" in lite.intents:
         return _respond("lite.greeting", tier="lite", intents=lite.intents)
+    # Web chat may quote an approved passage. SMS and USSD stay on the short templates.
+    if req.channel == "web" and req.text:
+        passage = search_passages(req.text)
+        if passage:
+            return _from_passage(passage)
     return _respond("lite.unclear", tier="fallback")

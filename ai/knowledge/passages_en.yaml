@@ -1,0 +1,225 @@
+# Approved passages for web chat. DRAFT: pending clinical review.
+# Reply text stays clear of words that must never appear on a shared phone
+# (cancer, result, diagnosis, positive, hiv, screening). Citations may name the source.
+version: "0.1-draft"
+review_status: draft_pending_clinical_review
+passages:
+  - id: visit_purpose
+    title: What a follow-up visit is for
+    review_status: draft_pending_clinical_review
+    source_title: "World Health Organization. Cervical cancer fact sheet."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - what happens at the visit
+      - what is the visit for
+      - what happens next at the clinic
+    text: "A follow-up visit lets a health worker look again and explain the next step in person. CareLoop can help you get there. It cannot tell you what a check means."
+
+  - id: not_final
+    title: A check is not the last word
+    review_status: draft_pending_clinical_review
+    source_title: "World Health Organization. Cervical cancer fact sheet."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - is the check the final answer
+      - does a check mean i am unwell
+      - is a worrying check the last word
+    text: "A worrying check is a reason to be seen. It is not the last word about your health. Only a health worker who examines you can explain it."
+
+  - id: ask_questions
+    title: Asking questions at the visit
+    review_status: draft_pending_clinical_review
+    source_title: "World Health Organization. Comprehensive cervical cancer control: a guide to essential practice."
+    source_url: "https://www.who.int/publications/i/item/9789241548953"
+    prompts:
+      - can i ask questions at the visit
+      - will they explain each step
+      - can i ask them to use plain words
+    text: "You can ask the health worker to pause and explain each step before it starts. You can also ask them to use plain words."
+
+  - id: bring_someone
+    title: Bringing someone with you
+    review_status: draft_pending_clinical_review
+    source_title: "CareLoop demo note. Not a clinical guideline. Local practice varies."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - can i bring someone with me
+      - can i bring a friend
+      - may i go with someone
+    text: "You may bring a person you trust to the visit. If you would rather go alone, that is also all right. A navigator can help you decide."
+
+  - id: what_to_bring
+    title: What to carry
+    review_status: draft_pending_clinical_review
+    source_title: "CareLoop demo note. A navigator confirms what the clinic actually asks for."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - what should i bring
+      - what do i need to bring
+      - what should i carry to the visit
+    text: "Bring the text about your visit if you have one, and any card you normally use at the clinic. A navigator can tell you if that clinic needs anything else."
+
+  - id: fees
+    title: Asking about fees
+    review_status: draft_pending_clinical_review
+    source_title: "CareLoop demo note. Fees are not invented here."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - who can explain the fee
+      - how do i ask about the fee
+      - can someone explain the fee
+    text: "If you are unsure about the fee, a navigator can help you ask the clinic before you travel. CareLoop does not know the fee and will not guess it."
+
+  - id: travel_plan
+    title: Planning the trip
+    review_status: draft_pending_clinical_review
+    source_title: "CareLoop demo note. Not a transport service."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - how do i plan the trip
+      - help me plan the journey
+      - is there a closer clinic
+    text: "If the clinic is hard to reach, a navigator can help you plan the trip or look for a closer place. Tell them what time of day you can travel."
+
+  - id: private_texts
+    title: Why texts stay short
+    review_status: draft_pending_clinical_review
+    source_title: "CareLoop privacy rule for shared phones."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - are the texts private
+      - why are the texts so short
+      - will the text mention my check
+    text: "Texts from CareLoop stay short and do not mention a check. Phones are often shared. On this web chat you can say more, and you choose what a navigator may see."
+
+  - id: stop_messages
+    title: Stopping messages
+    review_status: draft_pending_clinical_review
+    source_title: "CareLoop consent rule."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - how do i stop messages
+      - can i opt out
+      - i want to stop the texts
+    text: "You can stop at any time. Reply STOP to texts, or say so here. That choice is recorded and respected."
+
+  - id: nervous
+    title: Feeling nervous is common
+    review_status: draft_pending_clinical_review
+    source_title: "World Health Organization. Comprehensive cervical cancer control: a guide to essential practice."
+    source_url: "https://www.who.int/publications/i/item/9789241548953"
+    prompts:
+      - is it normal to feel nervous
+      - feeling nervous about the visit
+      - i feel uneasy before the visit
+    text: "Many people feel nervous before a visit. That feeling is common. A health worker can explain the next step, and a navigator can stay with the planning."
+
+  - id: go_slowly
+    title: Asking them to go slowly
+    review_status: draft_pending_clinical_review
+    source_title: "World Health Organization. Comprehensive cervical cancer control: a guide to essential practice."
+    source_url: "https://www.who.int/publications/i/item/9789241548953"
+    prompts:
+      - can i ask them to go slowly
+      - what if i feel uneasy during the visit
+      - can they pause if i ask
+    text: "If you are uneasy, you can ask the health worker what they will do before they begin. You can ask them to pause."
+
+  - id: your_choice
+    title: The visit is your choice
+    review_status: draft_pending_clinical_review
+    source_title: "CareLoop consent rule."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - do i have to go
+      - is the visit my choice
+      - can i decide later
+    text: "Whether to go ahead is your choice. A navigator can explain the visit. They should not pressure you."
+
+  - id: missed_visit
+    title: If you miss a visit
+    review_status: draft_pending_clinical_review
+    source_title: "CareLoop navigation rule. A missed visit is a problem to solve."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - what if i miss the visit
+      - i missed my visit
+      - missed the appointment
+    text: "If you miss a visit, it is a problem to solve, not a failure. Tell CareLoop and a navigator will help you pick another time."
+
+  - id: after_arrival
+    title: After you arrive
+    review_status: draft_pending_clinical_review
+    source_title: "CareLoop scope. The facility owns care after arrival."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - what happens after i arrive
+      - who takes over after arrival
+      - what happens once i am at the clinic
+    text: "Once the clinic confirms you have arrived, their own team leads the care. CareLoop only checks that you were not lost between arriving and care starting."
+
+  - id: not_a_clinic
+    title: What CareLoop will not do
+    review_status: draft_pending_clinical_review
+    source_title: "CareLoop safety boundary."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - can careloop examine me
+      - are you a doctor
+      - can this chat examine me
+    text: "CareLoop helps you reach a health worker. It does not examine you, name an illness, or choose treatment."
+
+  - id: reach_a_person
+    title: Asking for a person
+    review_status: draft_pending_clinical_review
+    source_title: "CareLoop human handoff rule."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - how do i reach a person
+      - how do i ask for a counsellor
+      - how do i ask for a navigator
+    text: "If you want a person, say so here or reply HELP by text. Someone from the team is meant to take it from there."
+
+  - id: reminder_contents
+    title: What a reminder contains
+    review_status: draft_pending_clinical_review
+    source_title: "CareLoop privacy rule for shared phones."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - what will the reminder say
+      - what is in the reminder text
+      - why is the reminder vague
+    text: "A reminder says the time and the place only. It does not describe a check, because a phone may be shared."
+
+  - id: how_long
+    title: How long a visit takes
+    review_status: draft_pending_clinical_review
+    source_title: "CareLoop demo note. Times are not guessed."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - how long does the visit take
+      - how long will i be there
+      - how much time should i allow
+    text: "How long a visit takes is different at each clinic. CareLoop will not guess. A navigator can ask the clinic what to expect."
+
+  - id: plain_language
+    title: Everyday words
+    review_status: draft_pending_clinical_review
+    source_title: "World Health Organization. Comprehensive cervical cancer control: a guide to essential practice."
+    source_url: "https://www.who.int/publications/i/item/9789241548953"
+    prompts:
+      - can they explain in simple words
+      - can i ask for everyday words
+      - a language i understand
+    text: "You can ask for an explanation in everyday words, and for a language you are comfortable with. It is reasonable to ask until you understand."
+
+  - id: one_sign
+    title: One sign is not the whole story
+    review_status: draft_pending_clinical_review
+    source_title: "World Health Organization. Cervical cancer fact sheet."
+    source_url: "https://www.who.int/news-room/fact-sheets/detail/cervical-cancer"
+    prompts:
+      - does one sign tell me
+      - one worrying sign
+      - is one sign enough to know
+    text: "One worrying sign, on its own, does not tell you what is wrong. A proper visit is how a health worker looks at the whole picture."

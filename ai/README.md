@@ -7,6 +7,7 @@ Everything the assistant says or matches lives here as plain files, so people wh
 | `lexicon/safety_en.yaml` | Phrases that signal crisis, distress, a request for a diagnosis, or a symptom report | DRAFT, needs clinical and language review |
 | `lexicon/barriers_en.yaml` | Keywords and phrases for each barrier (fear, cost, transport, stigma, misconceptions, not knowing where to go, distress, lack of support), plus intents and the "What worries you most?" menu | DRAFT, needs language review |
 | `templates/lite_en.yaml` | The approved replies Lite mode sends over USSD, SMS and web | DRAFT, needs clinical and language review |
+| `knowledge/passages_en.yaml` | Approved passages for web chat, each with a source and review status | DRAFT, needs clinical review |
 
 ## Rules for every change
 
