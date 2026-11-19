@@ -23,18 +23,17 @@ from pathlib import Path
 BACKEND_DIR = Path(__file__).resolve().parents[2] / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
 
-from sqlalchemy import select  # noqa: E402
-
-from app.core import clock  # noqa: E402
-from app.core.config import settings  # noqa: E402
-from app.core.db import Base, SessionLocal, engine, import_models, init_db  # noqa: E402
-from app.core.security import hash_password  # noqa: E402
-from app.modules.auth.models import Department, User  # noqa: E402
-from app.modules.patients.models import Consent, Patient  # noqa: E402
-from app.modules.pathways import service as pathways  # noqa: E402
-from app.modules.pathways.loader import load_pathway  # noqa: E402
-from app.modules.pathways.models import CareCase  # noqa: E402
-from app.modules.screenings.models import Screening  # noqa: E402
+from app.core import clock
+from app.core.config import settings
+from app.core.db import Base, SessionLocal, engine, import_models, init_db
+from app.core.security import hash_password
+from app.modules.auth.models import Department, User
+from app.modules.pathways import service as pathways
+from app.modules.pathways.loader import load_pathway
+from app.modules.pathways.models import CareCase
+from app.modules.patients.models import Consent, Patient
+from app.modules.screenings.models import Screening
+from sqlalchemy import select
 
 DEPARTMENTS = [
     ("screening_clinic", "Screening clinic", "clinical"),
