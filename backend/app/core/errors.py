@@ -1,5 +1,6 @@
 """One error shape for the whole API:
 {"error": {"code": "...", "message": "...", "details": {}}}"""
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -20,11 +21,15 @@ def _body(code: str, message: str, details: dict | None = None) -> dict:
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def _domain(_: Request, exc: DomainError):
-        return JSONResponse(status_code=exc.status_code, content=_body(exc.code, exc.message, exc.details))
+        return JSONResponse(
+            status_code=exc.status_code, content=_body(exc.code, exc.message, exc.details)
+        )
 
     @app.exception_handler(HTTPException)
     async def _http(_: Request, exc: HTTPException):
-        code = {401: "not_authenticated", 403: "forbidden", 404: "not_found"}.get(exc.status_code, "http_error")
+        code = {401: "not_authenticated", 403: "forbidden", 404: "not_found"}.get(
+            exc.status_code, "http_error"
+        )
         return JSONResponse(
             status_code=exc.status_code,
             content=_body(code, str(exc.detail)),
@@ -35,5 +40,7 @@ def register_error_handlers(app: FastAPI) -> None:
     async def _validation(_: Request, exc: RequestValidationError):
         return JSONResponse(
             status_code=422,
-            content=_body("validation_error", "Request data is not valid", {"errors": exc.errors()}),
+            content=_body(
+                "validation_error", "Request data is not valid", {"errors": exc.errors()}
+            ),
         )

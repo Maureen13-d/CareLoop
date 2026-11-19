@@ -7,14 +7,14 @@ from app.config import settings
 from app.fhir import case_to_fhir_task
 from app.models import AdvanceRequest, Case, CaseView
 from app.pathway import InvalidTransition, Stage, is_overdue
+from app.store import OUTREACH_LOG, STORE
 from app.synthetic import generate_cases
-
-STORE: dict[str, Case] = {}
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     STORE.clear()
+    OUTREACH_LOG.clear()
     STORE.update({c.id: c for c in generate_cases(settings.seed_cases, settings.seed)})
     yield
 
@@ -26,12 +26,13 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+from app.outreach_api import router as outreach_router
+
+app.include_router(outreach_router)
 
 
 def _view(case: Case) -> CaseView:
-    return CaseView(
-        **case.model_dump(), overdue=is_overdue(case.stage, case.stage_entered_at)
-    )
+    return CaseView(**case.model_dump(), overdue=is_overdue(case.stage, case.stage_entered_at))
 
 
 def _get(case_id: str) -> Case:

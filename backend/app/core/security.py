@@ -1,4 +1,5 @@
 """Password hashing (standard-library scrypt) and login tokens (JWT)."""
+
 import base64
 import hashlib
 import hmac
@@ -38,7 +39,11 @@ def create_access_token(user_id: int, role: str) -> str:
     from datetime import datetime
 
     expires = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
-    return jwt.encode({"sub": str(user_id), "role": role, "exp": expires}, settings.secret_key, algorithm=ALGORITHM)
+    return jwt.encode(
+        {"sub": str(user_id), "role": role, "exp": expires},
+        settings.secret_key,
+        algorithm=ALGORITHM,
+    )
 
 
 def decode_access_token(token: str) -> dict | None:
