@@ -19,6 +19,9 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: pytest -q tests/test_api.py tests/test_pathway.py
+      - name: Mock hospital tests
+        working-directory: .
+        run: python -m pytest -q integrations
 
   frontend:
     runs-on: ubuntu-latest
