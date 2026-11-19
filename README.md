@@ -71,69 +71,69 @@ CareLoop speaks FHIR R4. For the prototype, a **mock hospital system** exchanges
 
 We build in phases so everyone can see how far we are. **Phases overlap, because several people work in parallel. A phase is done when its exit criteria are met, not when its date passes.** Dates are targets for the 20 November prototype deadline. Phases can be merged, split, added or dropped by team agreement; note the change and the reason in the technical decisions record.
 
-**Current focus: Phase 0 (foundation), moving into Phase 1.**
+**Current focus: the pathway, desk, chat, phone simulator and simulated clinic handoff run on synthetic data. The demo video has not been recorded, and the knowledge base is still awaiting clinical review.**
 
 | Phase | Goal | Target | Status |
 |---|---|---|---|
-| 0. Foundation and alignment | Shared scope, working repository, everyone able to contribute | 16 Nov | In progress |
-| 1. Core engine and data | A synthetic case moves through the pre-hospital pathway with owners, deadlines and an audit trail | 16 to 17 Nov | Not started |
-| 2. Support and navigation | Safe, grounded support, barrier flags and navigation tasks that work with no model | 17 Nov | Not started |
-| 3. Channels and follow-up | USSD and SMS (simulated), reminders, missed-step detection | 17 to 18 Nov | Not started |
-| 4. Interoperability and handoff | FHIR exchange with a mock hospital; handoff and loop closure | 18 Nov | Not started |
-| 5. Dashboard, evaluation and hardening | Navigator dashboard and funnel, evaluation results, safety testing | 18 to 19 Nov | Not started |
+| 0. Foundation and alignment | Shared scope, working repository, everyone able to contribute | 16 Nov | Done |
+| 1. Core engine and data | A synthetic case moves through the pre-hospital pathway with owners, deadlines and an audit trail | 16 to 17 Nov | Done |
+| 2. Support and navigation | Safe, grounded support, barrier flags and navigation tasks that work with no model | 17 Nov | Done |
+| 3. Channels and follow-up | USSD and SMS (simulated), reminders, missed-step detection | 17 to 18 Nov | Done |
+| 4. Interoperability and handoff | FHIR exchange with a mock hospital; handoff and loop closure | 18 Nov | Done |
+| 5. Dashboard, evaluation and hardening | Navigator dashboard and funnel, evaluation results, safety testing | 18 to 19 Nov | Done |
 | 6. Demo and submission | Fresh-machine test, video, description, final checks, submit | 19 to 20 Nov | Not started |
 
 Status values: **Not started**, **In progress**, **Done**, **Dropped**.
 
 ### Phase 0: Foundation and alignment
-- [ ] Scope agreed: pre-hospital bridge, USSD and SMS channels, Lite mode
-- [ ] README merged and the repository About section updated
+- [x] Scope agreed: pre-hospital bridge, USSD and SMS channels, Lite mode
+- [x] README merged and the repository About section updated
 - [ ] Labels, milestones, project board and the `idea` label created
-- [ ] Open decisions resolved or defaulted (see Team notes)
-- [ ] Backend foundation merged
+- [ ] Open decisions resolved or defaulted (a clinical reviewer for the knowledge base is still needed)
+- [x] Backend foundation merged
 
 **Done when:** every teammate has cloned the repository, run it, and opened a pull request.
 
 ### Phase 1: Core engine and data
-- [ ] Pre-hospital pathway definition (flagged, engaged, barriers assessed, navigation, appointment booked, arrival confirmed, handed off, closed)
-- [ ] Roles: patient, navigator, counsellor, clinician, program manager, admin
-- [ ] Consent purposes, including SMS contact and sharing barriers with a navigator
-- [ ] Synthetic seed data
-- [ ] Tests updated and passing
+- [x] Pre-hospital pathway definition (flagged, engaged, barriers assessed, navigation, appointment booked, arrival confirmed, handed off, closed)
+- [x] Roles: patient, navigator, counsellor, clinician, program manager, admin
+- [x] Consent purposes, including SMS contact and sharing barriers with a navigator
+- [x] Synthetic seed data
+- [x] Tests updated and passing
 
 **Done when:** a synthetic case can move from flagged to handed-off through the API, every step is in the audit log, and the tests pass.
 
 ### Phase 2: Support and navigation
-- [ ] Knowledge base v1: about 20 to 30 passages, each with its source and review status
-- [ ] Safety rules (crisis language, requests for a diagnosis) with human handoff
-- [ ] Lite mode: menus, keyword lexicon, barrier flags
-- [ ] Grounded retrieval for web chat
-- [ ] Navigation tasks and a small synthetic facility directory
+- [x] Knowledge base v1: about 20 to 30 passages, each with its source and review status
+- [x] Safety rules (crisis language, requests for a diagnosis) with human handoff
+- [x] Lite mode: menus, keyword lexicon, barrier flags
+- [x] Grounded retrieval for web chat
+- [x] Navigation tasks and a small synthetic facility directory
 
 **Done when:** a synthetic patient message produces either a cited, grounded reply or a confirmed barrier flag with a navigator task; a crisis message produces a human handoff; and all of this works with no language model installed.
 
 ### Phase 3: Channels and follow-up
-- [ ] Channel layer and channel simulator (USSD menu, SMS inbox)
-- [ ] SMS outbox with approved templates, reply codes and STOP
-- [ ] Appointment requests and reminders
-- [ ] Missed-appointment and unreachable-by-SMS detection
+- [x] Channel layer and channel simulator (USSD menu, SMS inbox)
+- [x] SMS outbox with approved templates, reply codes and STOP
+- [x] Appointment requests and reminders
+- [x] Missed-appointment and unreachable-by-SMS detection
 
 **Done when:** in the simulator someone can dial the placeholder code, flag a worry, receive a reminder and reply to confirm, and an undelivered reminder creates a navigator task.
 
 ### Phase 4: Interoperability and handoff
-- [ ] FHIR mapping and the adapter interface
-- [ ] Mock hospital system running as a separate process
-- [ ] Appointment request sent out; arrival and milestones received back
-- [ ] Handoff and loop closure
+- [x] FHIR mapping and the adapter interface
+- [x] Mock hospital system running as a separate process
+- [x] Appointment request sent out; arrival and milestones received back
+- [x] Handoff and loop closure
 
 **Done when:** an appointment request travels as FHIR to the mock hospital, milestones come back and change the case, and an invalid message is rejected with a clear error.
 
 ### Phase 5: Dashboard, evaluation and hardening
-- [ ] Navigator dashboard with a pathway funnel
-- [ ] Patient web view (chat and journey)
-- [ ] Evaluation sets and written-up results (Lite mode precision and recall, crisis detection recall, USSD and SMS length limits)
-- [ ] Safety and refusal tests documented, including failures
-- [ ] Documents consistent with the code; Status table accurate
+- [x] Navigator dashboard with a pathway funnel
+- [x] Patient web view (chat and journey)
+- [x] Evaluation sets and written-up results (Lite mode precision and recall, crisis detection recall, USSD and SMS length limits)
+- [x] Safety and refusal tests documented, including failures
+- [x] Documents consistent with the code; Status table accurate
 
 **Done when:** the demo flow runs from start to finish with no manual database edits, and the evaluation results are written up.
 
@@ -152,18 +152,19 @@ This table is the single place that shows progress by component. Update it in th
 
 | Component | Phase | Status | Notes |
 |---|---|---|---|
-| Case engine: stages, owners, deadlines, escalation, audit | 1 | In progress | Prototype built; being adapted to the pre-hospital pathway |
-| Patient onboarding and consent | 1 | Planned | |
-| Knowledge base with cited sources | 2 | Planned | Pending clinical review |
-| Safety rules and human handoff | 2 | Planned | Wording needs clinical review |
-| Lite mode: menus, keywords, barrier flags | 2 | Planned | English first |
-| Grounded retrieval assistant (web chat) | 2 | Planned | |
-| Barrier detection and navigation tasks | 2 | Planned | |
-| Channel layer and channel simulator (USSD and SMS) | 3 | Planned | Simulated, no live short code |
-| SMS outbox, reminders, missed-step detection | 3 | Planned | |
-| Mock hospital FHIR exchange | 4 | Planned | Simulated |
-| Navigator dashboard and pathway funnel | 5 | Planned | |
-| Safety and quality evaluation | 5 | Planned | Our own synthetic test sets |
+| Case engine: stages, owners, deadlines, escalation, audit | 1 | Working | Pre-hospital pathway in `pathways/cervical_cancer.yaml` |
+| Patient onboarding and consent | 1 | Working | Clinician intake screen records consent, then a finding |
+| Knowledge base with cited sources | 2 | Working | 20 draft passages; pending clinical review |
+| Safety rules and human handoff | 2 | Working | Crisis, distress, symptoms and diagnosis requests |
+| Lite mode: menus, keywords, barrier flags | 2 | Working | English. Confirmed worries open a navigator task |
+| Grounded retrieval assistant (web chat) | 2 | Working | Web only. SMS and USSD stay on short templates |
+| Barrier detection and navigation tasks | 2 | Working | Keyword matches stay private until the person confirms |
+| Channel layer and channel simulator (USSD and SMS) | 3 | Working | Simulated. `*XYZ#` is a placeholder |
+| SMS outbox, reminders, missed-step detection | 3 | Working | Reply 1/2/3/STOP. Undelivered text opens a task |
+| Mock hospital FHIR exchange | 4 | Working | Simulated clinic on port 8100. The desk can request a visit and read milestones |
+| Navigator dashboard and pathway funnel | 5 | Working | Today, cases, chat, phone, follow-up, audit |
+| Loop-closure metrics | 5 | Working | `GET /metrics`, shown on Follow-up. Synthetic associations, not causal claims |
+| Safety and quality evaluation | 5 | Working | Test-split write-up in `docs/EVALUATION.md`. Crisis recall on that set is 25% |
 
 Status values: **Planned**, **In progress**, **Working** (runs and has tests), **Dropped**.
 
@@ -197,7 +198,7 @@ New ideas are welcome. See "Designed to grow" below.
 - **Testing:** pytest, with frontend tests where useful
 - **Optional:** Docker
 
-Technical decisions and their reasons are recorded in `docs/TECHNICAL_DECISIONS.md` once added. A decision can change; the record should say why.
+Technical decisions and their reasons are recorded in [docs/TECHNICAL_DECISIONS.md](docs/TECHNICAL_DECISIONS.md). A decision can change; the record should say why.
 
 ## Designed to grow
 
@@ -229,21 +230,53 @@ project-management/   work breakdown, milestones, dependencies
 
 ## Getting started
 
-Run instructions will be added here as soon as the first runnable version is merged. They must work on a clean machine without any API key.
+You need Python 3.11+ and Node 20+. No API key.
+
+```bash
+# Backend (from backend/)
+uv venv .venv --python 3.12
+uv pip install -e ".[dev]" --python .venv/Scripts/python.exe
+.venv/Scripts/python -m uvicorn app.main:app --reload --port 8000
+
+# Frontend (from frontend/)
+npm install
+npm run dev
+```
+
+On macOS or Linux, the Python path is `.venv/bin/python` instead of `.venv/Scripts/python.exe`.
+
+Open http://localhost:3000 and sign in as **amina** (navigator), **david** (clinician) or **aisha** (patient). Every demo account uses the password `careloop-demo`. The first backend start seeds synthetic people across the pathway. Restarting keeps that data. Delete `backend/careloop.db` to seed again.
+
+The phone at `/phone` is a simulator. `*XYZ#` is not a real short code.
+
+The simulated clinic is a separate process. Start it from the repository root, so Python can import `integrations`:
+
+```bash
+backend/.venv/Scripts/python -m uvicorn integrations.mock_hospital.app:app --port 8100
+```
+
+On macOS or Linux that interpreter is `backend/.venv/bin/python`. The desk's "Simulated clinic" card talks to this process. If it is not running, the request fails with a clear message. It is not a real hospital.
 
 ## Documentation
 
-Planned documents, linked as they are added: architecture, system requirements, database design, API documentation, security and privacy, technical decisions, the care pathway definition, evidence and sources, work breakdown, milestones, dependencies.
+- [Architecture](docs/ARCHITECTURE.md)
+- [System requirements](docs/SYSTEM_REQUIREMENTS.md)
+- [Database design](docs/DATABASE_DESIGN.md)
+- [API](docs/API_DOCUMENTATION.md)
+- [Security and privacy](docs/SECURITY_AND_PRIVACY.md)
+- [Data policy](docs/DATA_POLICY.md)
+- [Technical decisions](docs/TECHNICAL_DECISIONS.md)
+- [Clinical review brief](docs/CLINICAL_REVIEW.md) (parameters are still unreviewed)
+- [Evaluation results](docs/EVALUATION.md)
+- [Pathway](docs/pathways/cervical-cancer.md)
+- [Evidence](docs/evidence/problem-and-gap.md)
+- [Work breakdown](project-management/WORK_BREAKDOWN_STRUCTURE.md)
+- [Milestones](project-management/MILESTONES.md)
+- [Dependencies](project-management/DEPENDENCIES.md)
 
 ## Contributing
 
-A full contribution guide is coming. Until then: work on a branch, open a pull request, get one approval from a teammate, never commit real patient data or secrets.
-
-## Team notes (delete this section before submission)
-
-- Open decisions: database default, language model access, clinical reviewer for the knowledge base and safety wording, Kiswahili reviewer, helpline information to verify, human roles, where consent is captured, simulator only or also a provider sandbox.
-- At each milestone check, update the phase tracker and the Status table.
-- Before submitting: working run instructions in "Getting started", links in "Documentation" all working, Status table up to date, licence visible in the repository's About section, demo video public on YouTube, no secrets in the repository history.
+Work on a branch, open a pull request, get one approval from a teammate, and never commit real patient data or secrets.
 
 ## Licence
 
