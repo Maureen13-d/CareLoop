@@ -1,4 +1,5 @@
 """Loads the lexicons and templates from the repository's ai/ folder."""
+
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -46,13 +47,18 @@ class BarrierLexicon:
 @lru_cache(maxsize=1)
 def load_safety() -> SafetyLexicon:
     data = _read("lexicon/safety_en.yaml")
-    cats = {name: _norm_list(data[name]["phrases"]) for name in ("crisis", "distress", "symptom_report", "diagnosis_request")}
+    cats = {
+        name: _norm_list(data[name]["phrases"])
+        for name in ("crisis", "distress", "symptom_report", "diagnosis_request")
+    }
     return SafetyLexicon(version=str(data["version"]), categories=cats)
 
 
 def _entries(block: dict) -> dict[str, Entry]:
     return {
-        name: Entry(_norm_list(e.get("phrases")), _norm_list(e.get("keywords")), _norm_list(e.get("exact")))
+        name: Entry(
+            _norm_list(e.get("phrases")), _norm_list(e.get("keywords")), _norm_list(e.get("exact"))
+        )
         for name, e in (block or {}).items()
     }
 

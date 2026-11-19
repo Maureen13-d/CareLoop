@@ -16,7 +16,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 from app.models import Case
-from app.pathway import SLA_DAYS, Stage, is_overdue
+from app.pathway import SLA_DAYS, TRANSITIONS, InvalidTransition, Stage, is_overdue
 
 
 class Channel(str, Enum):
@@ -24,11 +24,13 @@ class Channel(str, Enum):
     CALL = "call"
     HOME_VISIT = "home_visit"  # community health worker visit
     COORDINATOR = "coordinator"  # hand-off to a human care coordinator
+    CLINIC = "clinic"  # patient attended in person
 
 
 class Kind(str, Enum):
     REMINDER = "reminder"
     ESCALATION = "escalation"
+    RESPONSE = "response"  # patient attended; this is what closes the loop
 
 
 LADDER: tuple[Channel, ...] = (Channel.SMS, Channel.CALL, Channel.HOME_VISIT)
@@ -174,3 +176,70 @@ def run_sweep(
         if plan is not None:
             created.append(execute(plan, log, notifier, now))
     return created
+
+
+class CaseStatus(str, Enum):
+    ON_TRACK = "on_track"
+    OVERDUE = "overdue"
+    ESCALATED = "escalated"
+    CLOSED = "closed"
+
+
+class AmbiguousTarget(ValueError):
+    """The case has several valid next stages and the caller did not choose one."""
+
+
+def next_stages(case: Case) -> list[Stage]:
+    order = list(Stage)
+    return sorted(TRANSITIONS[case.stage], key=order.index)
+
+
+def case_status(case: Case, log: list[OutreachEvent], now: datetime | None = None) -> CaseStatus:
+    now = now or datetime.now(UTC)
+    if case.stage == Stage.CLOSED:
+        return CaseStatus.CLOSED
+    if not is_overdue(case.stage, case.stage_entered_at, now):
+        return CaseStatus.ON_TRACK
+    escalated = any(e.kind == Kind.ESCALATION for e in _attempts_in_current_stage(case, log))
+    return CaseStatus.ESCALATED if escalated else CaseStatus.OVERDUE
+
+
+def record_response(
+    case: Case,
+    log: list[OutreachEvent],
+    to_stage: Stage | None = None,
+    now: datetime | None = None,
+) -> OutreachEvent:
+    """The patient attended. Advance the case and log it, which closes the loop.
+
+    The ladder resets automatically: contacts are scoped to (stage, stage_entered_at), and
+    advancing changes both. The response event carries the stage the patient was in, so it
+    never counts toward the next stage's ladder.
+    """
+    now = now or datetime.now(UTC)
+    options = next_stages(case)
+    if not options:
+        raise InvalidTransition("Case is already closed")
+    if to_stage is None:
+        if len(options) > 1:
+            choices = ", ".join(s.value for s in options)
+            raise AmbiguousTarget(f"Several next stages are possible; choose one of: {choices}")
+        to_stage = options[0]
+
+    from_stage = case.stage
+    contacts = len(_attempts_in_current_stage(case, log))  # before the stage changes
+    case.advance(to_stage, now)  # raises InvalidTransition and leaves the case untouched
+
+    event = OutreachEvent(
+        case_id=case.id,
+        patient_ref=case.patient_ref,
+        stage=from_stage,
+        kind=Kind.RESPONSE,
+        channel=Channel.CLINIC,
+        attempt=contacts,  # 0 means the patient attended without any outreach
+        message=f"Patient attended. Case moved from {from_stage.value} to {to_stage.value}.",
+        status="stage_advanced",
+        created_at=now,
+    )
+    log.append(event)
+    return event

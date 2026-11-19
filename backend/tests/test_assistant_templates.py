@@ -23,8 +23,17 @@ def test_every_barrier_flag_and_safety_path_has_a_template():
     templates = load_templates()
     for flag in load_barriers().flags:
         assert f"lite.barrier.{flag}" in templates, flag
-    for tid in ("safety.crisis", "safety.distress", "safety.no_diagnosis", "safety.symptom",
-                "lite.greeting", "lite.unclear", "lite.request_human", "lite.opt_out", "lite.clarify"):
+    for tid in (
+        "safety.crisis",
+        "safety.distress",
+        "safety.no_diagnosis",
+        "safety.symptom",
+        "lite.greeting",
+        "lite.unclear",
+        "lite.request_human",
+        "lite.opt_out",
+        "lite.clarify",
+    ):
         assert tid in templates, tid
 
 
@@ -40,7 +49,9 @@ def test_placeholder_templates_are_marked_so_they_cannot_be_forgotten():
     assert templates["safety.symptom"]["placeholder"] is True
     for tid, tpl in templates.items():
         if "[" in tpl["text"]:
-            assert tpl.get("placeholder") is True, f"{tid} has brackets but is not marked placeholder"
+            assert tpl.get("placeholder") is True, (
+                f"{tid} has brackets but is not marked placeholder"
+            )
 
 
 def test_lexicons_have_content():

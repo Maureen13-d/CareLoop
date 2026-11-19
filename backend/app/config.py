@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000"]
     seed_cases: int = 25
     seed: int = 42
+    demo_scenario: bool = False
 
 
 settings = Settings()

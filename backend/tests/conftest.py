@@ -40,8 +40,15 @@ def db_session():
         depts[name] = d
     session.flush()
     for username, role, dept in USERS:
-        session.add(User(username=username, password_hash=PASSWORD_HASH, role=role,
-                         display_name=username.title(), department_id=depts[dept].id if dept else None))
+        session.add(
+            User(
+                username=username,
+                password_hash=PASSWORD_HASH,
+                role=role,
+                display_name=username.title(),
+                department_id=depts[dept].id if dept else None,
+            )
+        )
     session.commit()
     yield session
     session.close()
@@ -77,14 +84,23 @@ def make_case(client, auth):
     """Create a consenting patient and a positive screening; returns the case id."""
 
     def _make(result="positive", consent=True):
-        patient = client.post("/api/v1/patients", json={"display_name": "Demo Patient", "age_band": "30-34"},
-                              headers=auth["nav"]).json()
+        patient = client.post(
+            "/api/v1/patients",
+            json={"display_name": "Demo Patient", "age_band": "30-34"},
+            headers=auth["nav"],
+        ).json()
         if consent:
-            r = client.post(f"/api/v1/patients/{patient['id']}/consents",
-                            json={"purpose": "care_coordination", "granted": True}, headers=auth["nav"])
+            r = client.post(
+                f"/api/v1/patients/{patient['id']}/consents",
+                json={"purpose": "care_coordination", "granted": True},
+                headers=auth["nav"],
+            )
             assert r.status_code == 201, r.text
-        resp = client.post(f"/api/v1/patients/{patient['id']}/screenings",
-                           json={"screening_type": "HPV_DNA", "result": result}, headers=auth["clin"])
+        resp = client.post(
+            f"/api/v1/patients/{patient['id']}/screenings",
+            json={"screening_type": "HPV_DNA", "result": result},
+            headers=auth["clin"],
+        )
         assert resp.status_code == 201, resp.text
         return patient, resp.json()
 

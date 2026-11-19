@@ -12,21 +12,24 @@ def flags(r):
     return [f.flag for f in r.barrier_flags]
 
 
-@pytest.mark.parametrize("text, expected", [
-    ("will it hurt", "fear_of_procedure_pain"),
-    ("how much will it cost", "cost"),
-    ("I have no money for this", "cost"),
-    ("it is too far from the hospital", "transport_access"),
-    ("I dont want anyone to know", "stigma_privacy"),
-    ("where do i go", "no_info_where_to_go"),
-    ("my husband refuses", "lack_of_support"),
-    ("people say it is a death sentence", "misconception"),
-    ("I am scared of bad news", "fear_of_diagnosis"),
-])
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("will it hurt", "fear_of_procedure_pain"),
+        ("how much will it cost", "cost"),
+        ("I have no money for this", "cost"),
+        ("it is too far from the hospital", "transport_access"),
+        ("I dont want anyone to know", "stigma_privacy"),
+        ("where do i go", "no_info_where_to_go"),
+        ("my husband refuses", "lack_of_support"),
+        ("people say it is a death sentence", "misconception"),
+        ("I am scared of bad news", "fear_of_diagnosis"),
+    ],
+)
 def test_single_barrier_is_detected_as_a_suggestion(text, expected):
     r = ask(text)
     assert flags(r)[0] == expected
-    assert r.barrier_flags[0].status == "suggested"      # not confirmed until the patient says so
+    assert r.barrier_flags[0].status == "suggested"  # not confirmed until the patient says so
     assert r.barrier_flags[0].source == "keyword"
     assert r.template_id == f"lite.barrier.{expected}"
     assert r.suggested_task.type == "navigator_followup"
@@ -67,8 +70,16 @@ def test_greeting_and_unknown_text():
     assert r.template_id == "lite.unclear" and r.tier == "fallback" and r.needs_human is False
 
 
-@pytest.mark.parametrize("choice, expected", [("1", "fear_of_procedure_pain"), ("2", "cost"), ("3", "transport_access"),
-                                              ("4", "stigma_privacy"), ("5", "misconception")])
+@pytest.mark.parametrize(
+    "choice, expected",
+    [
+        ("1", "fear_of_procedure_pain"),
+        ("2", "cost"),
+        ("3", "transport_access"),
+        ("4", "stigma_privacy"),
+        ("5", "misconception"),
+    ],
+)
 def test_menu_choice_gives_a_confirmed_flag(choice, expected):
     r = ask(menu_choice=choice, menu_context="worry_menu", channel="ussd")
     assert flags(r) == [expected]
@@ -77,7 +88,10 @@ def test_menu_choice_gives_a_confirmed_flag(choice, expected):
 
 
 def test_invalid_menu_choice_repeats_the_menu():
-    assert ask(menu_choice="9", menu_context="worry_menu", channel="ussd").template_id == "lite.clarify"
+    assert (
+        ask(menu_choice="9", menu_context="worry_menu", channel="ussd").template_id
+        == "lite.clarify"
+    )
 
 
 def test_request_needs_text_or_a_menu_choice():

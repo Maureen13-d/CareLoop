@@ -2,6 +2,7 @@
 
 Scoring: each distinct phrase matched adds phrase_weight, each distinct keyword adds keyword_weight.
 A flag is raised at the threshold. Matches directly after a negation word ("not afraid") are ignored."""
+
 from dataclasses import dataclass, field
 
 from app.modules.assistant.lexicon import load_barriers
@@ -10,7 +11,7 @@ from app.modules.assistant.text import is_negated, phrase_positions, tokens
 
 @dataclass
 class LiteMatch:
-    flags: list[tuple[str, int]] = field(default_factory=list)   # (flag, score), best first
+    flags: list[tuple[str, int]] = field(default_factory=list)  # (flag, score), best first
     intents: list[str] = field(default_factory=list)
 
     @property
@@ -21,10 +22,14 @@ class LiteMatch:
 def _score(toks: list[str], entry, lex) -> int:
     score = 0
     for phrase in entry.phrases:
-        if any(not is_negated(toks, pos, lex.negation_window) for pos in phrase_positions(toks, phrase)):
+        if any(
+            not is_negated(toks, pos, lex.negation_window) for pos in phrase_positions(toks, phrase)
+        ):
             score += lex.phrase_weight
     for word in entry.keywords:
-        if any(not is_negated(toks, pos, lex.negation_window) for pos in phrase_positions(toks, word)):
+        if any(
+            not is_negated(toks, pos, lex.negation_window) for pos in phrase_positions(toks, word)
+        ):
             score += lex.keyword_weight
     return score
 
