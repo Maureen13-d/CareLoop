@@ -10,8 +10,9 @@ measurements. They are not evidence about any real health system.
   - Each step takes a random time centred a little under its deadline (log-normal),
     so roughly a third of steps run late.
   - About 7% of cases silently stall at a step (the patient is never moved on).
-  - About 15% of confirmed cases need no treatment and close as confirmed_negative.
-  - About 12% of screened-positive cases are flagged suspected cancer (urgent).
+  - About 10% of patients decline to continue after engaging.
+  - About 15% of booked appointments are missed; the case returns to navigation and is rebooked.
+  - About 12% of flagged cases are marked suspected cancer (urgent).
 """
 import argparse
 import random
@@ -37,20 +38,22 @@ from app.modules.screenings.models import Screening  # noqa: E402
 
 DEPARTMENTS = [
     ("screening_clinic", "Screening clinic", "clinical"),
-    ("care_coordination", "Care coordination", "administrative"),
-    ("gynaecology_clinic", "Gynaecology clinic", "clinical"),
-    ("treatment_unit", "Treatment unit", "clinical"),
+    ("navigation_team", "Navigation team", "administrative"),
+    ("facility", "Facility", "clinical"),
+    ("hospital", "Hospital", "clinical"),
 ]
 USERS = [  # username, role, display name, department
-    ("coordinator", "coordinator", "Demo Coordinator", "care_coordination"),
-    ("clinician", "clinician", "Demo Clinician", "gynaecology_clinic"),
+    ("navigator", "navigator", "Demo Navigator", "navigation_team"),
+    ("clinician", "clinician", "Demo Clinician", "screening_clinic"),
+    ("counsellor", "counsellor", "Demo Counsellor", None),
     ("manager", "program_manager", "Demo Program Manager", None),
     ("admin", "admin", "Demo Admin", None),
 ]
-FLOW = ["PATIENT_NOTIFIED", "PATIENT_ACKNOWLEDGED", "CONFIRMATION_SCHEDULED", "CONFIRMATION_COMPLETED",
-        "REFERRAL_SENT", "REFERRAL_ACCEPTED", "TREATMENT_STARTED", "FOLLOW_UP_DUE"]
+FLOW = ["PATIENT_ENGAGED", "BARRIERS_ASSESSED", "NAVIGATION_ACTIVE", "APPOINTMENT_BOOKED",
+        "ARRIVAL_CONFIRMED", "HANDED_OFF"]
 P_STALL = 0.07
-P_NO_TREATMENT_NEEDED = 0.15
+P_DECLINE = 0.10
+P_MISSED_APPOINTMENT = 0.15
 P_URGENT = 0.12
 
 
@@ -125,26 +128,40 @@ def main() -> None:
         db.commit()
 
         ts = start
+        finished = True
         for state in FLOW:
             previous = pw.states[case.state]
             ts = ts + timedelta(hours=step_hours(rng, previous.deadline_hours))
             if ts > now or rng.random() < P_STALL:
+                finished = False
                 break
             pathways.transition(db, case, state, None, at=ts)
-            if state == "CONFIRMATION_COMPLETED" and rng.random() < P_NO_TREATMENT_NEEDED:
+            if state in ("PATIENT_ENGAGED", "BARRIERS_ASSESSED") and rng.random() < P_DECLINE / 2:
                 ts = ts + timedelta(hours=rng.uniform(2, 48))
                 if ts <= now:
-                    pathways.close_case(db, case, None, "confirmed_negative", "Synthetic: no treatment needed", at=ts)
+                    pathways.decline_case(db, case, None, "Synthetic: patient chose not to continue", at=ts)
+                finished = False
                 break
-        else:
-            ts = ts + timedelta(hours=step_hours(rng, pw.states["FOLLOW_UP_DUE"].deadline_hours))
+            if state == "APPOINTMENT_BOOKED" and rng.random() < P_MISSED_APPOINTMENT:
+                ts = ts + timedelta(hours=step_hours(rng, pw.states["APPOINTMENT_BOOKED"].deadline_hours))
+                if ts > now:
+                    finished = False
+                    break
+                pathways.transition(db, case, "NAVIGATION_ACTIVE", None, note="Synthetic: missed visit, rebooking", at=ts)
+                ts = ts + timedelta(hours=step_hours(rng, pw.states["NAVIGATION_ACTIVE"].deadline_hours))
+                if ts > now:
+                    finished = False
+                    break
+                pathways.transition(db, case, "APPOINTMENT_BOOKED", None, at=ts)
+        if finished:
+            ts = ts + timedelta(hours=step_hours(rng, pw.states["HANDED_OFF"].deadline_hours))
             if ts <= now and rng.random() > P_STALL:
-                pathways.close_case(db, case, None, "follow_up_completed", "Synthetic: follow-up completed", at=ts)
+                pathways.close_case(db, case, None, "facility_confirmation", "Synthetic: facility reports care initiated", at=ts)
 
     # Some open cases already have an owner; others stay unowned so the worklist shows both.
     for case in db.scalars(select(CareCase).where(CareCase.state.not_in(list(pw.terminal_states)))).all():
         if rng.random() < 0.4:
-            pathways.claim_case(db, case, users["coordinator"])
+            pathways.claim_case(db, case, users["navigator"])
 
     created = pathways.run_deadline_check(db, now)
 

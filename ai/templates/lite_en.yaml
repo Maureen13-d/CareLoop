@@ -1,0 +1,44 @@
+# Approved reply templates for Lite mode (English). DRAFT: pending clinical and language review.
+# Rules: plain ASCII characters, 160 characters or fewer (one SMS), and discreet wording.
+# Do NOT use the words: cancer, result, diagnosis, positive, hiv, screening. Phones are often shared.
+# "placeholder: true" marks text that must be replaced with verified information before real use.
+version: "0.1-draft"
+templates:
+  safety.crisis:
+    placeholder: true
+    text: "I am sorry you feel this way. You matter. Please call [VERIFIED HELPLINE] or go to the nearest clinic now. We are asking a team member to contact you."
+  safety.distress:
+    text: "I am sorry this is so hard. You are not alone. We will ask a team member to reach out. I cannot tell you what a check means, but a health worker can."
+  safety.no_diagnosis:
+    text: "I cannot tell you what your check means or whether you are unwell. Only a health worker can, after a proper visit. I can help you plan it. Reply HELP."
+  safety.symptom:
+    placeholder: true
+    text: "Please contact a health worker or your nearest clinic soon about this. If it is severe or you feel unsafe, go to emergency care now. A navigator will help."
+  lite.greeting:
+    text: "Hello. CareLoop can help with questions about your health visit. Tell me what is on your mind, or reply HELP to talk to a person."
+  lite.unclear:
+    text: "Sorry, I did not understand. Reply HELP to talk to a person, or tell me what worries you most, for example cost, travel, fear or privacy."
+  lite.request_human:
+    text: "Okay. We will ask a navigator to contact you. Reply STOP at any time to stop messages."
+  lite.opt_out:
+    text: "You will not receive more messages from CareLoop. Reply START to join again."
+  lite.clarify:
+    text: "What worries you most? Reply 1 Fear or pain, 2 Cost, 3 Getting there, 4 Privacy, 5 Not sure what it means."
+  lite.barrier.fear_of_diagnosis:
+    text: "Many people feel afraid before a health check. A health worker can explain the next steps. Reply HELP to talk to a person."
+  lite.barrier.fear_of_procedure_pain:
+    text: "It is natural to worry about discomfort. You can ask the health worker to explain each step before it starts. Reply HELP to talk to a person."
+  lite.barrier.cost:
+    text: "Cost can be a worry. A navigator can help you find out about costs and options before you go. Reply HELP to talk to a person."
+  lite.barrier.transport_access:
+    text: "Getting there can be hard. A navigator can help you plan the trip or find a closer clinic. Reply HELP to talk to a person."
+  lite.barrier.stigma_privacy:
+    text: "Your privacy matters. We keep messages discreet and only share what you agree to share. Reply HELP to talk to a person."
+  lite.barrier.misconception:
+    text: "One worrying sign does not on its own tell you what is wrong. Only a proper check can. A navigator can explain more. Reply HELP."
+  lite.barrier.no_info_where_to_go:
+    text: "A navigator can help you find a clinic and plan the visit. Reply HELP and we will contact you."
+  lite.barrier.emotional_distress:
+    text: "It can be hard to carry worry alone. A team member can talk with you. Reply HELP and we will contact you."
+  lite.barrier.lack_of_support:
+    text: "You do not have to do this alone. A navigator can help you plan the visit. Reply HELP and we will contact you."
