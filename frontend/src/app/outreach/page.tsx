@@ -1,3 +1,4 @@
+export const instant = false;
 import { getEvents, getQueue } from "@/lib/outreach-api";
 import { runSweep } from "./actions";
 import { SweepButton } from "./SweepButton";
