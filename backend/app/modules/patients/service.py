@@ -26,7 +26,14 @@ def create_patient(db: Session, actor, data: PatientCreate) -> Patient:
     )
     db.add(patient)
     db.flush()
-    audit.record(db, actor=actor, action="patient.create", entity_type="patient", entity_id=patient.id, patient_id=patient.id)
+    audit.record(
+        db,
+        actor=actor,
+        action="patient.create",
+        entity_type="patient",
+        entity_id=patient.id,
+        patient_id=patient.id,
+    )
     db.commit()
     return patient
 
@@ -61,7 +68,9 @@ def record_consent(db: Session, actor, patient: Patient, data: ConsentIn, at=Non
             )
         ).all()
         if not active:
-            raise DomainError(409, "no_active_consent", "There is no active consent to withdraw for this purpose")
+            raise DomainError(
+                409, "no_active_consent", "There is no active consent to withdraw for this purpose"
+            )
         for consent in active:
             consent.granted = False
             consent.revoked_at = now

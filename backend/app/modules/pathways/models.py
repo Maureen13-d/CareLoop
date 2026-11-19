@@ -13,13 +13,17 @@ class CareCase(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
-    source_screening_id: Mapped[int | None] = mapped_column(ForeignKey("screenings.id"), nullable=True)
+    source_screening_id: Mapped[int | None] = mapped_column(
+        ForeignKey("screenings.id"), nullable=True
+    )
     pathway_id: Mapped[str] = mapped_column(String(60))
     pathway_version: Mapped[str] = mapped_column(String(20))
     state: Mapped[str] = mapped_column(String(40), index=True)
     urgency: Mapped[str] = mapped_column(String(10), default="routine")  # routine | urgent
     owner_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
-    owner_department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"), nullable=True)
+    owner_department_id: Mapped[int | None] = mapped_column(
+        ForeignKey("departments.id"), nullable=True
+    )
     state_entered_at: Mapped[datetime]
     deadline_at: Mapped[datetime | None] = mapped_column(nullable=True)
     opened_at: Mapped[datetime]

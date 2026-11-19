@@ -21,4 +21,6 @@ class AuditLog(Base):
     entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     patient_id: Mapped[int | None] = mapped_column(ForeignKey("patients.id"), nullable=True)
     detail: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    outcome: Mapped[str] = mapped_column(String(15), default="success")  # success | denied | rejected
+    outcome: Mapped[str] = mapped_column(
+        String(15), default="success"
+    )  # success | denied | rejected

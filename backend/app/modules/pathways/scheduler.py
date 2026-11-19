@@ -1,5 +1,6 @@
 """Optional background deadline checker (ENABLE_SCHEDULER=true).
 For demos it is usually clearer to advance the demo clock and run the check by hand."""
+
 import asyncio
 
 from app.core.db import SessionLocal

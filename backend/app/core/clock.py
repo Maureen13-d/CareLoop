@@ -4,6 +4,7 @@ All business logic asks this module for "now" so a demo can move time forward
 (for example 3 days) and show an escalation in seconds. The offset lives in
 memory and resets when the server restarts. Times are naive UTC.
 """
+
 from datetime import UTC, datetime, timedelta
 
 _offset = timedelta(0)

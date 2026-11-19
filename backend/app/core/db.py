@@ -1,4 +1,5 @@
 """Database engine and session handling (SQLite by default)."""
+
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
