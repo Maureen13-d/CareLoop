@@ -1,5 +1,3 @@
-from typing import Literal
-
 from pydantic import BaseModel, Field, model_validator
 
 from app.core.schemas import UtcDatetime

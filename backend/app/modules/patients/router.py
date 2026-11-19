@@ -15,14 +15,26 @@ staff = require_roles(ROLE_NAVIGATOR, ROLE_CLINICIAN)
 
 
 @router.get("", response_model=list[PatientOut])
-def list_patients(limit: int = Query(25, ge=1, le=100), offset: int = Query(0, ge=0), db: Session = Depends(get_db), _=Depends(staff)):
+def list_patients(
+    limit: int = Query(25, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    _=Depends(staff),
+):
     return db.scalars(select(Patient).order_by(Patient.id).limit(limit).offset(offset)).all()
 
 
 @router.get("/{patient_id}", response_model=PatientOut)
 def get_patient(patient_id: int, db: Session = Depends(get_db), user=Depends(staff)):
     patient = service.get_patient(db, patient_id)
-    audit.record(db, actor=user, action="patient.view", entity_type="patient", entity_id=patient.id, patient_id=patient.id)
+    audit.record(
+        db,
+        actor=user,
+        action="patient.view",
+        entity_type="patient",
+        entity_id=patient.id,
+        patient_id=patient.id,
+    )
     db.commit()
     return patient
 
@@ -33,6 +45,8 @@ def create_patient(data: PatientCreate, db: Session = Depends(get_db), user=Depe
 
 
 @router.post("/{patient_id}/consents", response_model=ConsentOut, status_code=201)
-def post_consent(patient_id: int, data: ConsentIn, db: Session = Depends(get_db), user=Depends(staff)):
+def post_consent(
+    patient_id: int, data: ConsentIn, db: Session = Depends(get_db), user=Depends(staff)
+):
     patient = service.get_patient(db, patient_id)
     return service.record_consent(db, user, patient, data)

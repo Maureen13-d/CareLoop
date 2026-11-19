@@ -23,6 +23,14 @@ Do not present any single percentage as "Kenya's loss rate".
 | WHO 90-70-90 includes 90% of those diagnosed receiving timely treatment | [V] news report | https://peopledaily.digital/news/kenya-records-over-5k-new-cervical-cancer-cases-over-3k-deaths-annually |
 | National guidance recommends screening ages 25 to 49, HPV primary above 30 where available | [V] opinion piece; confirm against the guideline | https://www.standardmedia.co.ke/health/health-opinion/article/2001553796/hpv-vaccination-protecting-girls-today-from-cervical-cancer-tomorrow |
 
+## Channels and reach (to validate)
+
+| Claim | Status | Source |
+|---|---|---|
+| Clinicians report fear, stigma, cost and not knowing where to go as reasons people do not reach assessment | [A] preliminary observations, not proven national findings | clinician conversations |
+| A real USSD short code needs licensing through the Communications Authority and mobile networks | [A] stated in the README, not yet sourced | none yet |
+| Many people CareLoop targets use basic phones with no mobile data | [A] | none yet |
+
 ## Existing systems
 
 | System | What sources show | Status | Source |
@@ -38,11 +46,12 @@ Do not present any single percentage as "Kenya's loss rate".
 ## Gap assessment
 
 - **Supported [V]:** documented drop-off between positive screen and treatment; national reporting is largely aggregate.
-- **Not verified [A]:** that routine hospital workflows lack cross-department closed-loop tracking with named owners and deadlines. Plausible, but no source describes routine practice at a specific hospital. Validate with short interviews.
-- **Positioning:** CATSystem shows tracking is being tested. CareLoop's intended differences (open source, FHIR-shaped, explicit cross-department ownership and escalation, human-governed AI drafting) must be confirmed against the full protocol before being claimed.
+- **Not verified [A]:** that people with a concerning finding lack patient-facing navigation that works on a basic phone, and that barriers are rarely captured before the first visit. Plausible, but no source describes routine practice at a specific facility. Validate with short interviews.
+- **Positioning:** CATSystem shows tracking is being tested on the clinic side. CareLoop's intended differences (open source, support that works on a basic phone, barrier capture with the person's confirmation, a navigator handoff, FHIR-shaped exchange with hospital systems) must be confirmed against the full CATSystem protocol before being claimed.
 
 ## Next validation steps
 
 1. Read the full CATSystem protocol and list its features.
 2. Read the national cervical screening guideline for pathway steps and time windows.
-3. Interview two or three people who work in the pathway (screener, gynaecology clinic nurse, records officer).
+3. Interview two or three people who work in the pathway (screener, nurse or navigator, records officer).
+4. Ask a clinician to review the safety wording and the knowledge base passages.

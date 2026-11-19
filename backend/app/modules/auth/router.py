@@ -17,7 +17,14 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = service.authenticate(db, form.username, form.password)
     if not user:
-        audit.record(db, actor=None, action="auth.login", entity_type="user", detail={"username": form.username}, outcome="denied")
+        audit.record(
+            db,
+            actor=None,
+            action="auth.login",
+            entity_type="user",
+            detail={"username": form.username},
+            outcome="denied",
+        )
         db.commit()
         raise DomainError(401, "invalid_credentials", "Incorrect username or password")
     audit.record(db, actor=user, action="auth.login", entity_type="user", entity_id=user.id)

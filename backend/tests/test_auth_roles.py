@@ -31,5 +31,15 @@ def test_denied_access_is_audited(client, auth):
 
 
 def test_demo_controls_are_admin_only(client, auth):
-    assert client.post("/api/v1/admin/advance-clock", json={"hours": 1}, headers=auth["clin"]).status_code == 403
-    assert client.post("/api/v1/admin/advance-clock", json={"hours": 1}, headers=auth["admin"]).status_code == 200
+    assert (
+        client.post(
+            "/api/v1/admin/advance-clock", json={"hours": 1}, headers=auth["clin"]
+        ).status_code
+        == 403
+    )
+    assert (
+        client.post(
+            "/api/v1/admin/advance-clock", json={"hours": 1}, headers=auth["admin"]
+        ).status_code
+        == 200
+    )

@@ -12,7 +12,14 @@ router = APIRouter(prefix="/patients", tags=["screenings"])
 
 
 @router.post("/{patient_id}/screenings", response_model=ScreeningRecorded, status_code=201)
-def post_screening(patient_id: int, data: ScreeningIn, db: Session = Depends(get_db), user=Depends(require_roles(ROLE_CLINICIAN))):
+def post_screening(
+    patient_id: int,
+    data: ScreeningIn,
+    db: Session = Depends(get_db),
+    user=Depends(require_roles(ROLE_CLINICIAN)),
+):
     patient = patients.get_patient(db, patient_id)
     screening, case, status, message = service.record_screening(db, user, patient, data)
-    return ScreeningRecorded(screening=screening, case_id=case.id if case else None, case_status=status, message=message)
+    return ScreeningRecorded(
+        screening=screening, case_id=case.id if case else None, case_status=status, message=message
+    )

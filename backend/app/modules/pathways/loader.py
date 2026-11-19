@@ -1,4 +1,5 @@
 """Loads care pathway definitions (pathways/*.yaml) and validates them."""
+
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -80,7 +81,9 @@ def _build(data: dict) -> Pathway:
         closure_roles=tuple(data["closure"]["roles"]),
         decline_roles=tuple(data["decline"]["roles"]),
         lost_roles=tuple(data["lost_to_follow_up"]["roles"]),
-        lost_requires_escalation=bool(data["lost_to_follow_up"].get("requires_prior_escalation", True)),
+        lost_requires_escalation=bool(
+            data["lost_to_follow_up"].get("requires_prior_escalation", True)
+        ),
         second_level_after_hours=int(data["escalation"]["second_level_after_hours"]),
         urgent_starts_at_level=int(data["escalation"]["urgent_starts_at_level"]),
         raw=data,

@@ -1,4 +1,5 @@
 """Database engine and session handling (SQLite by default)."""
+
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -39,8 +40,8 @@ def import_models() -> None:
     """Import every module's models so their tables are registered on Base."""
     from app.modules.audit import models as _a  # noqa: F401
     from app.modules.auth import models as _b  # noqa: F401
-    from app.modules.patients import models as _c  # noqa: F401
     from app.modules.pathways import models as _d  # noqa: F401
+    from app.modules.patients import models as _c  # noqa: F401
     from app.modules.screenings import models as _e  # noqa: F401
 
 

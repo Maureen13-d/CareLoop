@@ -1,0 +1,64 @@
+{"id": "m001", "text": "I don't want to live anymore", "label": "crisis", "channel": "web", "split": "dev"}
+{"id": "m002", "text": "I feel like ending it all", "label": "crisis", "channel": "web", "split": "dev"}
+{"id": "m003", "text": "I am thinking of hurting myself", "label": "crisis", "channel": "web", "split": "dev"}
+{"id": "m004", "text": "There is no point going on, everyone would be better off without me", "label": "crisis", "channel": "web", "split": "dev"}
+{"id": "m005", "text": "I can't take this any more, I just want to disappear", "label": "crisis", "channel": "web", "split": "test"}
+{"id": "m006", "text": "I have been having thoughts of suicide since I got the news", "label": "crisis", "channel": "web", "split": "test"}
+{"id": "m007", "text": "I feel so hopeless I do not see why I should keep living", "label": "crisis", "channel": "web", "split": "test"}
+{"id": "m008", "text": "My husband beats me when he finds out about the clinic, I am not safe at home", "label": "crisis", "channel": "web", "split": "test"}
+{"id": "m009", "text": "Do I have cancer?", "label": "diagnosis_request", "channel": "web", "split": "dev"}
+{"id": "m010", "text": "Am I going to die from this?", "label": "diagnosis_request", "channel": "web", "split": "dev"}
+{"id": "m011", "text": "Which medicine should I take for this?", "label": "diagnosis_request", "channel": "web", "split": "dev"}
+{"id": "m012", "text": "Can you tell me what stage it is?", "label": "diagnosis_request", "channel": "web", "split": "dev"}
+{"id": "m013", "text": "From what I described, what disease do I have?", "label": "diagnosis_request", "channel": "web", "split": "test"}
+{"id": "m014", "text": "Just tell me yes or no, is it cancer", "label": "diagnosis_request", "channel": "web", "split": "test"}
+{"id": "m015", "text": "Should I skip the hospital and use herbs instead?", "label": "diagnosis_request", "channel": "web", "split": "test"}
+{"id": "m016", "text": "Is it HIV or cancer? tell me what I have", "label": "diagnosis_request", "channel": "web", "split": "test"}
+{"id": "m017", "text": "I am afraid of what they will find", "label": "fear", "channel": "web", "split": "dev"}
+{"id": "m018", "text": "I'm scared the procedure will be painful", "label": "fear", "channel": "web", "split": "dev"}
+{"id": "m019", "text": "I keep postponing because I am terrified", "label": "fear", "channel": "web", "split": "dev"}
+{"id": "m020", "text": "I heard the test hurts a lot, I don't want to go", "label": "fear", "channel": "web", "split": "dev"}
+{"id": "m021", "text": "am scared", "label": "fear", "channel": "sms", "split": "test"}
+{"id": "m022", "text": "I'm afraid they will cut me open", "label": "fear", "channel": "web", "split": "test"}
+{"id": "m023", "text": "Just thinking about the clinic makes me panic", "label": "fear", "channel": "web", "split": "test"}
+{"id": "m024", "text": "What if they tell me something bad, I can't handle it", "label": "fear", "channel": "web", "split": "test"}
+{"id": "m025", "text": "I cannot afford the clinic fees", "label": "cost", "channel": "web", "split": "dev"}
+{"id": "m026", "text": "How much will the tests cost? I have no money", "label": "cost", "channel": "web", "split": "dev"}
+{"id": "m027", "text": "I lost my job and can't pay for another visit", "label": "cost", "channel": "web", "split": "dev"}
+{"id": "m028", "text": "Is it free at the public hospital or do I pay?", "label": "cost", "channel": "web", "split": "dev"}
+{"id": "m029", "text": "I will lose a day's wages if I go", "label": "cost", "channel": "web", "split": "test"}
+{"id": "m030", "text": "I can't pay for the tests", "label": "cost", "channel": "sms", "split": "test"}
+{"id": "m031", "text": "I have no SHA cover, who pays for the tests?", "label": "cost", "channel": "web", "split": "test"}
+{"id": "m032", "text": "no money for the fees", "label": "cost", "channel": "sms", "split": "test"}
+{"id": "m033", "text": "The hospital is too far from my village", "label": "transport", "channel": "web", "split": "dev"}
+{"id": "m034", "text": "There is no bus that goes near the clinic", "label": "transport", "channel": "web", "split": "dev"}
+{"id": "m035", "text": "The clinic is three hours away", "label": "transport", "channel": "web", "split": "dev"}
+{"id": "m036", "text": "I live far and the roads are bad in the rains", "label": "transport", "channel": "web", "split": "dev"}
+{"id": "m037", "text": "Nobody can take me and I cannot travel alone", "label": "transport", "channel": "web", "split": "test"}
+{"id": "m038", "text": "The last matatu leaves before the clinic opens", "label": "transport", "channel": "web", "split": "test"}
+{"id": "m039", "text": "I have no transport to town", "label": "transport", "channel": "web", "split": "test"}
+{"id": "m040", "text": "The river floods and I cannot cross to the road", "label": "transport", "channel": "web", "split": "test"}
+{"id": "m041", "text": "I don't want my neighbours to know I went to that clinic", "label": "stigma", "channel": "web", "split": "dev"}
+{"id": "m042", "text": "People will gossip if they see me there", "label": "stigma", "channel": "web", "split": "dev"}
+{"id": "m043", "text": "My husband will leave me if he knows", "label": "stigma", "channel": "web", "split": "dev"}
+{"id": "m044", "text": "I am ashamed, no one in my family talks about these things", "label": "stigma", "channel": "web", "split": "dev"}
+{"id": "m045", "text": "Please don't tell my family, I don't want anyone to know", "label": "stigma", "channel": "web", "split": "test"}
+{"id": "m046", "text": "They will say I have a bad disease", "label": "stigma", "channel": "web", "split": "test"}
+{"id": "m047", "text": "My church would judge me", "label": "stigma", "channel": "web", "split": "test"}
+{"id": "m048", "text": "I am embarrassed to be examined", "label": "stigma", "channel": "web", "split": "test"}
+{"id": "m049", "text": "Where do I go for the next check?", "label": "dont_know_where", "channel": "web", "split": "dev"}
+{"id": "m050", "text": "I don't know which hospital to go to", "label": "dont_know_where", "channel": "web", "split": "dev"}
+{"id": "m051", "text": "Which clinic near me does this test?", "label": "dont_know_where", "channel": "web", "split": "dev"}
+{"id": "m052", "text": "Who do I talk to to book an appointment?", "label": "dont_know_where", "channel": "web", "split": "dev"}
+{"id": "m053", "text": "I do not know where to start", "label": "dont_know_where", "channel": "web", "split": "test"}
+{"id": "m054", "text": "Is there a clinic in Kisumu that does this?", "label": "dont_know_where", "channel": "web", "split": "test"}
+{"id": "m055", "text": "I was told to go for another test but not where", "label": "dont_know_where", "channel": "web", "split": "test"}
+{"id": "m056", "text": "Which department do I go to when I arrive?", "label": "dont_know_where", "channel": "web", "split": "test"}
+{"id": "m057", "text": "Thank you", "label": "none", "channel": "sms", "split": "dev"}
+{"id": "m058", "text": "Hello", "label": "none", "channel": "sms", "split": "dev"}
+{"id": "m059", "text": "Ok I understand", "label": "none", "channel": "sms", "split": "dev"}
+{"id": "m060", "text": "Can you explain what screening means?", "label": "none", "channel": "web", "split": "dev"}
+{"id": "m061", "text": "Is cervical screening only for older women?", "label": "none", "channel": "web", "split": "test"}
+{"id": "m062", "text": "I will think about it", "label": "none", "channel": "web", "split": "test"}
+{"id": "m063", "text": "Yes please send me the reminder", "label": "none", "channel": "web", "split": "test"}
+{"id": "m064", "text": "How long does the appointment take?", "label": "none", "channel": "web", "split": "test"}

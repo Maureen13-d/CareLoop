@@ -1,0 +1,10 @@
+{
+  "resourceType": "Appointment",
+  "status": "proposed",
+  "description": "SYNTHETIC: follow-up visit request",
+  "start": "2026-11-25T09:00:00+03:00",
+  "participant": [
+    {"actor": {"reference": "Patient/demo-001"}, "status": "needs-action"},
+    {"actor": {"reference": "Location/demo-clinic-1"}, "status": "needs-action"}
+  ]
+}
