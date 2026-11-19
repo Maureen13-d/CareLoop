@@ -57,7 +57,10 @@ export default async function OutreachPage() {
   return (
     <main className="mx-auto max-w-5xl space-y-8 p-6 sm:p-8">
       <header className="space-y-3">
-        <h1 className="text-2xl font-semibold">Outreach queue</h1>
+        <h1 className="text-2xl font-semibold">Follow-up ladder</h1>
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+          Simulated reminders for journeys that have gone quiet. Nothing is actually sent.
+        </p>
         <p
           role="note"
           className="rounded-md bg-amber-100 p-2 text-sm text-amber-900 dark:bg-amber-900/40 dark:text-amber-100"
