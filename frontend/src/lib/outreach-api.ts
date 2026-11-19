@@ -82,3 +82,43 @@ export async function getCaseDetail(id: string): Promise<CaseDetail | null> {
   if (!res.ok) throw new Error(`Case ${id} failed with ${res.status}`);
   return (await res.json()) as CaseDetail;
 }
+
+export type LoopClosureMetrics = {
+  contacted_episodes: number;
+  attended: number;
+  still_open: number;
+  unrecorded_advances: number;
+  closure_rate: number | null;
+  median_contacts_to_attend: number | null;
+  attended_by_last_channel: Record<string, number>;
+  attended_without_outreach: number;
+};
+
+export type EscalationMetrics = {
+  escalated: number;
+  escalation_rate: number | null;
+  recovered: number;
+  recovery_rate: number | null;
+  awaiting_coordinator: number;
+};
+
+export type TimeToReferralMetrics = {
+  completed: number;
+  median_days: number | null;
+  mean_days: number | null;
+  within_sla_rate: number | null;
+  sla_days: number;
+  awaiting: number;
+  awaiting_overdue: number;
+};
+
+export type Metrics = {
+  generated_at: string;
+  total_cases: number;
+  loop_closure: LoopClosureMetrics;
+  escalation: EscalationMetrics;
+  time_to_referral: TimeToReferralMetrics;
+  disclaimer: string;
+};
+
+export const getMetrics = () => getJson<Metrics>("/metrics");

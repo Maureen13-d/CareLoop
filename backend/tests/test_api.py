@@ -27,14 +27,12 @@ def test_list_cases_seeded(client):
     assert len(client.get("/cases").json()) == 25
 
 
-def test_advance_flow_persists(client):
+def test_stage_changes_only_via_respond(client):
+    """Invariant the metrics rely on: no route moves a case without logging a response."""
     _seed_case()
-    bad = client.post("/cases/case-test/advance", json={"to_stage": "treatment_started"})
-    assert bad.status_code == 409
-    ok = client.post("/cases/case-test/advance", json={"to_stage": "abnormal_result"})
-    assert ok.status_code == 200 and ok.json()["stage"] == "abnormal_result"
-    # Re-read through a fresh session: the change is in the database, not in memory.
-    assert client.get("/cases/case-test").json()["stage"] == "abnormal_result"
+    r = client.post("/cases/case-test/advance", json={"to_stage": "abnormal_result"})
+    assert r.status_code == 404
+    assert client.get("/cases/case-test").json()["stage"] == "screened"
 
 
 def test_fhir_task(client):
