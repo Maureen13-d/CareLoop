@@ -3,13 +3,20 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
 
-ROLE_NAVIGATOR = "navigator"          # supports patients; works the worklist (was "coordinator")
-ROLE_CLINICIAN = "clinician"          # records screenings; facility-side staff
-ROLE_COUNSELLOR = "counsellor"        # takes escalations for distress
-ROLE_PATIENT = "patient"              # a patient using the web app (patient login comes later)
+ROLE_NAVIGATOR = "navigator"  # supports patients; works the worklist (was "coordinator")
+ROLE_CLINICIAN = "clinician"  # records screenings; facility-side staff
+ROLE_COUNSELLOR = "counsellor"  # takes escalations for distress
+ROLE_PATIENT = "patient"  # a patient using the web app (patient login comes later)
 ROLE_PROGRAM_MANAGER = "program_manager"
 ROLE_ADMIN = "admin"
-ROLES = (ROLE_NAVIGATOR, ROLE_CLINICIAN, ROLE_COUNSELLOR, ROLE_PATIENT, ROLE_PROGRAM_MANAGER, ROLE_ADMIN)
+ROLES = (
+    ROLE_NAVIGATOR,
+    ROLE_CLINICIAN,
+    ROLE_COUNSELLOR,
+    ROLE_PATIENT,
+    ROLE_PROGRAM_MANAGER,
+    ROLE_ADMIN,
+)
 
 
 class Department(Base):
