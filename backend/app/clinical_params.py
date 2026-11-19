@@ -44,8 +44,10 @@ def render_markdown() -> str:
 
     out += [
         "",
-        f"Minimum gap between contacts: **{COOLDOWN_DAYS} days**. "
-        "The ladder restarts when the case moves to a new stage.",
+        (
+            f"Minimum gap between contacts: **{COOLDOWN_DAYS} days**. "
+            "The ladder restarts when the case moves to a new stage."
+        ),
         "",
         "**C. Message wording** (the same text is used for every reminder channel)",
         "",
