@@ -30,6 +30,7 @@ class Pathway:
     closable_from: tuple[str, ...]
     evidence_types: tuple[str, ...]
     closure_roles: tuple[str, ...]
+    decline_roles: tuple[str, ...]
     lost_roles: tuple[str, ...]
     lost_requires_escalation: bool
     second_level_after_hours: int
@@ -77,6 +78,7 @@ def _build(data: dict) -> Pathway:
         closable_from=tuple(data["closure"]["closable_from"]),
         evidence_types=tuple(data["closure"]["evidence_types"]),
         closure_roles=tuple(data["closure"]["roles"]),
+        decline_roles=tuple(data["decline"]["roles"]),
         lost_roles=tuple(data["lost_to_follow_up"]["roles"]),
         lost_requires_escalation=bool(data["lost_to_follow_up"].get("requires_prior_escalation", True)),
         second_level_after_hours=int(data["escalation"]["second_level_after_hours"]),

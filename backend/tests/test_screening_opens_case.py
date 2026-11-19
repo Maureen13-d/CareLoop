@@ -1,8 +1,8 @@
 def test_positive_screening_opens_case_with_owner_and_deadline(client, auth, make_case):
     _, result = make_case("positive")
     assert result["case_status"] == "opened"
-    case = client.get(f"/api/v1/cases/{result['case_id']}", headers=auth["coord"]).json()
-    assert case["state"] == "OPENED"
+    case = client.get(f"/api/v1/cases/{result['case_id']}", headers=auth["nav"]).json()
+    assert case["state"] == "SCREENING_FLAGGED"
     assert case["owner_department"] == "Screening clinic"
     assert case["deadline_at"].endswith("Z")
     assert case["unowned"] is True
@@ -36,16 +36,16 @@ def test_second_positive_does_not_duplicate_open_case(client, auth, make_case):
     assert again["case_id"] == first["case_id"]
 
 
-def test_coordinator_cannot_record_screening(client, auth, make_case):
+def test_navigator_cannot_record_screening(client, auth, make_case):
     patient, _ = make_case("negative")
     resp = client.post(f"/api/v1/patients/{patient['id']}/screenings",
-                       json={"screening_type": "VIA", "result": "positive"}, headers=auth["coord"])
+                       json={"screening_type": "VIA", "result": "positive"}, headers=auth["nav"])
     assert resp.status_code == 403
 
 
 def test_withdrawn_consent_blocks_new_case(client, auth, make_case):
     patient, _ = make_case("negative")
-    client.post(f"/api/v1/patients/{patient['id']}/consents", json={"purpose": "care_coordination", "granted": False}, headers=auth["coord"])
+    client.post(f"/api/v1/patients/{patient['id']}/consents", json={"purpose": "care_coordination", "granted": False}, headers=auth["nav"])
     resp = client.post(f"/api/v1/patients/{patient['id']}/screenings",
                        json={"screening_type": "HPV_DNA", "result": "positive"}, headers=auth["clin"]).json()
     assert resp["case_status"] == "no_consent"

@@ -208,6 +208,32 @@ def close_case(db: Session, case: CareCase, actor, evidence_type: str | None = N
     return case
 
 
+def decline_case(db: Session, case: CareCase, actor, note: str, at: datetime | None = None) -> CareCase:
+    """The patient chose not to proceed. Recorded and respected; never pressured.
+    Not available after handoff, when the hospital owns care."""
+    pw = load_pathway(case.pathway_id)
+    now = at or clock.now()
+    action = "case.decline"
+    if pw.is_terminal(case.state):
+        _reject(db, actor, case, action, 409, "case_closed", f"Case is already {case.state}")
+    _require_role(db, actor, case, pw.decline_roles, action)
+    if case.state in pw.closable_from:
+        _reject(db, actor, case, action, 409, "invalid_transition",
+                "The patient is already in the hospital's care; CareLoop cannot record a decline here")
+    db.add(CaseEvent(case_id=case.id, from_state=case.state, to_state="PATIENT_DECLINED", occurred_at=now,
+                     note=note, **_actor_fields(actor)))
+    case.state = "PATIENT_DECLINED"
+    case.state_entered_at = now
+    case.closed_at = now
+    case.closure_reason = "patient_declined"
+    case.deadline_at = None
+    case.owner_user_id = None
+    audit.record(db, actor=actor, action=action, entity_type="care_case", entity_id=case.id,
+                 patient_id=case.patient_id, detail={"note": note}, at=at)
+    db.commit()
+    return case
+
+
 def mark_lost(db: Session, case: CareCase, actor, note: str, at: datetime | None = None) -> CareCase:
     """A person decides the patient is lost to follow-up. Software never does this alone."""
     pw = load_pathway(case.pathway_id)

@@ -5,13 +5,13 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.deps import require_roles
 from app.modules.audit import service as audit
-from app.modules.auth.models import ROLE_CLINICIAN, ROLE_COORDINATOR
+from app.modules.auth.models import ROLE_CLINICIAN, ROLE_NAVIGATOR
 from app.modules.patients import service
 from app.modules.patients.models import Patient
 from app.modules.patients.schemas import ConsentIn, ConsentOut, PatientCreate, PatientOut
 
 router = APIRouter(prefix="/patients", tags=["patients"])
-staff = require_roles(ROLE_COORDINATOR, ROLE_CLINICIAN)
+staff = require_roles(ROLE_NAVIGATOR, ROLE_CLINICIAN)
 
 
 @router.get("", response_model=list[PatientOut])

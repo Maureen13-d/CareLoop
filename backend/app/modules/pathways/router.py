@@ -7,16 +7,16 @@ from app.core.db import get_db
 from app.core.deps import get_current_user, require_roles
 from app.core.errors import DomainError
 from app.modules.audit import service as audit
-from app.modules.auth.models import ROLE_ADMIN, ROLE_CLINICIAN, ROLE_COORDINATOR
+from app.modules.auth.models import ROLE_ADMIN, ROLE_CLINICIAN, ROLE_NAVIGATOR
 from app.modules.pathways import service
 from app.modules.pathways.loader import PathwayError, load_pathway
 from app.modules.pathways.models import Escalation
 from app.modules.pathways.schemas import (
-    AdvanceClockIn, CaseOut, ClockOut, CloseIn, DeadlineCheckOut, EscalationOut, EventOut, EvidenceIn,
+    AdvanceClockIn, CaseOut, ClockOut, CloseIn, DeadlineCheckOut, DeclineIn, EscalationOut, EventOut, EvidenceIn,
     EvidenceOut, LostIn, PathwayOut, PathwayStateOut, ResolveIn, TransitionIn,
 )
 
-staff = require_roles(ROLE_COORDINATOR, ROLE_CLINICIAN)
+staff = require_roles(ROLE_NAVIGATOR, ROLE_CLINICIAN)
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 escalation_router = APIRouter(prefix="/escalations", tags=["escalations"])
@@ -76,6 +76,11 @@ def post_evidence(case_id: int, data: EvidenceIn, db: Session = Depends(get_db),
 def post_close(case_id: int, data: CloseIn, db: Session = Depends(get_db), user=Depends(staff)):
     case = service.close_case(db, service.get_case(db, case_id), user, data.evidence_type, data.description, data.reference, data.note)
     return service.case_view(db, case)
+
+
+@router.post("/{case_id}/decline", response_model=CaseOut)
+def post_decline(case_id: int, data: DeclineIn, db: Session = Depends(get_db), user=Depends(staff)):
+    return service.case_view(db, service.decline_case(db, service.get_case(db, case_id), user, data.note))
 
 
 @router.post("/{case_id}/mark-lost", response_model=CaseOut)

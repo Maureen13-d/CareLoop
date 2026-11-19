@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.db import init_db
 from app.core.errors import register_error_handlers
+from app.modules.assistant.router import router as assistant_router
 from app.modules.audit.router import router as audit_router
 from app.modules.auth.router import router as auth_router
 from app.modules.pathways.router import admin_router, escalation_router, pathway_router
@@ -51,7 +52,7 @@ def health():
 
 
 for module_router in (auth_router, patients_router, screenings_router, cases_router, escalation_router,
-                      pathway_router, audit_router, admin_router):
+                      pathway_router, assistant_router, audit_router, admin_router):
     api.include_router(module_router)
 
 app.include_router(api)

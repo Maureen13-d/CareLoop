@@ -1,0 +1,133 @@
+# Lite-mode lexicon (English). DRAFT: needs language review. Add words and phrases freely.
+# Scoring: each distinct phrase matched = phrase_weight, each distinct keyword = keyword_weight.
+# A flag is raised when the score reaches the threshold. Keyword hits are ignored when a
+# negation word appears just before them ("not afraid").
+version: "0.1-draft"
+review_status: draft_pending_language_review
+threshold: 3
+phrase_weight: 3
+keyword_weight: 1
+negation_window: 3
+
+flags:
+  fear_of_diagnosis:
+    phrases:
+      - afraid of the result
+      - scared of the result
+      - afraid of the results
+      - scared of the results
+      - afraid of bad news
+      - scared of bad news
+      - scared it is cancer
+      - afraid it is cancer
+      - afraid of cancer
+      - scared of cancer
+      - fear of cancer
+      - what if it is cancer
+    keywords: [afraid, scared, fear, terrified, frightened, news, bad]
+  fear_of_procedure_pain:
+    phrases:
+      - will it hurt
+      - does it hurt
+      - afraid of pain
+      - scared of pain
+      - afraid of the procedure
+      - scared of the procedure
+      - fear of the procedure
+      - too painful
+    keywords: [hurt, pain, painful, procedure, needle, examination, exam, afraid, scared]
+  cost:
+    phrases:
+      - cannot afford
+      - cant afford
+      - no money
+      - too expensive
+      - how much will it cost
+      - how much does it cost
+      - cost of treatment
+    keywords: [money, afford, expensive, cost, pay, fee, fees, insurance, charges]
+  transport_access:
+    phrases:
+      - no transport
+      - cannot travel
+      - cant travel
+      - too far
+      - far from the hospital
+      - far from the clinic
+      - bus fare
+      - transport money
+    keywords: [transport, far, distance, travel, fare, matatu, bus]
+  stigma_privacy:
+    phrases:
+      - what will people say
+      - what people will think
+      - afraid people will know
+      - dont want anyone to know
+      - do not want anyone to know
+      - keep it secret
+      - people will talk
+    keywords: [stigma, shame, ashamed, secret, privacy, gossip, embarrassed, judged]
+  misconception:
+    phrases:
+      - death sentence
+      - no cure
+      - screening causes cancer
+      - tests cause cancer
+      - caused by a curse
+      - caused by witchcraft
+    keywords: [myth, rumour, rumor, curse, witchcraft]
+  no_info_where_to_go:
+    phrases:
+      - where do i go
+      - where should i go
+      - which hospital
+      - which clinic
+      - do not know where
+      - dont know where
+      - where can i get checked
+      - what should i do next
+    keywords: [where, which, clinic, hospital, directions]
+  emotional_distress:
+    phrases:
+      - i am stressed
+      - i am anxious
+      - i feel anxious
+      - so much stress
+    keywords: [stressed, anxious, anxiety, overwhelmed, worried, worry]
+  lack_of_support:
+    phrases:
+      - nobody to go with
+      - no one to go with
+      - no one to help me
+      - husband refuses
+      - partner refuses
+      - family does not support
+      - family doesnt support
+    keywords: [support, refuses, permission, alone]
+
+# Intents that are not barriers. "exact" means the WHOLE message must equal the word.
+intents:
+  request_human:
+    phrases:
+      - talk to someone
+      - speak to a person
+      - speak to someone
+      - talk to a person
+      - call me back
+      - call me
+      - i need help
+      - talk to a navigator
+      - speak to a navigator
+    exact: [help, human, agent, navigator]
+  opt_out:
+    exact: [stop, unsubscribe, cancel]
+  greeting:
+    exact: [hi, hello, hey]
+
+# Menu replies for the "What worries you most?" question (USSD and SMS).
+worry_menu:
+  "1": fear_of_procedure_pain
+  "2": cost
+  "3": transport_access
+  "4": stigma_privacy
+  "5": misconception

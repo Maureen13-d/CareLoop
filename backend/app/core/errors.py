@@ -1,6 +1,7 @@
 """One error shape for the whole API:
 {"error": {"code": "...", "message": "...", "details": {}}}"""
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -35,5 +36,7 @@ def register_error_handlers(app: FastAPI) -> None:
     async def _validation(_: Request, exc: RequestValidationError):
         return JSONResponse(
             status_code=422,
-            content=_body("validation_error", "Request data is not valid", {"errors": exc.errors()}),
+            # Some validation errors carry exception objects; turn them into text so they can be sent as JSON.
+            content=_body("validation_error", "Request data is not valid",
+                          {"errors": jsonable_encoder(exc.errors(), custom_encoder={Exception: str})}),
         )

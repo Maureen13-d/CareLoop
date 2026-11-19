@@ -19,13 +19,13 @@ def test_program_manager_cannot_see_cases(client, auth):
 
 
 def test_only_admin_and_manager_read_audit(client, auth):
-    assert client.get("/api/v1/audit", headers=auth["coord"]).status_code == 403
+    assert client.get("/api/v1/audit", headers=auth["nav"]).status_code == 403
     assert client.get("/api/v1/audit", headers=auth["manager"]).status_code == 200
     assert client.get("/api/v1/audit", headers=auth["admin"]).status_code == 200
 
 
 def test_denied_access_is_audited(client, auth):
-    client.get("/api/v1/audit", headers=auth["coord"])  # denied
+    client.get("/api/v1/audit", headers=auth["nav"])  # denied
     entries = client.get("/api/v1/audit?outcome=denied", headers=auth["admin"]).json()
     assert any(e["action"] == "access.denied" for e in entries)
 

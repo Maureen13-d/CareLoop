@@ -13,13 +13,14 @@ PASSWORD = "test-password"
 PASSWORD_HASH = hash_password(PASSWORD)  # hashed once; scrypt is deliberately slow
 DEPARTMENTS = [
     ("screening_clinic", "Screening clinic"),
-    ("care_coordination", "Care coordination"),
-    ("gynaecology_clinic", "Gynaecology clinic"),
-    ("treatment_unit", "Treatment unit"),
+    ("navigation_team", "Navigation team"),
+    ("facility", "Facility"),
+    ("hospital", "Hospital"),
 ]
 USERS = [
-    ("coord", "coordinator", "care_coordination"),
-    ("clin", "clinician", "gynaecology_clinic"),
+    ("nav", "navigator", "navigation_team"),
+    ("clin", "clinician", "screening_clinic"),
+    ("counsellor", "counsellor", None),
     ("manager", "program_manager", None),
     ("admin", "admin", None),
 ]
@@ -77,10 +78,10 @@ def make_case(client, auth):
 
     def _make(result="positive", consent=True):
         patient = client.post("/api/v1/patients", json={"display_name": "Demo Patient", "age_band": "30-34"},
-                              headers=auth["coord"]).json()
+                              headers=auth["nav"]).json()
         if consent:
             r = client.post(f"/api/v1/patients/{patient['id']}/consents",
-                            json={"purpose": "care_coordination", "granted": True}, headers=auth["coord"])
+                            json={"purpose": "care_coordination", "granted": True}, headers=auth["nav"])
             assert r.status_code == 201, r.text
         resp = client.post(f"/api/v1/patients/{patient['id']}/screenings",
                            json={"screening_type": "HPV_DNA", "result": result}, headers=auth["clin"])
