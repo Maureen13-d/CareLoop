@@ -18,7 +18,7 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: ruff check .
-      - run: pytest -q tests/test_api.py tests/test_pathway.py
+      - run: pytest -q tests/test_api.py tests/test_pathway.py tests/test_interop.py
       - name: Mock hospital tests
         working-directory: .
         run: python -m pytest -q integrations
