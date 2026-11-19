@@ -258,3 +258,11 @@ and synthetic data is seeded **only if the database is empty**, so restarting ne
 
 Override the location with `CARELOOP_DATABASE_URL`. Tests always use an in-memory database.
 The domain logic is storage-agnostic: `app/repository.py` is the only place that touches rows.
+
+## Metrics
+`GET /metrics` returns loop-closure rate, escalation rate, recovery after escalation, contacts to
+attendance, and time to referral; they are shown on `/outreach`. An *episode* is one overdue stage
+of one case that received at least one contact. Rates are associations, not causal claims, and
+contacted vs uncontacted cases are deliberately not compared (outreach only starts once a case is
+already late). Stage changes happen only through `POST /outreach/cases/{id}/respond`, so every
+change is recorded and counted. All figures are computed from synthetic data.

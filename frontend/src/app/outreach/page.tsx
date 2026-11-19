@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getEvents, getQueue, type OutreachEvent } from "@/lib/outreach-api";
 import { runSweep } from "./actions";
 import { EscalatedSection } from "./EscalatedSection";
+import { MetricsStrip } from "./MetricsStrip";
 import { SweepButton } from "./SweepButton";
 
 const CHANNEL_LABEL: Record<string, string> = {
@@ -64,6 +65,8 @@ export default async function OutreachPage() {
           Synthetic data only. Contacts are simulated; nothing is actually sent.
         </p>
       </header>
+
+      <MetricsStrip />
 
       <section aria-labelledby="summary-heading">
         <h2 id="summary-heading" className="sr-only">

@@ -12,7 +12,8 @@ from app.db import engine as outreach_engine
 from app.db import init_db as init_outreach_db
 from app.deps import get_repo
 from app.fhir import case_to_fhir_task
-from app.models import AdvanceRequest, Case, CaseView
+from app.metrics_api import router as metrics_router
+from app.models import Case, CaseView
 from app.modules.assistant.router import router as assistant_router
 from app.modules.audit.router import router as audit_router
 from app.modules.auth.router import router as auth_router
@@ -22,7 +23,7 @@ from app.modules.pathways.scheduler import scheduler_loop
 from app.modules.patients.router import router as patients_router
 from app.modules.screenings.router import router as screenings_router
 from app.outreach_api import router as outreach_router
-from app.pathway import InvalidTransition, Stage, is_overdue
+from app.pathway import Stage, is_overdue
 from app.repository import Repository
 from app.seed import seed_if_empty
 
@@ -79,6 +80,7 @@ for module_router in (
 
 app.include_router(api)
 app.include_router(outreach_router)
+app.include_router(metrics_router)
 
 
 def _view(case: Case) -> CaseView:
@@ -114,20 +116,6 @@ def list_cases(
 @app.get("/cases/{case_id}", response_model=CaseView)
 def get_case(case_id: str, repo: Repository = Depends(get_repo)):
     return _view(_get(repo, case_id))
-
-
-@app.post("/cases/{case_id}/advance", response_model=CaseView)
-def advance_case(case_id: str, body: AdvanceRequest, repo: Repository = Depends(get_repo)):
-    # NOTE: moves a case WITHOUT logging a response event. Step 3 (metrics) should either route
-    # this through record_response() or remove it. Prefer POST /outreach/cases/{id}/respond.
-    case = _get(repo, case_id)
-    try:
-        case.advance(body.to_stage)
-    except InvalidTransition as e:
-        raise HTTPException(409, str(e)) from e
-    repo.save_case(case)
-    repo.commit()
-    return _view(case)
 
 
 @app.get("/cases/{case_id}/fhir-task")
