@@ -1,13 +1,26 @@
+import os
+
+# Must run BEFORE the app is imported. Tests use an isolated in-memory database and never touch
+# backend/careloop.db, whatever is in a developer's local .env.
+os.environ["CARELOOP_DATABASE_URL"] = "sqlite://"
+os.environ["CARELOOP_DEMO_SCENARIO"] = "false"
+os.environ["CARELOOP_SEED_CASES"] = "25"
+os.environ["CARELOOP_SEED"] = "42"
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from sqlmodel import Session
 
 from app.core import clock
 from app.core.db import Base, get_db, import_models, make_engine
 from app.core.security import hash_password
+from app.db import engine as outreach_engine
+from app.db import reset_db as reset_outreach_db
 from app.main import app
 from app.modules.auth.models import Department, User
+from app.seed import seed_if_empty
 
 PASSWORD = "test-password"
 PASSWORD_HASH = hash_password(PASSWORD)  # hashed once; scrypt is deliberately slow
@@ -31,8 +44,8 @@ def db_session():
     engine = make_engine("sqlite://", poolclass=StaticPool)
     import_models()
     Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
-    session = Session()
+    SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+    session = SessionLocal()
     depts = {}
     for name, label in DEPARTMENTS:
         d = Department(name=name, label=label)
@@ -56,14 +69,22 @@ def db_session():
 
 
 @pytest.fixture()
-def client(db_session):
+def db():
+    reset_outreach_db()
+    yield outreach_engine
+
+
+@pytest.fixture()
+def client(db_session, db):
     clock.reset()
+    with Session(outreach_engine) as s:
+        seed_if_empty(s)
 
     def override_get_db():
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
-    yield TestClient(app)  # no "with": the real lifespan (and real database) is never started
+    yield TestClient(app)
     app.dependency_overrides.clear()
     clock.reset()
 

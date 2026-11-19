@@ -1,8 +1,9 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from app.deps import get_repo
 from app.models import Case, CaseView
 from app.outreach import (
     AmbiguousTarget,
@@ -19,7 +20,7 @@ from app.outreach import (
     run_sweep,
 )
 from app.pathway import SLA_DAYS, InvalidTransition, Stage, is_overdue
-from app.store import OUTREACH_LOG, STORE
+from app.repository import Repository
 
 router = APIRouter(prefix="/outreach", tags=["outreach"])
 notifier = SimulatedNotifier()
@@ -50,44 +51,45 @@ class EscalatedCase(BaseModel):
     escalated_at: datetime
 
 
-def _get_case(case_id: str) -> Case:
-    case = STORE.get(case_id)
+def _get_case(repo: Repository, case_id: str) -> Case:
+    case = repo.get_case(case_id)
     if case is None:
         raise HTTPException(404, "Case not found")
     return case
 
 
-def _detail(case: Case) -> CaseDetail:
+def _detail(case: Case, events: list[OutreachEvent]) -> CaseDetail:
     now = datetime.now(UTC)
-    events = sorted((e for e in OUTREACH_LOG if e.case_id == case.id), key=lambda e: e.created_at)
     return CaseDetail(
         case=CaseView(
             **case.model_dump(), overdue=is_overdue(case.stage, case.stage_entered_at, now)
         ),
-        status=case_status(case, OUTREACH_LOG, now),
+        status=case_status(case, events, now),
         next_stages=next_stages(case),
-        events=events,
+        events=sorted(events, key=lambda e: e.created_at),
     )
 
 
 @router.get("/queue", response_model=list[OutreachPlan])
-def get_queue():
+def get_queue(repo: Repository = Depends(get_repo)):
     """Dry run: what a sweep would do right now. Most overdue first."""
-    plans = [p for c in STORE.values() if (p := plan_outreach(c, OUTREACH_LOG)) is not None]
+    log = repo.load_log()
+    plans = [p for c in repo.list_cases() if (p := plan_outreach(c, log)) is not None]
     return sorted(plans, key=lambda p: p.days_overdue, reverse=True)
 
 
 @router.get("/escalated", response_model=list[EscalatedCase])
-def list_escalated():
+def list_escalated(repo: Repository = Depends(get_repo)):
     """Cases where automated outreach is exhausted and a human needs to step in."""
     now = datetime.now(UTC)
+    log = repo.load_log()
     result = []
-    for case in STORE.values():
-        if case_status(case, OUTREACH_LOG, now) != CaseStatus.ESCALATED:
+    for case in repo.list_cases():
+        if case_status(case, log, now) != CaseStatus.ESCALATED:
             continue
         escalated_at = max(
             e.created_at
-            for e in OUTREACH_LOG
+            for e in log
             if e.case_id == case.id and e.kind == Kind.ESCALATION and e.stage == case.stage
         )
         result.append(
@@ -103,39 +105,59 @@ def list_escalated():
 
 
 @router.get("/events", response_model=list[OutreachEvent])
-def list_events(case_id: str | None = None, limit: int = Query(50, ge=1, le=500)):
-    items = [e for e in OUTREACH_LOG if case_id is None or e.case_id == case_id]
-    return sorted(items, key=lambda e: e.created_at, reverse=True)[:limit]
+def list_events(
+    case_id: str | None = None,
+    limit: int = Query(50, ge=1, le=500),
+    repo: Repository = Depends(get_repo),
+):
+    return repo.recent_events(case_id, limit)
 
 
 @router.post("/sweep", response_model=SweepResult)
-def sweep():
-    created = run_sweep(list(STORE.values()), OUTREACH_LOG, notifier)
-    return SweepResult(considered=len(STORE), created=created)
+def sweep(repo: Repository = Depends(get_repo)):
+    cases = repo.list_cases()
+    created = run_sweep(cases, repo.load_log(), notifier)
+    repo.add_events(created)
+    repo.commit()
+    return SweepResult(considered=len(cases), created=created)
 
 
 @router.get("/cases/{case_id}", response_model=CaseDetail)
-def get_case_detail(case_id: str):
-    return _detail(_get_case(case_id))
+def get_case_detail(case_id: str, repo: Repository = Depends(get_repo)):
+    case = _get_case(repo, case_id)
+    return _detail(case, repo.events_for_case(case_id))
 
 
 @router.post("/cases/{case_id}/send", response_model=OutreachEvent)
-def send_one(case_id: str):
-    case = _get_case(case_id)
-    plan = plan_outreach(case, OUTREACH_LOG)
+def send_one(case_id: str, repo: Repository = Depends(get_repo)):
+    case = _get_case(repo, case_id)
+    log = repo.events_for_case(case_id)
+    plan = plan_outreach(case, log)
     if plan is None:
         raise HTTPException(409, "No outreach is due for this case")
-    return execute(plan, OUTREACH_LOG, notifier)
+    event = execute(plan, log, notifier)
+    repo.add_events([event])
+    repo.commit()
+    return event
 
 
 @router.post("/cases/{case_id}/respond", response_model=CaseDetail)
-def respond(case_id: str, body: RespondRequest | None = None):
-    """Patient attended: advance the stage, reset the ladder, log the response."""
-    case = _get_case(case_id)
+def respond(
+    case_id: str,
+    body: RespondRequest | None = None,
+    repo: Repository = Depends(get_repo),
+):
+    """Patient attended: advance the stage, reset the ladder, log the response (one transaction)."""
+    case = _get_case(repo, case_id)
+    log = repo.events_for_case(case_id)
     try:
-        record_response(case, OUTREACH_LOG, body.to_stage if body else None)
+        event = record_response(case, log, body.to_stage if body else None)
     except AmbiguousTarget as e:
         raise HTTPException(422, str(e)) from e
     except InvalidTransition as e:
+        # A double submit lands here: the first request already moved the case.
         raise HTTPException(409, str(e)) from e
-    return _detail(case)
+    repo.save_case(case)
+    repo.add_events([event])
+    repo.commit()  # case + event committed together, or neither
+    return _detail(case, log)
