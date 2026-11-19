@@ -4,15 +4,16 @@ Python, FastAPI, SQLAlchemy, SQLite. **Synthetic data only.**
 
 ## What exists today
 
-- Login with roles (coordinator, clinician, program manager, admin)
+- Login with roles: navigator, clinician, counsellor, patient (role defined, patient login comes later), program manager, admin
 - Synthetic patients and consent records
-- Screening results; a positive result opens a tracked case (if the patient consented)
-- The case engine: stages from `pathways/cervical_cancer.yaml`, owners, deadlines, evidence-to-close rule
+- Screenings; a concerning result opens a tracked case (if the patient consented)
+- The case engine, driven by `pathways/cervical_cancer.yaml` (version 0.2, pre-hospital bridge): stages, owners, deadlines, evidence-to-close, patient decline, lost-to-follow-up by human decision
 - Escalations raised by a deadline checker, with a demo clock
 - Audit log of every state change and refused action
-- 36 automated tests
+- **The assistant (Tier 0 and Tier 1):** safety rules and Lite mode (keyword and phrase matching with approved replies and barrier flags). No model, no network. Reads the files in `../ai/`.
+- 91 automated tests
 
-Not built yet: referrals, tasks and appointments, notifications, analytics, risk score, assistant, FHIR mapping, frontend.
+Not built yet: onboarding flow, patient login, navigation tasks, appointments, reminders and the SMS outbox, the USSD and SMS channel adapters and simulator, grounded retrieval and knowledge base, the mock hospital and FHIR exchange, analytics, frontend.
 
 ## Run it (first time)
 
@@ -37,16 +38,26 @@ uvicorn app.main:app --reload
 ```
 
 Open http://127.0.0.1:8000/docs. This is an interactive page for trying every endpoint.
-Click **Authorize**, log in as `coordinator` with password `careloop-demo`, then try `GET /api/v1/cases`.
+Click **Authorize**, log in as `navigator` with password `careloop-demo`, then try `GET /api/v1/cases`.
 
-Demo accounts (all synthetic): `coordinator`, `clinician`, `manager`, `admin`. Same password for all (set `DEMO_PASSWORD` to change it).
+Demo accounts (all synthetic): `navigator`, `clinician`, `counsellor`, `manager`, `admin`. Same password for all (set `DEMO_PASSWORD` to change it).
+
+## Try the assistant
+
+In `/docs`, open `POST /api/v1/assistant/message` and send:
+
+```json
+{ "channel": "sms", "text": "how much will it cost, i have no money" }
+```
+
+You get an approved reply, a barrier flag (marked *suggested* until a patient confirms it), and a suggested navigator task. Try `"i want to die"` to see the safety path: it hands over to a human and the reply still holds a `[VERIFIED HELPLINE]` placeholder that must be replaced before real use. Menu answers look like `{ "channel": "ussd", "menu_choice": "2", "menu_context": "worry_menu" }`.
 
 ## Show an escalation in seconds (demo clock)
 
 1. Log in as `admin`.
 2. `POST /api/v1/admin/advance-clock` with `{"hours": 72}`.
 3. `POST /api/v1/admin/run-deadline-check`.
-4. Log in as `coordinator` and open `GET /api/v1/escalations`.
+4. Log in as `navigator` and open `GET /api/v1/escalations`.
 
 The demo clock resets when the server restarts.
 
@@ -79,6 +90,7 @@ app/
     patients/              patients and consent
     screenings/            screening results; opens cases
     pathways/              the case engine (service.py) and the YAML loader
+    assistant/             safety rules and Lite mode (no database, no network)
     audit/                 append-only audit log
 tests/                     pytest suites
 ```

@@ -1,88 +1,83 @@
-# Care pathway definition: cervical cancer screening-to-care (demo, Kenya context)
+# Care pathway definition: cervical cancer, pre-hospital bridge (demo, Kenya context)
+#
+# CareLoop covers the journey BEFORE the patient is in the hospital's care, plus a light
+# watch after handoff. Clinical care inside the hospital belongs to hospital systems.
 #
 # IMPORTANT: every deadline_hours value below is ASSUMED. None has been sourced from a
-# national guideline yet. Replace them (or keep them and label them as assumptions in the
-# submission) once the Ministry of Health guideline has been read.
+# national guideline. Replace them (or keep them and label them as assumptions).
 #
-# "roles" lists who may move a case INTO that state.
-# "owner_department" is the department that owns the case while it is in that state.
+# "roles" lists who may move a case INTO that state. The system itself (actor = none) may
+# always move cases, for example when a mock hospital message arrives.
+# "owner_department" owns the case while it is in that state.
 # "deadline_hours" is how long the case may stay in the state before it is overdue.
 
 id: cervical_cancer
-name: Cervical cancer screening-to-care
-version: "0.1-draft"
+name: Cervical cancer screening-to-care (pre-hospital bridge)
+version: "0.2-draft"
 deadlines_status: ASSUMED
-initial_state: OPENED
+initial_state: SCREENING_FLAGGED
 
 escalation:
   second_level_after_hours: 48     # level 2 if still overdue this long after the deadline
   urgent_starts_at_level: 2        # urgent cases skip level 1
 
 closure:
-  closable_from: [CONFIRMATION_COMPLETED, TREATMENT_STARTED, FOLLOW_UP_DUE]
-  evidence_types: [confirmed_negative, treatment_documented, follow_up_completed, clinician_decision]
-  roles: [clinician]
+  closable_from: [HANDED_OFF]
+  evidence_types: [facility_confirmation, follow_up_plan_documented, clinician_decision]
+  roles: [navigator, clinician]
+
+decline:                            # the patient chooses not to proceed (not available after handoff)
+  roles: [navigator, clinician]
 
 lost_to_follow_up:
-  roles: [coordinator, clinician]
+  roles: [navigator, clinician]
   requires_prior_escalation: true
 
 terminal_states:
-  CLOSED: Closed with evidence
+  CLOSED: Loop closed with evidence
+  PATIENT_DECLINED: Patient chose not to proceed
   LOST_TO_FOLLOW_UP: Closed by a recorded human decision after escalation
 
 states:
-  OPENED:
-    label: Positive or suspicious result recorded
+  SCREENING_FLAGGED:
+    label: Concerning screening finding recorded; patient invited
     owner_department: screening_clinic
     deadline_hours: 48
-    next: [PATIENT_NOTIFIED]
-    roles: [clinician, coordinator]
-  PATIENT_NOTIFIED:
-    label: Result communicated to the patient
-    owner_department: care_coordination
+    next: [PATIENT_ENGAGED]
+    roles: [clinician, navigator]
+  PATIENT_ENGAGED:
+    label: Patient joined and consented
+    owner_department: navigation_team
     deadline_hours: 72
-    next: [PATIENT_ACKNOWLEDGED]
-    roles: [coordinator, clinician]
-  PATIENT_ACKNOWLEDGED:
-    label: Patient confirmed receipt
-    owner_department: care_coordination
+    next: [BARRIERS_ASSESSED]
+    roles: [navigator, clinician]
+  BARRIERS_ASSESSED:
+    label: Concerns and access barriers identified
+    owner_department: navigation_team
+    deadline_hours: 72
+    next: [NAVIGATION_ACTIVE]
+    roles: [navigator, clinician]
+  NAVIGATION_ACTIVE:
+    label: Navigator supporting the patient towards a facility
+    owner_department: navigation_team
+    deadline_hours: 120
+    next: [APPOINTMENT_BOOKED]
+    roles: [navigator, clinician]
+  APPOINTMENT_BOOKED:
+    label: Appointment confirmed by the facility
+    owner_department: facility
     deadline_hours: 168
-    next: [CONFIRMATION_SCHEDULED]
-    roles: [coordinator, clinician]
-  CONFIRMATION_SCHEDULED:
-    label: Confirmatory assessment booked
-    owner_department: gynaecology_clinic
-    deadline_hours: 336
-    next: [CONFIRMATION_COMPLETED]
-    roles: [coordinator, clinician]
-  CONFIRMATION_COMPLETED:
-    label: Confirmatory assessment done and documented
-    owner_department: gynaecology_clinic
-    deadline_hours: 72
-    next: [REFERRAL_SENT]
+    next: [ARRIVAL_CONFIRMED, NAVIGATION_ACTIVE]   # back to navigation if the visit is missed or rebooked
+    roles: [navigator, clinician]
+  ARRIVAL_CONFIRMED:
+    label: Facility confirmed the patient attended
+    owner_department: facility
+    deadline_hours: 24
+    next: [HANDED_OFF]
     roles: [clinician]
-  REFERRAL_SENT:
-    label: Referral to treatment unit sent
-    owner_department: treatment_unit
-    deadline_hours: 72
-    next: [REFERRAL_ACCEPTED]
-    roles: [clinician]
-  REFERRAL_ACCEPTED:
-    label: Treatment unit accepted the referral
-    owner_department: treatment_unit
-    deadline_hours: 336
-    next: [TREATMENT_STARTED]
-    roles: [clinician]
-  TREATMENT_STARTED:
-    label: Treatment or surveillance plan begun and documented
-    owner_department: treatment_unit
-    deadline_hours: 168
-    next: [FOLLOW_UP_DUE]
-    roles: [clinician]
-  FOLLOW_UP_DUE:
-    label: Post-treatment follow-up pending
-    owner_department: care_coordination
-    deadline_hours: 720
+  HANDED_OFF:
+    label: Hospital owns care; CareLoop watches milestones
+    owner_department: hospital
+    deadline_hours: 336            # silent-loop window: no hospital milestone within this time creates a task
     next: []
-    roles: [coordinator, clinician]
+    roles: [clinician]

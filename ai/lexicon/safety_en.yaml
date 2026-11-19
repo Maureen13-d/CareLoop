@@ -1,0 +1,74 @@
+# Safety lexicon (English). DRAFT: needs clinical and language review before any real use.
+# These phrase lists are deliberately broad. For safety we accept false alarms; a missed
+# crisis is worse than an unnecessary handoff to a human. Negation is NOT applied here.
+version: "0.1-draft"
+review_status: draft_pending_clinical_and_language_review
+
+crisis:
+  phrases:
+    - kill myself
+    - end my life
+    - want to die
+    - wish i was dead
+    - wish i were dead
+    - suicide
+    - suicidal
+    - no reason to live
+    - better off dead
+    - hurt myself
+    - harm myself
+    - end it all
+    - cannot go on
+    - cant go on
+    - dont want to live
+    - dont want to be alive
+
+distress:
+  phrases:
+    - i cannot cope
+    - i cant cope
+    - i am not coping
+    - cant take it anymore
+    - cannot take it anymore
+    - i feel hopeless
+    - no hope
+    - i am so scared
+    - i am terrified
+    - panic attack
+    - cannot stop crying
+    - i feel alone
+    - nobody to talk to
+    - no one to talk to
+    - am i going to die
+
+diagnosis_request:
+  phrases:
+    - do i have cancer
+    - is it cancer
+    - am i going to die
+    - will i die
+    - how long do i have
+    - what does my result mean
+    - what does the result mean
+    - what does my results mean
+    - is it serious
+    - how serious is it
+    - what is wrong with me
+    - what treatment should
+    - which treatment
+    - should i take
+    - do i need chemo
+    - do i need surgery
+    - what stage
+
+# PLACEHOLDER: a clinician must review and replace this list before any real use.
+symptom_report:
+  phrases:
+    - bleeding
+    - heavy bleeding
+    - severe pain
+    - very painful
+    - bad pain
+    - discharge
+    - fainted
+    - fever

@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     require_consent_for_tracking: bool = True
     cors_origins: str = "http://localhost:3000"
     pathways_dir: str = str(REPO_ROOT / "pathways")
+    ai_dir: str = str(REPO_ROOT / "ai")  # lexicons, templates, knowledge base
     demo_password: str = "careloop-demo"
 
 
