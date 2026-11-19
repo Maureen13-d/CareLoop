@@ -248,3 +248,13 @@ A full contribution guide is coming. Until then: work on a branch, open a pull r
 ## Licence
 
 MIT. See `LICENSE`.
+
+## Persistence
+State lives in SQLite (`backend/careloop.db`, gitignored) via SQLModel. Tables are created on startup
+and synthetic data is seeded **only if the database is empty**, so restarting never loses state.
+
+    python -m app.cli reset --demo    # wipe and re-seed (+ scripted escalated case) before a demo
+    python -m app.cli status          # row counts
+
+Override the location with `CARELOOP_DATABASE_URL`. Tests always use an in-memory database.
+The domain logic is storage-agnostic: `app/repository.py` is the only place that touches rows.

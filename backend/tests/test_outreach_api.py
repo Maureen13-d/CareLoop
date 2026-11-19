@@ -1,29 +1,20 @@
 from datetime import UTC, datetime, timedelta
 
-import pytest
-
-from app.main import OUTREACH_LOG, STORE
 from app.models import Case, StageEvent
 from app.pathway import Stage
-
-
-@pytest.fixture(autouse=True)
-def _reset_store():
-    STORE.clear()
-    OUTREACH_LOG.clear()
-    yield
-    STORE.clear()
-    OUTREACH_LOG.clear()
+from tests.helpers import put_case
 
 
 def _inject_overdue(case_id="case-od"):
     entered = datetime.now(UTC) - timedelta(days=30)
-    STORE[case_id] = Case(
-        id=case_id,
-        patient_ref="SYN-9001",
-        stage=Stage.ABNORMAL_RESULT,
-        stage_entered_at=entered,
-        history=[StageEvent(stage=Stage.ABNORMAL_RESULT, at=entered)],
+    put_case(
+        Case(
+            id=case_id,
+            patient_ref="SYN-9001",
+            stage=Stage.ABNORMAL_RESULT,
+            stage_entered_at=entered,
+            history=[StageEvent(stage=Stage.ABNORMAL_RESULT, at=entered)],
+        )
     )
 
 
@@ -53,7 +44,6 @@ def test_send_unknown_case_404(client):
 
 
 def test_all_logged_events_are_synthetic(client):
-    _inject_overdue()
     client.post("/outreach/sweep")
     events = client.get("/outreach/events", params={"limit": 500}).json()
     assert all(e["patient_ref"].startswith("SYN-") for e in events)
