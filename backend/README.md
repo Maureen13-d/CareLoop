@@ -84,3 +84,29 @@ tests/                     pytest suites
 ```
 
 Rule: a module reads and writes only its own tables. To use another module's data, call its `service` functions.
+
+## Closing the loop
+`POST /outreach/cases/{id}/respond` records that the patient attended: the case advances, the
+outreach ladder restarts for the new stage, and a `response` event is logged. Stages with more than
+one valid outcome (screened, diagnostic done) require an explicit `to_stage`; the API returns 422
+otherwise. The endpoint accepts no free text by design (see DATA_POLICY.md).
+
+`GET /outreach/cases/{id}` returns status (on_track / overdue / escalated / closed), next stages and
+the outreach timeline. `GET /outreach/escalated` lists cases awaiting a coordinator. UI: `/cases/{id}`.
+
+### Demo scenario
+Set `CARELOOP_DEMO_SCENARIO=true` in `backend/.env` to seed `case-demo` (`SYN-9000`), a case that is
+already escalated, so the loop-closure flow can be shown without waiting for real time to pass.
+
+## Closing the loop
+`POST /outreach/cases/{id}/respond` records that the patient attended: the case advances, the
+outreach ladder restarts for the new stage, and a `response` event is logged. Stages with more than
+one valid outcome (screened, diagnostic done) require an explicit `to_stage`; the API returns 422
+otherwise. The endpoint accepts no free text by design (see DATA_POLICY.md).
+
+`GET /outreach/cases/{id}` returns status (on_track / overdue / escalated / closed), next stages and
+the outreach timeline. `GET /outreach/escalated` lists cases awaiting a coordinator. UI: `/cases/{id}`.
+
+### Demo scenario
+Set `CARELOOP_DEMO_SCENARIO=true` in `backend/.env` to seed `case-demo` (`SYN-9000`), a case that is
+already escalated, so the loop-closure flow can be shown without waiting for real time to pass.

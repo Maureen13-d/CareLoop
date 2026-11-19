@@ -1,6 +1,8 @@
 export const instant = false;
-import { getEvents, getQueue } from "@/lib/outreach-api";
+import Link from "next/link";
+import { getEvents, getQueue, type OutreachEvent } from "@/lib/outreach-api";
 import { runSweep } from "./actions";
+import { EscalatedSection } from "./EscalatedSection";
 import { SweepButton } from "./SweepButton";
 
 const CHANNEL_LABEL: Record<string, string> = {
@@ -8,6 +10,7 @@ const CHANNEL_LABEL: Record<string, string> = {
   call: "Phone call",
   home_visit: "Home visit (CHW)",
   coordinator: "Care coordinator",
+  clinic: "Clinic visit",
 };
 
 const fmtStage = (s: string) => s.replace(/_/g, " ");
@@ -27,7 +30,14 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function KindBadge({ kind }: { kind: "reminder" | "escalation" }) {
+function KindBadge({ kind }: { kind: OutreachEvent["kind"] }) {
+  if (kind === "response") {
+    return (
+      <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-900 dark:bg-green-900/40 dark:text-green-100">
+        Attended
+      </span>
+    );
+  }
   return kind === "escalation" ? (
     <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-900 dark:bg-red-900/40 dark:text-red-100">
       Escalation
@@ -95,7 +105,11 @@ export default async function OutreachPage() {
               <tbody>
                 {queue.map((p) => (
                   <tr key={p.case_id} className="border-b border-black/10 align-top dark:border-white/15">
-                    <td className="py-2 pr-4">{p.case_id}</td>
+                    <td className="py-2 pr-4">
+                      <Link href={`/cases/${p.case_id}`} className="underline underline-offset-2">
+                        {p.case_id}
+                      </Link>
+                    </td>
                     <td className="pr-4">{p.patient_ref}</td>
                     <td className="pr-4 capitalize">{fmtStage(p.stage)}</td>
                     <td className="pr-4">{p.days_overdue}</td>
@@ -113,6 +127,8 @@ export default async function OutreachPage() {
           </div>
         )}
       </section>
+
+      <EscalatedSection />
 
       <section aria-labelledby="log-heading" className="space-y-3">
         <h2 id="log-heading" className="text-lg font-medium">
@@ -139,7 +155,11 @@ export default async function OutreachPage() {
                     <td className="py-2 pr-4">
                       <time dateTime={e.created_at}>{fmtTime(e.created_at)}</time>
                     </td>
-                    <td className="pr-4">{e.case_id}</td>
+                    <td className="pr-4">
+                      <Link href={`/cases/${e.case_id}`} className="underline underline-offset-2">
+                        {e.case_id}
+                      </Link>
+                    </td>
                     <td className="pr-4">{e.patient_ref}</td>
                     <td className="space-x-2 pr-4">
                       <KindBadge kind={e.kind} />

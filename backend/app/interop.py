@@ -4,6 +4,7 @@ SIMULATED. The only "hospital" it talks to is integrations/mock_hospital.
 Pure functions plus an injectable httpx client, so it is easy to test and
 the real base URL can be swapped in later.
 """
+
 import httpx
 
 FHIR_JSON = "application/fhir+json"
@@ -13,8 +14,12 @@ class HospitalRejected(Exception):
     """The hospital system refused the message. The text says why."""
 
 
-def build_appointment(patient_ref: str, location_ref: str, start_iso: str,
-                      description: str = "SYNTHETIC: follow-up visit request") -> dict:
+def build_appointment(
+    patient_ref: str,
+    location_ref: str,
+    start_iso: str,
+    description: str = "SYNTHETIC: follow-up visit request",
+) -> dict:
     """Make a FHIR Appointment *request*. Never put a result or diagnosis in here."""
     return {
         "resourceType": "Appointment",
@@ -30,8 +35,7 @@ def build_appointment(patient_ref: str, location_ref: str, start_iso: str,
 
 def send_appointment(client: httpx.Client, appointment: dict) -> str:
     """Send the request. Returns the hospital's appointment id."""
-    r = client.post("/fhir/Appointment", json=appointment,
-                    headers={"Content-Type": FHIR_JSON})
+    r = client.post("/fhir/Appointment", json=appointment, headers={"Content-Type": FHIR_JSON})
     if r.status_code != 201:
         raise HospitalRejected(_reason(r))
     return r.json()["id"]

@@ -1,4 +1,5 @@
 """I1 tests: CareLoop adapter against the mock hospital (all simulated)."""
+
 import sys
 from pathlib import Path
 

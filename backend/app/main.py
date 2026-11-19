@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.demo import seed_demo_scenario
 from app.fhir import case_to_fhir_task
 from app.models import AdvanceRequest, Case, CaseView
 from app.pathway import InvalidTransition, Stage, is_overdue
@@ -16,6 +17,8 @@ async def lifespan(_: FastAPI):
     STORE.clear()
     OUTREACH_LOG.clear()
     STORE.update({c.id: c for c in generate_cases(settings.seed_cases, settings.seed)})
+    if settings.demo_scenario:
+        seed_demo_scenario(STORE, OUTREACH_LOG)
     yield
 
 
