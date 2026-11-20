@@ -1,0 +1,106 @@
+# Care pathway definition: maternal warning-to-visit (demo, Kenya context)
+#
+# CareLoop covers the journey from a warning during pregnancy to a confirmed facility
+# visit, plus a light watch after handoff. It does not diagnose, treat, or run the hospital.
+#
+# IMPORTANT: every deadline_hours value is ASSUMED. None is a national guideline.
+# Clinical thresholds are not in this file. Triage is PENDING CLINICAL REVIEW.
+#
+# The engine stores one deadline per state. Where yellow and red differ, deadline_hours
+# is the routine (yellow) wait and urgent_deadline_hours is the urgent (red) wait.
+# A red journey is also urgency=urgent, so escalation starts at urgent_starts_at_level.
+#
+# "roles" lists who may move a case INTO that state. The system (actor = none) may
+# always move along a listed edge. A community health promoter may enter enrolled
+# and home_screened only.
+#
+# Endings are not edges. close, decline, and mark-lost write the state named under
+# closure.state, decline.state, and lost_to_follow_up.state. A person decides each one.
+
+id: maternal
+name: Maternal warning-to-visit (pre-hospital bridge)
+version: "0.1-draft"
+deadlines_status: ASSUMED
+initial_state: enrolled
+
+escalation:
+  second_level_after_hours: 48
+  urgent_starts_at_level: 2
+
+closure:
+  closable_from: [with_hospital, postnatal_watch]
+  evidence_types: [facility_confirmation, follow_up_plan_documented, clinician_decision]
+  roles: [navigator, clinician]
+  state: closed
+
+decline:
+  roles: [navigator, clinician]
+  state: chose_to_stop
+
+lost_to_follow_up:
+  roles: [navigator, clinician]
+  requires_prior_escalation: true
+  state: closed_by_person
+
+terminal_states:
+  closed: Loop closed with evidence
+  chose_to_stop: Woman chose not to proceed
+  closed_by_person: Closed by a recorded human decision after escalation
+
+states:
+  enrolled:
+    label: Consented and linked to a community health promoter
+    owner_department: community
+    deadline_hours: 72
+    next: [home_screened]
+    roles: [chw, navigator, clinician]
+  home_screened:
+    label: First reading or check-in recorded
+    owner_department: community
+    deadline_hours: 168
+    next: [risk_flagged, navigating]
+    roles: [chw, navigator, clinician]
+  risk_flagged:
+    label: A warning needs a human. Decision support only. PENDING CLINICAL REVIEW.
+    owner_department: navigation_team
+    deadline_hours: 24
+    urgent_deadline_hours: 2
+    next: [navigating]
+    roles: [navigator, clinician]
+  navigating:
+    label: Navigator working on barriers and a facility
+    owner_department: navigation_team
+    deadline_hours: 48
+    urgent_deadline_hours: 12
+    next: [visit_booked, delivery_planned]
+    roles: [navigator, clinician]
+  visit_booked:
+    label: Facility accepted a visit
+    owner_department: facility
+    deadline_hours: 168
+    next: [arrived, navigating]
+    roles: [navigator, clinician]
+  arrived:
+    label: Facility confirmed she attended
+    owner_department: facility
+    deadline_hours: 24
+    next: [with_hospital]
+    roles: [clinician]
+  with_hospital:
+    label: Hospital owns care; CareLoop watches. Assumed antenatal silent window.
+    owner_department: hospital
+    deadline_hours: 168
+    next: [postnatal_watch, delivery_planned]
+    roles: [clinician]
+  delivery_planned:
+    label: Facility and transport plan recorded
+    owner_department: navigation_team
+    deadline_hours: 168
+    next: [visit_booked, with_hospital]
+    roles: [navigator, clinician]
+  postnatal_watch:
+    label: Postnatal home check loop. Assumed 72 hour window.
+    owner_department: community
+    deadline_hours: 72
+    next: [with_hospital]
+    roles: [navigator, clinician]

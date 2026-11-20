@@ -17,6 +17,7 @@ class StateDef:
     deadline_hours: int
     next: tuple[str, ...]
     roles: tuple[str, ...]
+    urgent_deadline_hours: int | None = None
 
 
 @dataclass(frozen=True)
@@ -36,6 +37,9 @@ class Pathway:
     lost_requires_escalation: bool
     second_level_after_hours: int
     urgent_starts_at_level: int
+    closed_state: str
+    declined_state: str
+    lost_state: str
     raw: dict = field(default_factory=dict, compare=False, repr=False)
 
     def is_terminal(self, state: str) -> bool:
@@ -47,17 +51,21 @@ class PathwayError(Exception):
 
 
 def _build(data: dict) -> Pathway:
-    states = {
-        name: StateDef(
+    states = {}
+    for name, s in data["states"].items():
+        urgent = s.get("urgent_deadline_hours")
+        roles = tuple(s["roles"])
+        if not roles:
+            raise PathwayError(f"{name} does not list who may enter it")
+        states[name] = StateDef(
             name=name,
             label=s["label"],
             owner_department=s["owner_department"],
             deadline_hours=int(s["deadline_hours"]),
             next=tuple(s.get("next", [])),
-            roles=tuple(s["roles"]),
+            roles=roles,
+            urgent_deadline_hours=int(urgent) if urgent is not None else None,
         )
-        for name, s in data["states"].items()
-    }
     terminal = dict(data["terminal_states"])
     if data["initial_state"] not in states:
         raise PathwayError("initial_state is not a defined state")
@@ -65,9 +73,19 @@ def _build(data: dict) -> Pathway:
         for target in state.next:
             if target not in states:
                 raise PathwayError(f"{state.name} points to unknown state {target}")
+            if target in terminal:
+                raise PathwayError(f"{state.name} points at ending {target}")
     for name in data["closure"]["closable_from"]:
         if name not in states:
             raise PathwayError(f"closable_from has unknown state {name}")
+    closed_state = data["closure"].get("state", "CLOSED")
+    declined_state = data["decline"].get("state", "PATIENT_DECLINED")
+    lost_state = data["lost_to_follow_up"].get("state", "LOST_TO_FOLLOW_UP")
+    for ending in (closed_state, declined_state, lost_state):
+        if ending not in terminal:
+            raise PathwayError(f"ending {ending} is not listed under terminal_states")
+        if ending in states:
+            raise PathwayError(f"ending {ending} cannot also be a pathway state")
     return Pathway(
         id=data["id"],
         name=data["name"],
@@ -86,6 +104,9 @@ def _build(data: dict) -> Pathway:
         ),
         second_level_after_hours=int(data["escalation"]["second_level_after_hours"]),
         urgent_starts_at_level=int(data["escalation"]["urgent_starts_at_level"]),
+        closed_state=closed_state,
+        declined_state=declined_state,
+        lost_state=lost_state,
         raw=data,
     )
 

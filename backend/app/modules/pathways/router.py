@@ -7,7 +7,7 @@ from app.core.db import get_db
 from app.core.deps import get_current_user, require_roles
 from app.core.errors import DomainError
 from app.modules.audit import service as audit
-from app.modules.auth.models import ROLE_ADMIN, ROLE_CLINICIAN, ROLE_NAVIGATOR
+from app.modules.auth.models import ROLE_ADMIN, ROLE_CHW, ROLE_CLINICIAN, ROLE_NAVIGATOR
 from app.modules.pathways import service
 from app.modules.pathways.loader import PathwayError, load_pathway
 from app.modules.pathways.models import Escalation
@@ -30,6 +30,7 @@ from app.modules.pathways.schemas import (
 )
 
 staff = require_roles(ROLE_NAVIGATOR, ROLE_CLINICIAN)
+movers = require_roles(ROLE_NAVIGATOR, ROLE_CLINICIAN, ROLE_CHW)
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 escalation_router = APIRouter(prefix="/escalations", tags=["escalations"])
@@ -87,7 +88,7 @@ def get_timeline(case_id: int, db: Session = Depends(get_db), _=Depends(staff)):
 
 @router.post("/{case_id}/transitions", response_model=CaseOut)
 def post_transition(
-    case_id: int, data: TransitionIn, db: Session = Depends(get_db), user=Depends(staff)
+    case_id: int, data: TransitionIn, db: Session = Depends(get_db), user=Depends(movers)
 ):
     case = service.transition(db, service.get_case(db, case_id), data.to_state, user, data.note)
     return service.case_view(db, case)
@@ -184,6 +185,7 @@ def get_pathway(pathway_id: str, _=Depends(get_current_user)):
                 label=s.label,
                 owner_department=s.owner_department,
                 deadline_hours=s.deadline_hours,
+                urgent_deadline_hours=s.urgent_deadline_hours,
                 next=list(s.next),
                 roles=list(s.roles),
             )

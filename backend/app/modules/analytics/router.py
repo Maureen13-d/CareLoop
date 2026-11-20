@@ -24,8 +24,8 @@ readers = require_roles(
 )
 
 
-def _count(db: Session, *where) -> int:
-    stmt = select(func.count()).select_from(CareCase)
+def _count(db: Session, pathway_id: str, *where) -> int:
+    stmt = select(func.count()).select_from(CareCase).where(CareCase.pathway_id == pathway_id)
     for clause in where:
         stmt = stmt.where(clause)
     return int(db.scalar(stmt) or 0)
@@ -38,12 +38,12 @@ def funnel(db: Session = Depends(get_db), _=Depends(readers)):
         {
             "state": name,
             "label": state.label,
-            "count": _count(db, CareCase.state == name),
+            "count": _count(db, pathway.id, CareCase.state == name),
         }
         for name, state in pathway.states.items()
     ]
     terminals = [
-        {"state": name, "label": label, "count": _count(db, CareCase.state == name)}
+        {"state": name, "label": label, "count": _count(db, pathway.id, CareCase.state == name)}
         for name, label in pathway.terminal_states.items()
     ]
     return {
@@ -60,14 +60,17 @@ def summary(db: Session = Depends(get_db), _=Depends(readers)):
     pathway = load_pathway()
     terminal = list(pathway.terminal_states)
     now = clock.now()
-    open_cases = _count(db, CareCase.state.not_in(terminal))
+    open_cases = _count(db, pathway.id, CareCase.state.not_in(terminal))
     overdue = _count(
         db,
+        pathway.id,
         CareCase.state.not_in(terminal),
         CareCase.deadline_at.is_not(None),
         CareCase.deadline_at < now,
     )
-    unowned = _count(db, CareCase.state.not_in(terminal), CareCase.owner_user_id.is_(None))
+    unowned = _count(
+        db, pathway.id, CareCase.state.not_in(terminal), CareCase.owner_user_id.is_(None)
+    )
     open_escalations = int(
         db.scalar(
             select(func.count()).select_from(Escalation).where(Escalation.resolved_at.is_(None))
@@ -86,6 +89,6 @@ def summary(db: Session = Depends(get_db), _=Depends(readers)):
         "unowned": unowned,
         "open_escalations": open_escalations,
         "open_tasks": open_tasks,
-        "handed_off": _count(db, CareCase.state == "HANDED_OFF"),
+        "handed_off": _count(db, pathway.id, CareCase.state == "HANDED_OFF"),
         "deadlines_status": pathway.deadlines_status,
     }
