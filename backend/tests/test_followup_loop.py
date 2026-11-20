@@ -88,6 +88,7 @@ def test_register_issues_a_checked_id_and_hides_the_contact(client, auth):
     assert PHONE not in slip_blob
     assert "hiv" not in slip_blob
     assert public_id in slip_blob
+    assert "<svg" in (slip.json()["qr_svg"] or "")
     refused = enrol(client, auth, consent=False)
     assert refused["public_id"] is None
     skipped = enrol(client, auth, finding="not_concerning")
