@@ -1,0 +1,14 @@
+{"id": "f01", "text": "I am bleeding heavily", "expected": "danger"}
+{"id": "f02", "text": "chest pain when I walk", "expected": "danger"}
+{"id": "f03", "text": "I cant breath at all", "expected": "danger"}
+{"id": "f04", "text": "nimezimia leo", "expected": "danger"}
+{"id": "f05", "text": "siwezi kupumua usiku", "expected": "danger"}
+{"id": "f06", "text": "there is damu", "expected": "danger"}
+{"id": "f07", "text": "bl33ding since morning", "expected": "danger"}
+{"id": "f08", "text": "I want to die", "expected": "distress"}
+{"id": "f09", "text": "my chest feels heavy when I lie down", "expected": "danger"}
+{"id": "f10", "text": "kifua kinauma sana", "expected": "danger"}
+{"id": "f11", "text": "I feel very dizzy and hot", "expected": "danger"}
+{"id": "f12", "text": "naskia uchungu mwingi", "expected": "danger"}
+{"id": "f13", "text": "I have been to the clinic", "expected": "none"}
+{"id": "f14", "text": "what time is the visit", "expected": "none"}
