@@ -87,7 +87,6 @@ def handle_message(req: AssistantRequest) -> AssistantResponse:
     norm = normalise(req.text)
     safety = check_safety(norm)
     lite = match_lite(norm)
-    load_barriers()
     flags = [
         BarrierFlag(flag=f, confidence=confidence(s), status="suggested", source="keyword")
         for f, s in lite.flags
