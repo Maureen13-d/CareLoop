@@ -21,6 +21,6 @@ Feature commits on `feat/screening-to-care-loop`. Search with `git log --grep "F
 | F14 | Safety checks | done | 1ea2ca4 | backend/tests/test_followup_loop.py | router.py and the safety test |
 | F15 | Cohort and eval | done | a3bae29 | backend/tests/test_followup_loop.py | cohort.py, ai/eval/followup_test.jsonl |
 | F16 | Submission docs | done | f0dede9 | n/a | docs/SUBMISSION.md, docs/LIMITATIONS.md, docs/DATA_DECLARATION.md |
-| F17 | Final verification | partial | not tagged submission-ready | full suite run before push | browser walkthrough of the demo script was not run |
+| F17 | Final verification | partial | not tagged submission-ready | 265 passed on this branch | browser walkthrough of the demo script was not run |
 
 Maternal and hardware files were not changed except the one pathway-engine guard that keeps the CHW pregnancy check on maternal cases only (`3c7f253`).
