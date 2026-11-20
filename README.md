@@ -257,7 +257,9 @@ Open http://localhost:3000 and sign in as **amina** (navigator), **david** (clin
 
 The phone at `/phone` is a simulator. `*XYZ#` is not a real short code. The maternal check-in is opt-in: send `M` from that menu. The hub simulator is at `/hub`.
 
-CareLoop Maternal is the same engine with a second pathway for a community promoter, a cuff reading, a band, and a discreet check-in. It is decision support for a person. It is not a diagnostic device. Read [CareLoop Maternal](docs/MATERNAL.md), [the device API](docs/DEVICE_API.md), [the hardware outline](docs/HARDWARE.md), and [the four-minute demo](docs/DEMO_SCRIPT.md). Do not use Docker for this prototype.
+CareLoop Maternal is an earlier pathway and stays in the tree. It is not the current demo. Read [CareLoop Maternal](docs/MATERNAL.md) if you need it. Do not use Docker.
+
+The current demo follows a person from a screening until they arrive. Sign in as **david** (clinician, the screener), **grace** (community health worker), or **amina** (navigator). Password `careloop-demo`. David records a screening at `/screen` and prints an ID slip. The person opens `/enter`. Grace's chase list is `/worklist`. Arrivals are `/facility`. Telegram is a simulator at `/telegram`. The four-minute path is [the screening demo](docs/DEMO_SCRIPT_SCREENING.md). Delete `backend/careloop.db` before the first run so the new IDs are seeded.
 
 The simulated clinic is a separate process. Start it from the repository root, so Python can import `integrations`:
 

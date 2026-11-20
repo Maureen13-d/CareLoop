@@ -1,0 +1,15 @@
+# Limitations
+
+- CareLoop does not diagnose, stage a disease, or decide treatment. It does not tell someone they are fine.
+- Deadlines, the check-in gap (every 2 days), and quiet hours are **assumed**. They are not a national guideline.
+- Arrival is confirmed by a person or by the simulated clinic. The bot cannot mark someone arrived.
+- Lost to follow-up is a human decision, and only after an escalation exists.
+- The one-time code is simulated. There is no real SMS or Telegram delivery in this build.
+- Telegram is a signature check plus a simulator. There is no live bot.
+- USSD is a contract and the existing simulator. There is no Africa's Talking connection.
+- The guide speaks with the browser's voice, if the device has one. Kiswahili voices are often missing. Captions are always on.
+- The contact split is pseudonymisation. It is not anonymisation and it is not a Data Protection Act compliance pack.
+- Danger-sign wording is pending clinical review. The held-out score in `docs/EVALUATION.md` includes the misses. It was not tuned against that file.
+- The 200-person report is synthetic. People are contacted because they are already late. That is not a causal comparison.
+- Maternal and hardware code from the earlier branch is still in the tree. It is not part of this demo.
+- Tests do not touch `backend/careloop.db`. A local demo database must be deleted before the new seed appears.

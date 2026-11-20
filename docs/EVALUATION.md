@@ -80,6 +80,19 @@ Reproduce from `backend/`:
 .venv/Scripts/python -m app.modules.maternal.evaluate
 ```
 
+## Follow-up danger signs (held-out, synthetic)
+
+File: `ai/eval/followup_test.jsonl`. Classifier: `app.modules.followup.conversation.classify`. The lexicon was not edited after these messages were written.
+
+| | |
+|---|---|
+| Labelled danger | 11 |
+| Hits | 7 |
+| Recall | 0.6364 |
+| Misses | f09, f10, f11, f12 |
+
+The misses are "my chest feels heavy when I lie down", "kifua kinauma sana", "I feel very dizzy and hot", and "naskia uchungu mwingi". They stay missed on purpose. A match does not reassure. It tells the person to go to the nearest clinic and opens one urgent task.
+
 ## Message length
 
 Approved replies are checked in `backend/tests/test_assistant_templates.py` (160 characters, plain ASCII, and none of the words cancer, result, diagnosis, positive, hiv, or screening) and in `backend/tests/test_workspace.py` (USSD screens at most 182 characters, SMS replies at most 160). There is no separate length file in `ai/eval/`.
