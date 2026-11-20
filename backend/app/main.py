@@ -19,6 +19,7 @@ from app.modules.assistant.router import router as assistant_router
 from app.modules.audit.router import router as audit_router
 from app.modules.auth.router import router as auth_router
 from app.modules.channels.router import router as channels_router
+from app.modules.followup.router import router as followup_router
 from app.modules.interop.router import router as hospital_router
 from app.modules.maternal.device_router import router as device_router
 from app.modules.maternal.router import router as maternal_router
@@ -90,6 +91,7 @@ for module_router in (
     hospital_router,
     maternal_router,
     device_router,
+    followup_router,
 ):
     api.include_router(module_router)
 

@@ -17,7 +17,9 @@ def get_current_user(
     token: str | None = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ) -> User:
     payload = decode_access_token(token) if token else None
-    user = db.get(User, int(payload["sub"])) if payload else None
+    user = None
+    if payload and str(payload.get("sub", "")).isdigit():
+        user = db.get(User, int(payload["sub"]))
     if not user or not user.active:
         raise DomainError(401, "not_authenticated", "Please log in")
     return user

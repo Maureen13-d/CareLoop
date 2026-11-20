@@ -79,6 +79,9 @@ def db():
 
 @pytest.fixture()
 def client(db_session, db):
+    from app.modules.followup.access import reset_limits
+
+    reset_limits()
     clock.reset()
     with Session(outreach_engine) as s:
         seed_if_empty(s)

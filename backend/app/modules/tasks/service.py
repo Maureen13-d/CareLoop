@@ -55,6 +55,26 @@ COPY = {
         "Device offline",
         "A device has not been seen within the assumed window.",
     ),
+    "followup_urgent": (
+        "Go to the clinic now",
+        "A check-in needs a person. PENDING CLINICAL REVIEW.",
+    ),
+    "followup_review": (
+        "A person should follow up",
+        "The message was unclear or asked for something the guide cannot answer.",
+    ),
+    "followup_barrier": (
+        "A barrier was confirmed",
+        "The person confirmed what is stopping them.",
+    ),
+    "followup_escalate": (
+        "CHW escalation",
+        "A community health worker asked a clinician to take this.",
+    ),
+    "followup_unreached": (
+        "No reply to check-ins",
+        "Check-ins went unanswered. This is a problem to solve, not a fault.",
+    ),
 }
 
 
