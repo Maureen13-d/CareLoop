@@ -181,7 +181,9 @@ def transition(
     pw = load_pathway(case.pathway_id)
     now = at or clock.now()
     action = "case.transition"
-    if actor is not None and actor.role == "chw":
+    # Maternal CHW moves stay scoped to assigned pregnancies. Other pathways do not
+    # have a pregnancy row, so this check does not apply to them.
+    if actor is not None and actor.role == "chw" and case.pathway_id == "maternal":
         from app.modules.maternal.service import assert_chw_assignment
 
         assert_chw_assignment(db, actor, case, action)

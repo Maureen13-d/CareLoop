@@ -1,0 +1,89 @@
+# Generic follow-up after any screening. The screening type is stored on the enrolment,
+# not in this file. pathways/cervical_cancer.yaml stays as it is.
+#
+# Every deadline_hours value is ASSUMED. None is a national guideline.
+# Missing a deadline is a problem for the team to solve, not the patient's fault.
+#
+# "roles" lists who may move a case INTO that state. The system (actor = none) may always
+# move cases. The patient and the conversation rules never set "arrived".
+
+id: follow_up
+name: Screening follow-up until arrival
+version: "0.1-draft"
+deadlines_status: ASSUMED
+initial_state: screened
+
+escalation:
+  second_level_after_hours: 48
+  urgent_starts_at_level: 2
+
+closure:
+  state: closed
+  closable_from: [with_hospital]
+  evidence_types: [facility_confirmation]
+  roles: [navigator, clinician]
+
+decline:
+  state: chose_to_stop
+  roles: [navigator, clinician]
+
+lost_to_follow_up:
+  state: closed_by_person
+  roles: [navigator, clinician]
+  requires_prior_escalation: true
+
+terminal_states:
+  closed: Loop closed with facility evidence
+  chose_to_stop: The person chose to stop; a human recorded that
+  closed_by_person: Lost to follow-up, decided by a human after an escalation
+
+states:
+  screened:
+    label: Screening recorded and follow-up accepted
+    owner_department: screening_clinic
+    deadline_hours: 48
+    next: [contacted, arrived]
+    roles: [clinician, navigator]
+  contacted:
+    label: Someone reached the person
+    owner_department: community
+    deadline_hours: 48
+    next: [joined, arrived]
+    roles: [chw, navigator]
+  joined:
+    label: The person joined the follow-up
+    owner_department: community
+    deadline_hours: 72
+    next: [barrier_identified, navigating, arrived]
+    roles: [chw, navigator]
+  barrier_identified:
+    label: A barrier was confirmed
+    owner_department: community
+    deadline_hours: 48
+    next: [navigating, arrived]
+    roles: [chw, navigator]
+  navigating:
+    label: A worker is helping the person reach care
+    owner_department: navigation_team
+    deadline_hours: 72
+    urgent_deadline_hours: 24
+    next: [visit_booked, arrived]
+    roles: [chw, navigator]
+  visit_booked:
+    label: A visit has been booked
+    owner_department: facility
+    deadline_hours: 168
+    next: [arrived, navigating]
+    roles: [navigator, clinician]
+  arrived:
+    label: Facility staff confirmed the person arrived
+    owner_department: facility
+    deadline_hours: 24
+    next: [with_hospital]
+    roles: [clinician]
+  with_hospital:
+    label: The facility has started care
+    owner_department: hospital
+    deadline_hours: 168
+    next: []
+    roles: [clinician]
