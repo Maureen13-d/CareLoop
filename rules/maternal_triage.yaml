@@ -1,0 +1,54 @@
+# Decision support only. Not a diagnosis.
+# status: PENDING CLINICAL REVIEW
+# Thresholds are placeholders to be confirmed against Kenya MoH guidance by a clinician.
+status: PENDING CLINICAL REVIEW
+rules_version: "0.1-pending-clinical-review"
+
+thresholds:
+  severe_systolic: 160
+  severe_diastolic: 110
+  high_systolic: 140
+  high_diastolic: 90
+  stale_days: 14
+
+# Higher rank means more protein. Unknown and anything else do not rank.
+urine_rank:
+  neg: 0
+  trace: 1
+  "1+": 2
+  "2+": 3
+  "3+": 4
+
+red_signs:
+  - heavy_bleeding
+  - convulsion
+  - severe_abdominal_pain
+  - difficulty_breathing
+  - no_fetal_movement
+  - fever_severe_weakness
+  - leaking_fluid_fever
+
+# Together with a hypertensive-range reading, any one of these is red.
+neuro_signs:
+  - headache_severe
+  - vision_blurred
+  - convulsion
+
+yellow_signs:
+  - swelling_face_hands
+  - reduced_fetal_movement
+  - missed_visit
+  - headache_only
+  - fever
+  - leaking_fluid
+
+hb_red: [severe]
+hb_yellow: [moderate]
+hb_in_range: [normal, mild]
+
+key_measurements: [systolic, diastolic, urine_protein, hb_band]
+
+gestation_past_20: ["20-28w", "28-36w", "36w+"]
+
+# Placeholder: a new symptom after a yellow reading is treated as red.
+prior_yellow_escalates: true
