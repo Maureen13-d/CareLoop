@@ -36,6 +36,20 @@ CONFIRM = "Thank you. You confirmed the visit. A short reminder will follow."
 CHANGE = "Okay. A navigator will contact you to change the time."
 HELP = "A navigator will contact you. Reply STOP at any time to stop messages."
 
+# Opt-in maternal check-in. The cervical home menu is unchanged.
+MATERNAL_STEPS = (
+    ("m_bleed", "Any bleeding?\n1 Yes\n2 No", "bleeding", {"1": "yes"}),
+    ("m_head", "Head pain?\n1 Severe\n2 Mild\n3 No", "headache", {"1": "severe", "2": "mild"}),
+    ("m_vis", "Blurred vision?\n1 Yes\n2 No", "vision", {"1": "blurred"}),
+    ("m_swell", "Swelling of face or hands?\n1 Yes\n2 No", "swelling", {"1": "yes"}),
+    ("m_pain", "Pain high in the belly?\n1 Yes\n2 No", "pain", {"1": "upper"}),
+    ("m_move", "Movement?\n1 None\n2 Less\n3 Same", "movement", {"1": "none", "2": "less"}),
+    ("m_fever", "Fever?\n1 With weakness\n2 Yes\n3 No", "fever", {"1": "severe", "2": "yes"}),
+    ("m_fluid", "Fluid leaking?\n1 With fever\n2 Yes\n3 No", "fluid", {"1": "fever", "2": "yes"}),
+    ("m_breath", "Hard to breathe?\n1 Yes\n2 No", "breathing", {"1": "yes"}),
+    ("m_mood", "How do you feel?\n1 Unsafe\n2 Low\n3 Okay", "mood", {"1": "unsafe", "2": "low"}),
+)
+
 
 def _fit(text: str, limit: int = SMS_LIMIT) -> str:
     text = " ".join(text.split()) if "\n" not in text else text
@@ -52,7 +66,41 @@ def _session(db: Session, session_id: str, phone_ref: str) -> UssdSession:
         db.flush()
     row.phone_ref = phone_ref
     row.updated_at = clock.now()
+    if row.scratch is None:
+        row.scratch = ""
     return row
+
+
+def _maternal_step(db: Session, row: UssdSession, choice: str) -> str:
+    names = [step[0] for step in MATERNAL_STEPS]
+    try:
+        index = names.index(row.menu)
+    except ValueError:
+        row.menu = "home"
+        return CHOOSE
+    _name, _prompt, key, answers = MATERNAL_STEPS[index]
+    picked = answers.get(choice)
+    if picked:
+        row.scratch = f"{row.scratch or ''}{key}={picked};"
+    if choice not in answers and choice not in {"2", "3"}:
+        return _prompt
+    if index + 1 < len(MATERNAL_STEPS):
+        row.menu = MATERNAL_STEPS[index + 1][0]
+        return MATERNAL_STEPS[index + 1][1]
+    parsed: dict[str, str] = {}
+    for part in (row.scratch or "").split(";"):
+        if "=" in part:
+            left, right = part.split("=", 1)
+            parsed[left] = right
+    if not parsed:
+        parsed = {"all_clear": "yes"}
+    response = handle_message(
+        AssistantRequest(channel="ussd", pathway="maternal", checkin=parsed, language="en")
+    )
+    _maybe_task(db, response)
+    row.menu = "home"
+    row.scratch = ""
+    return response.reply_text
 
 
 def _maybe_task(db: Session, response) -> None:
@@ -107,6 +155,12 @@ def handle_ussd(db: Session, session_id: str, phone_ref: str, text: str) -> str:
         _maybe_task(db, response)
         row.menu = "home"
         screen = response.reply_text
+    elif menu == "home" and choice.upper() == "M":
+        row.menu = MATERNAL_STEPS[0][0]
+        row.scratch = ""
+        screen = MATERNAL_STEPS[0][1]
+    elif menu.startswith("m_"):
+        screen = _maternal_step(db, row, choice)
     else:
         row.menu = "home"
         screen = CHOOSE
@@ -158,7 +212,14 @@ def inbound_sms(db: Session, phone_ref: str, text: str) -> SmsMessage | None:
         db.commit()
         return reply
 
-    if key == "1":
+    if key.startswith(("m ", "check ")):
+        language = "sw" if key.startswith(("m sw", "check sw")) else "en"
+        response = handle_message(
+            AssistantRequest(channel="sms", text=body, pathway="maternal", language=language)
+        )
+        _maybe_task(db, response)
+        reply_text = response.reply_text
+    elif key == "1":
         reply_text = CONFIRM
     elif key == "2":
         create_task(db, task_type="appointment_change", priority="normal", source="channel")

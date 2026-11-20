@@ -75,7 +75,9 @@ def _present(reading: dict, key: str, rules: dict) -> bool:
     return value not in (None, "")
 
 
-def triage_maternal(reading: dict | None, danger_signs: list | None, context: dict | None = None) -> dict:
+def triage_maternal(
+    reading: dict | None, danger_signs: list | None, context: dict | None = None
+) -> dict:
     """Return level, rule ids, reason labels, and the rules version.
 
     Missing or unreadable measurements never return green.
@@ -127,7 +129,15 @@ def triage_maternal(reading: dict | None, danger_signs: list | None, context: di
 
     red = any(
         rule in fired
-        for rule in ("SOS", "RED_SIGN", "NEURO_PAIR", "SEVERE_BP", "HIGH_BP_PROTEIN", "HIGH_BP_NEURO", "SEVERE_HB")
+        for rule in (
+            "SOS",
+            "RED_SIGN",
+            "NEURO_PAIR",
+            "SEVERE_BP",
+            "HIGH_BP_PROTEIN",
+            "HIGH_BP_NEURO",
+            "SEVERE_HB",
+        )
     )
 
     if high and not severe:
@@ -153,10 +163,7 @@ def triage_maternal(reading: dict | None, danger_signs: list | None, context: di
     gestation = context.get("gestation_band") or reading.get("gestation_band")
     if isinstance(taken, datetime) and isinstance(now, datetime):
         age = now - taken
-        if (
-            gestation in rules["gestation_past_20"]
-            and age > timedelta(days=limits["stale_days"])
-        ):
+        if gestation in rules["gestation_past_20"] and age > timedelta(days=limits["stale_days"]):
             add("STALE_READING", "STALE_READING")
 
     yellow_ids = {

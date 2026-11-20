@@ -1,0 +1,93 @@
+# Phrase list for the maternal companion. PENDING CLINICAL REVIEW.
+# Written from the danger-sign list. Do not add phrases to lift a held-out score.
+version: "0.1-draft"
+status: PENDING CLINICAL REVIEW
+signs:
+  heavy_bleeding:
+    - heavy bleeding
+    - bleeding a lot
+    - bleeding heavily
+    - hevy bleeeding
+    - damu nyingi
+    - nina bleed sana
+    - damu inatoka sana
+  convulsion:
+    - i had a fit
+    - convulsion
+    - kufit
+    - alifit
+  severe_abdominal_pain:
+    - pain high in the belly
+    - upper belly pain
+    - tummy pain is severe
+    - maumivu ya juu
+  difficulty_breathing:
+    - cant breathe
+    - hard to breathe
+    - difficulty breathing
+    - nashindwa kupumua
+    - breath iko tight
+  no_fetal_movement:
+    - no movement at all
+    - movement stopped
+    - hajisogei
+    - hakuna movement
+  fever_severe_weakness:
+    - fever and very weak
+    - fever with weakness
+    - homa na mlegevu
+  leaking_fluid_fever:
+    - water and fever
+    - fluid and fever
+    - maji na homa
+  swelling_face_hands:
+    - swelling of my face
+    - face is swollen
+    - hands are swollen
+    - uvimbe wa uso
+  reduced_fetal_movement:
+    - less movement
+    - movement is less
+    - anasogea kidogo
+  headache_only:
+    - mild headache
+    - headache only
+    - kichwa kinauma
+    - head is paining
+  headache_severe:
+    - severe headache
+    - bad head pain
+    - kichwa kinauma sana
+  vision_blurred:
+    - blurred vision
+    - vision is blurred
+    - siwezi ona vizuri
+    - blurd vission
+  fever:
+    - i have a fever
+    - nina homa
+    - feeling feverish
+  leaking_fluid:
+    - fluid leaking
+    - water leaking
+    - maji yanatoka
+  missed_visit:
+    - missed the visit
+    - sikufika
+crisis:
+  - want to die
+  - kill myself
+  - nataka kufa
+  - siwezi endelea kuishi
+distress:
+  - feeling low
+  - feeling so low
+  - nahisi vibaya
+  - so scared
+  - sina nguvu ya moyo
+all_clear:
+  - all is well
+  - feeling fine
+  - nimefika vizuri
+  - no problems today
+  - iko sawa
