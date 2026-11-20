@@ -1,0 +1,10 @@
+# Band nudges. Not measurements and not a diagnosis.
+# status: PENDING CLINICAL REVIEW
+# The margins below are placeholders for firmware. The server acts on the event type.
+status: PENDING CLINICAL REVIEW
+rules_version: "0.1-pending-clinical-review"
+hr_above_baseline: 20
+hr_hours: 2
+spo2_low: 94
+offline_hours: 6
+navigator_handset: "+254700000199"

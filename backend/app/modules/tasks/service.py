@@ -39,6 +39,22 @@ COPY = {
         "Change a visit",
         "The person asked to change the time of a visit.",
     ),
+    "maternal_warning": (
+        "A check needs a person",
+        "A home check needs a navigator. Decision support only. PENDING CLINICAL REVIEW.",
+    ),
+    "chw_cuff": (
+        "Please take a cuff reading today",
+        "The band asked for a cuff reading. The band does not measure that itself.",
+    ),
+    "chw_battery": (
+        "Charge or swap a device",
+        "A device battery is low.",
+    ),
+    "device_offline": (
+        "Device offline",
+        "A device has not been seen within the assumed window.",
+    ),
 }
 
 
