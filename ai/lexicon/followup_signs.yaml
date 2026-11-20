@@ -1,0 +1,36 @@
+# PENDING CLINICAL REVIEW
+# Phrases map to labels, not to a diagnosis. Do not tune this file against the held-out set.
+
+danger:
+  - bleeding
+  - bleed
+  - bleading
+  - bl33ding
+  - chest pain
+  - cannot breathe
+  - can't breathe
+  - cant breath
+  - fainted
+  - faintng
+  - passed out
+  - severe pain
+  - blood everywhere
+  - damu
+  - maumivu makali
+  - siwezi kupumua
+  - nimezimia
+distress:
+  - kill myself
+  - want to die
+  - kujiua
+diagnosis:
+  - what do i have
+  - what stage
+  - diagnose
+  - is it cancer
+  - ni ugonjwa gani
+  - hatua gani
+skip:
+  - skip the clinic
+  - can i skip
+  - naweza ruka
