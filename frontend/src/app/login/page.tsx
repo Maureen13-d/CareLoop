@@ -102,6 +102,11 @@ export default async function LoginPage({
             </button>
           ))}
         </form>
+        <p className="text-sm">
+          <a className="underline" href="/enter">
+            I have a card
+          </a>
+        </p>
       </section>
     </main>
   );
