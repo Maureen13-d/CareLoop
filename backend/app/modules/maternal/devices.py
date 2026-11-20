@@ -22,6 +22,7 @@ from app.modules.maternal.service import open_maternal_case
 from app.modules.maternal.triage import triage_maternal
 from app.modules.pathways.service import find_open_case, transition
 from app.modules.patients.models import Patient
+from app.modules.tasks.models import NavigatorTask
 from app.modules.tasks.service import create_task
 
 PROTEIN_CODE = {"0": "neg", "t": "trace", "1": "1+", "2": "2+", "3": "3+", "u": "unknown"}
@@ -303,7 +304,9 @@ def ingest_band_event(db: Session, device: Device, body: dict) -> dict:
     )
     if existing is not None:
         return {"event_id": existing.id, "duplicate": True, "commands": _commands(db, device)}
-    pregnancy = db.get(Pregnancy, device.assigned_pregnancy_id) if device.assigned_pregnancy_id else None
+    pregnancy = (
+        db.get(Pregnancy, device.assigned_pregnancy_id) if device.assigned_pregnancy_id else None
+    )
     if pregnancy is None:
         raise DomainError(409, "not_lent", "This band is not lent to anyone")
     patient = db.get(Patient, pregnancy.patient_id)
@@ -363,24 +366,43 @@ def ingest_band_event(db: Session, device: Device, body: dict) -> dict:
     else:
         raise DomainError(422, "bad_event", "That band event type is not recognised")
     db.commit()
-    return {"event_id": event_id, "duplicate": False, "case_id": case_id, "commands": _commands(db, device)}
+    return {
+        "event_id": event_id,
+        "duplicate": False,
+        "case_id": case_id,
+        "commands": _commands(db, device),
+    }
 
 
 def pending_commands(db: Session, device: Device) -> list[dict]:
     return _commands(db, device)
 
 
-def note_offline(db: Session) -> None:
+def note_offline(db: Session) -> int:
     rules = load_band_rules()
     cutoff_hours = float(rules["offline_hours"])
     now = clock.now()
+    opened = 0
     for device in db.scalars(select(Device).where(Device.status.in_(("active", "lent")))).all():
         if device.last_seen_at is None:
             continue
         hours = (now - device.last_seen_at).total_seconds() / 3600
         if hours <= cutoff_hours:
             continue
-        create_task(db, task_type="device_offline", priority="normal", case_id=None, source="device")
+        existing = db.scalar(
+            select(NavigatorTask.id).where(
+                NavigatorTask.task_type == "device_offline",
+                NavigatorTask.status == "open",
+            )
+        )
+        if existing is not None:
+            break
+        create_task(
+            db, task_type="device_offline", priority="normal", case_id=None, source="device"
+        )
+        opened += 1
+    db.commit()
+    return opened
 
 
 def lend_band(db: Session, actor: User, device: Device, pregnancy: Pregnancy) -> Device:
@@ -389,7 +411,9 @@ def lend_band(db: Session, actor: User, device: Device, pregnancy: Pregnancy) ->
     if device.kind != "band":
         raise DomainError(409, "wrong_device", "Only a band can be lent")
     if not pregnancy.consent_band_contact:
-        raise DomainError(409, "consent_required", "Band contact consent is required before lending")
+        raise DomainError(
+            409, "consent_required", "Band contact consent is required before lending"
+        )
     device.assigned_pregnancy_id = pregnancy.id
     device.assigned_chw_id = pregnancy.assigned_chw_id
     device.status = "lent"

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Header
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.core import clock
 from app.core.db import get_db
 from app.modules.maternal import devices
 
@@ -51,9 +52,7 @@ def _key(x_device_key: str | None = Header(default=None)) -> str | None:
 
 
 @router.post("/readings")
-def post_reading(
-    data: ReadingIn, db: Session = Depends(get_db), key: str | None = Depends(_key)
-):
+def post_reading(data: ReadingIn, db: Session = Depends(get_db), key: str | None = Depends(_key)):
     device = devices.authenticate(db, data.device_id, key)
     return devices.ingest_reading(
         db,
@@ -99,9 +98,7 @@ def post_band(data: BandEventIn, db: Session = Depends(get_db), key: str | None 
 
 
 @router.get("/band/commands")
-def get_commands(
-    device_id: str, db: Session = Depends(get_db), key: str | None = Depends(_key)
-):
+def get_commands(device_id: str, db: Session = Depends(get_db), key: str | None = Depends(_key)):
     device = devices.authenticate(db, device_id, key)
     return {"commands": devices.pending_commands(db, device)}
 
@@ -111,6 +108,7 @@ def post_heartbeat(
     data: HeartbeatIn, db: Session = Depends(get_db), key: str | None = Depends(_key)
 ):
     device = devices.authenticate(db, data.device_id, key)
+    device.last_seen_at = clock.now()
     if data.battery_pct is not None:
         device.battery_pct = data.battery_pct
     db.commit()

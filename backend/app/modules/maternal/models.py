@@ -118,6 +118,17 @@ class Voucher(Base):
     created_at: Mapped[datetime]
 
 
+class Barrier(Base):
+    """A confirmed practical barrier. The flag is a label, never a sentence."""
+
+    __tablename__ = "barriers"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("care_cases.id"), index=True)
+    flag: Mapped[str] = mapped_column(String(20))
+    created_at: Mapped[datetime]
+
+
 class CoverCheck(Base):
     """Simulated cover lookup. Not a live SHA or TaifaCare call."""
 

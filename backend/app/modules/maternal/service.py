@@ -130,9 +130,7 @@ def list_pregnancies(db: Session, actor: User) -> list[dict]:
             .order_by(CareCase.id.desc())
         )
         reading = db.scalar(
-            select(Reading)
-            .where(Reading.pregnancy_id == pregnancy.id)
-            .order_by(Reading.id.desc())
+            select(Reading).where(Reading.pregnancy_id == pregnancy.id).order_by(Reading.id.desc())
         )
         rows.append(
             {

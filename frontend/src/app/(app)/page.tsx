@@ -47,6 +47,17 @@ type Task = {
   summary: string;
 };
 
+type MaternalSummary = {
+  open: number;
+  red: number;
+  yellow: number;
+  unowned: number;
+  device_alerts: number;
+  sos_24h: number;
+  red_cases: { case_id: number; display_name: string; patient_ref: string; hours_left: number | null; state: string }[];
+  review: string;
+};
+
 type Woman = {
   id: number;
   patient_ref: string;
@@ -84,7 +95,9 @@ async function ChwHome({ first }: { first: string }) {
         <ul className="divide-y divide-line rounded-2xl border border-line bg-paper-2">
           {women.map((woman) => (
             <li key={woman.id} className="px-4 py-4">
-              <p className="text-base font-medium">{woman.display_name}</p>
+              <Link href={`/chw/${woman.id}`} className="text-base font-medium text-lagoon underline underline-offset-2">
+                {woman.display_name}
+              </Link>
               <p className="mt-1 text-sm text-ink-soft">
                 {woman.patient_ref} · {woman.area_label} · {woman.gestation_band}
               </p>
@@ -137,6 +150,15 @@ export default async function HomePage({
     problem = err instanceof ApiError ? err.message : "The desk could not load.";
   }
 
+  let maternal: MaternalSummary | null = null;
+  if (user.role === "navigator" || user.role === "clinician" || user.role === "program_manager" || user.role === "admin") {
+    try {
+      maternal = await api<MaternalSummary>("/maternal/summary");
+    } catch {
+      maternal = null;
+    }
+  }
+
   const first = user.display_name.split(" ")[0];
   const max = Math.max(1, ...(funnel?.stages.map((stage) => stage.count) ?? [1]));
   const attention = cases.filter((item) => item.overdue || item.unowned).slice(0, 6);
@@ -162,6 +184,34 @@ export default async function HomePage({
           <Stat label="Past deadline" value={summary.overdue} hint="Deadlines are assumed" />
           <Stat label="Waiting for an owner" value={summary.unowned} />
           <Stat label="Open tasks" value={summary.open_tasks} />
+        </section>
+      ) : null}
+
+      {maternal ? (
+        <section aria-label="Maternal checks" className="space-y-3">
+          <h2 className="text-2xl">Maternal checks</h2>
+          <p className="text-sm text-ink-soft">{maternal.review}. Counts are synthetic.</p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Stat label="Open maternal journeys" value={maternal.open} />
+            <Stat label="Red labels" value={maternal.red} hint="Decision support only" />
+            <Stat label="Yellow labels" value={maternal.yellow} />
+            <Stat label="Device alerts" value={maternal.device_alerts} hint={`${maternal.sos_24h} SOS in 24h`} />
+          </div>
+          {maternal.red_cases.length > 0 ? (
+            <ul className="divide-y divide-line rounded-2xl border border-line bg-paper-2">
+              {maternal.red_cases.map((item) => (
+                <li key={item.case_id}>
+                  <Link href={`/desk/${item.case_id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-white">
+                    <span>
+                      <span className="block font-medium">{item.display_name}</span>
+                      <span className="text-sm text-ink-soft">{item.patient_ref} · {stageShort(item.state)} · label red</span>
+                    </span>
+                    <span className="text-sm text-danger">{item.hours_left ?? "—"}h left</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </section>
       ) : null}
 

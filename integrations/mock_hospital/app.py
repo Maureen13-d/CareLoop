@@ -28,6 +28,16 @@ _ids = count(1)
 
 # the coarse milestones CareLoop watches, in order
 MILESTONES = ["arrived", "assessment-completed", "care-started"]
+MATERNAL_MILESTONES = ["arrived", "antenatal_visit_completed", "care_plan_recorded"]
+
+
+def track_for(appt_id: str) -> list[str]:
+    description = (APPOINTMENTS.get(appt_id, {}).get("description") or "").lower()
+    if "antenatal" in description:
+        return MATERNAL_MILESTONES
+    return MILESTONES
+
+
 FHIR_JSON = "application/fhir+json"
 
 
@@ -106,10 +116,11 @@ def advance(appt_id: str):
     """DEMO ONLY: move the pretend patient to the next hospital milestone."""
     if appt_id not in APPOINTMENTS:
         return outcome(404, "not-found", f"Appointment/{appt_id} not found")
+    track = track_for(appt_id)
     done = len(TASKS[appt_id])
-    if done >= len(MILESTONES):
+    if done >= len(track):
         return outcome(409, "conflict", "All milestones already reached")
-    milestone = MILESTONES[done]
+    milestone = track[done]
     TASKS[appt_id].append(make_task(appt_id, milestone))
     if milestone == "arrived":
         APPOINTMENTS[appt_id]["status"] = "fulfilled"

@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/desk", label: "Cases", roles: ["navigator", "clinician"] },
   { href: "/intake", label: "New finding", roles: ["clinician"] },
   { href: "/phone", label: "Phone", roles: ["navigator", "clinician", "counsellor", "program_manager", "admin", "patient"] },
+  { href: "/hub", label: "Hub", roles: ["chw", "navigator", "clinician", "program_manager", "admin"] },
   { href: "/chat", label: "Chat", roles: ["navigator", "clinician", "counsellor", "admin", "patient"] },
   { href: "/outreach", label: "Follow-up", roles: ["navigator", "clinician", "program_manager", "admin"] },
   { href: "/audit", label: "Audit", roles: ["program_manager", "admin"] },

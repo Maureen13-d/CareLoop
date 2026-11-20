@@ -10,6 +10,7 @@ import {
   requestVisit,
   resolveEscalation,
 } from "./actions";
+import { MaternalPanel } from "./MaternalPanel";
 import { completeTask } from "../task-actions";
 import { Notice } from "@/components/ui";
 import { ApiError, api } from "@/lib/api";
@@ -75,14 +76,25 @@ const button =
   "rounded-full bg-lagoon px-4 py-2 text-sm text-white hover:bg-lagoon-deep disabled:opacity-50";
 const quiet = "rounded-full border border-line bg-white px-4 py-2 text-sm hover:border-lagoon";
 
-async function ClinicCard({ caseId, state }: { caseId: number; state: string }) {
+async function ClinicCard({
+  caseId,
+  state,
+  pathwayId,
+}: {
+  caseId: number;
+  state: string;
+  pathwayId: string;
+}) {
   let link: { appointment_id: string; milestones: string[]; location_ref: string } | null = null;
   try {
     link = await api(`/cases/${caseId}/hospital`);
   } catch (error) {
     if (!(error instanceof ApiError) || error.status !== 404) throw error;
   }
-  const canRequest = state === "NAVIGATION_ACTIVE" || state === "APPOINTMENT_BOOKED";
+  const canRequest =
+    pathwayId === "maternal"
+      ? state === "navigating" || state === "visit_booked" || state === "delivery_planned"
+      : state === "NAVIGATION_ACTIVE" || state === "APPOINTMENT_BOOKED";
   if (!link && !canRequest) return null;
   const finished = (link?.milestones.length ?? 0) >= 3;
   return (
@@ -155,7 +167,14 @@ export default async function CaseWorkspace({
   const terminal = detail.state in pathway.terminal_states;
   const mine = escalations.filter((item) => item.case_id === detail.id);
   const myTasks = tasks.filter((item) => item.case_id === detail.id);
-  const showFacilities = detail.state === "NAVIGATION_ACTIVE" || detail.state === "APPOINTMENT_BOOKED";
+  const maternal = detail.pathway_id === "maternal";
+  const stageOrder = maternal ? pathway.states.map((item) => item.name) : [...STAGE_ORDER];
+  const showFacilities =
+    detail.state === "NAVIGATION_ACTIVE" ||
+    detail.state === "APPOINTMENT_BOOKED" ||
+    detail.state === "navigating" ||
+    detail.state === "visit_booked";
+  const canClose = detail.state === "HANDED_OFF" || detail.state === "with_hospital" || detail.state === "postnatal_watch";
 
   return (
     <main className="space-y-8 px-4 py-6 md:px-0 md:py-0">
@@ -188,9 +207,9 @@ export default async function CaseWorkspace({
       </header>
 
       <ol aria-label="Pathway" className="flex flex-wrap gap-2">
-        {STAGE_ORDER.map((name) => {
-          const index = STAGE_ORDER.indexOf(name);
-          const here = STAGE_ORDER.indexOf(detail.state as (typeof STAGE_ORDER)[number]);
+        {stageOrder.map((name) => {
+          const index = stageOrder.indexOf(name);
+          const here = stageOrder.indexOf(detail.state);
           const done = here > index;
           const current = name === detail.state;
           return (
@@ -238,7 +257,7 @@ export default async function CaseWorkspace({
                   ))}
                 </div>
               ) : null}
-              {detail.state === "HANDED_OFF" ? (
+              {canClose ? (
                 <form action={closeCase} className="space-y-2">
                   <input type="hidden" name="caseId" value={detail.id} />
                   <label className="block text-sm" htmlFor="evidence_type">
@@ -310,7 +329,8 @@ export default async function CaseWorkspace({
             </div>
           ) : null}
 
-          <ClinicCard caseId={detail.id} state={detail.state} />
+          <ClinicCard caseId={detail.id} state={detail.state} pathwayId={detail.pathway_id} />
+          {maternal ? <MaternalPanel caseId={detail.id} /> : null}
 
           {mine.length > 0 ? (
             <div className="space-y-3">
