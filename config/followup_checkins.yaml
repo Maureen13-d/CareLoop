@@ -1,0 +1,7 @@
+# ASSUMED cadence. Not a national guideline.
+cadence_hours: 48
+cadence_status: ASSUMED
+quiet_start_hour: 21
+quiet_end_hour: 7
+max_attempts: 6
+unreached_after: 3
