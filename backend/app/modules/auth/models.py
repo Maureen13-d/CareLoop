@@ -9,6 +9,7 @@ ROLE_COUNSELLOR = "counsellor"  # takes escalations for distress
 ROLE_PATIENT = "patient"  # a patient using the web app (patient login comes later)
 ROLE_PROGRAM_MANAGER = "program_manager"
 ROLE_ADMIN = "admin"
+ROLE_CHW = "chw"  # community health promoter; own women only, not clinical state changes
 ROLES = (
     ROLE_NAVIGATOR,
     ROLE_CLINICIAN,
@@ -16,6 +17,7 @@ ROLES = (
     ROLE_PATIENT,
     ROLE_PROGRAM_MANAGER,
     ROLE_ADMIN,
+    ROLE_CHW,
 )
 
 

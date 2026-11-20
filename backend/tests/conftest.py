@@ -30,6 +30,7 @@ DEPARTMENTS = [
     ("navigation_team", "Navigation team"),
     ("facility", "Facility"),
     ("hospital", "Hospital"),
+    ("community", "Community"),
 ]
 USERS = [
     ("nav", "navigator", "navigation_team"),
@@ -37,6 +38,7 @@ USERS = [
     ("counsellor", "counsellor", None),
     ("manager", "program_manager", None),
     ("admin", "admin", None),
+    ("chw", "chw", "community"),
 ]
 
 

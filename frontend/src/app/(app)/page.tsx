@@ -47,6 +47,61 @@ type Task = {
   summary: string;
 };
 
+type Woman = {
+  id: number;
+  patient_ref: string;
+  display_name: string;
+  gestation_band: string;
+  area_label: string;
+  case_state: string | null;
+  urgency: string | null;
+  risk_level: string | null;
+};
+
+async function ChwHome({ first }: { first: string }) {
+  let women: Woman[] = [];
+  let problem: string | null = null;
+  try {
+    women = await api<Woman[]>("/maternal/pregnancies");
+  } catch (err) {
+    problem = err instanceof ApiError ? err.message : "Your list could not load.";
+  }
+
+  return (
+    <main className="space-y-8 px-4 py-6 md:px-0 md:py-0">
+      <header className="max-w-2xl">
+        <p className="text-sm text-lagoon">Today</p>
+        <h1 className="mt-1 text-4xl">Hello, {first}.</h1>
+        <p className="mt-3 text-lg leading-relaxed text-ink-soft">
+          These are the women assigned to you. A colour is a label for the navigator, not a diagnosis.
+          Synthetic demo. PENDING CLINICAL REVIEW.
+        </p>
+      </header>
+      {problem ? <Notice tone="bad">{problem}</Notice> : null}
+      {women.length === 0 && !problem ? (
+        <p className="text-sm text-ink-soft">No women are assigned to you yet.</p>
+      ) : (
+        <ul className="divide-y divide-line rounded-2xl border border-line bg-paper-2">
+          {women.map((woman) => (
+            <li key={woman.id} className="px-4 py-4">
+              <p className="text-base font-medium">{woman.display_name}</p>
+              <p className="mt-1 text-sm text-ink-soft">
+                {woman.patient_ref} · {woman.area_label} · {woman.gestation_band}
+              </p>
+              <p className="mt-2 text-sm">
+                {woman.case_state ? stageShort(woman.case_state) : "No journey yet"}
+                {woman.urgency === "urgent" ? " · Urgent" : ""}
+                {" · "}
+                {woman.risk_level ? `Reading ${woman.risk_level}` : "No reading yet"}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </main>
+  );
+}
+
 const CASE_ROLES = new Set(["navigator", "clinician"]);
 const TASK_ROLES = new Set(["navigator", "clinician", "counsellor"]);
 
@@ -58,6 +113,9 @@ export default async function HomePage({
   const user = await getSession();
   if (!user) redirect("/login");
   if (user.role === "patient") redirect("/chat");
+  if (user.role === "chw") {
+    return <ChwHome first={user.display_name.split(" ")[0]} />;
+  }
   const { error } = await searchParams;
 
   let summary: Summary | null = null;

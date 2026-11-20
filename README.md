@@ -245,7 +245,7 @@ npm run dev
 
 On macOS or Linux, the Python path is `.venv/bin/python` instead of `.venv/Scripts/python.exe`.
 
-Open http://localhost:3000 and sign in as **amina** (navigator), **david** (clinician) or **aisha** (patient). Every demo account uses the password `careloop-demo`. The first backend start seeds synthetic people across the pathway. Restarting keeps that data. Delete `backend/careloop.db` to seed again.
+Open http://localhost:3000 and sign in as **amina** (navigator), **david** (clinician), **aisha** (patient) or **grace** (community health promoter). Every demo account uses the password `careloop-demo`. The first backend start seeds synthetic people across the cervical pathway and the maternal pathway. Restarting keeps that data. Delete `backend/careloop.db` to seed again.
 
 The phone at `/phone` is a simulator. `*XYZ#` is not a real short code.
 
