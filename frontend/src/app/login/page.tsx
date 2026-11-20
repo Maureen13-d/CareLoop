@@ -41,6 +41,12 @@ const PEOPLE = [
     role: "Patient",
     line: "Uses the private chat, or the basic phone in her pocket.",
   },
+  {
+    username: "grace",
+    name: "Grace Achieng",
+    role: "Community health promoter",
+    line: "Sees only the women assigned to her. Enters a home check. Does not move clinical care.",
+  },
 ];
 
 export default async function LoginPage({

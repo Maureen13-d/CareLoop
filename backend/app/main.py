@@ -20,6 +20,8 @@ from app.modules.audit.router import router as audit_router
 from app.modules.auth.router import router as auth_router
 from app.modules.channels.router import router as channels_router
 from app.modules.interop.router import router as hospital_router
+from app.modules.maternal.device_router import router as device_router
+from app.modules.maternal.router import router as maternal_router
 from app.modules.pathways.router import admin_router, escalation_router, pathway_router
 from app.modules.pathways.router import router as cases_router
 from app.modules.pathways.scheduler import scheduler_loop
@@ -86,6 +88,8 @@ for module_router in (
     tasks_router,
     channels_router,
     hospital_router,
+    maternal_router,
+    device_router,
 ):
     api.include_router(module_router)
 

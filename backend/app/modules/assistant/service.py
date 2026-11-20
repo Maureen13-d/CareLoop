@@ -79,6 +79,12 @@ def _from_passage(passage: dict) -> AssistantResponse:
 
 
 def handle_message(req: AssistantRequest) -> AssistantResponse:
+    maternal = req.pathway == "maternal" or req.checkin is not None
+    maternal = maternal or (req.menu_context or "").startswith("maternal")
+    if maternal:
+        from app.modules.maternal.companion import handle_maternal
+
+        return handle_maternal(req)
     if req.menu_choice and req.menu_context == "worry_menu":
         return _handle_menu(req)
     if req.confirm_flag and not (req.text and req.text.strip()):

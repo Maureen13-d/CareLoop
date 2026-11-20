@@ -26,7 +26,13 @@ MILESTONE_STATE = {
     "arrived": "ARRIVAL_CONFIRMED",
     "care-started": "HANDED_OFF",
 }
+MATERNAL_MILESTONE = {
+    "arrived": "arrived",
+    "care_plan_recorded": "with_hospital",
+}
 REQUEST_FROM = {"NAVIGATION_ACTIVE", "APPOINTMENT_BOOKED"}
+MATERNAL_FROM = {"navigating", "visit_booked", "delivery_planned"}
+ANTENATAL = "SYNTHETIC: antenatal visit request"
 
 
 def link_for(db: Session, case_id: int) -> HospitalLink | None:
@@ -56,7 +62,9 @@ def _unreachable(exc: Exception) -> None:
 
 
 def request_visit(db: Session, case: CareCase, actor, client: httpx.Client) -> HospitalLink:
-    if case.state not in REQUEST_FROM:
+    maternal = case.pathway_id == "maternal"
+    allowed = MATERNAL_FROM if maternal else REQUEST_FROM
+    if case.state not in allowed:
         raise DomainError(
             409,
             "invalid_transition",
@@ -68,7 +76,8 @@ def request_visit(db: Session, case: CareCase, actor, client: httpx.Client) -> H
     patient = db.get(Patient, case.patient_id)
     ref = patient.patient_ref if patient else f"patient-{case.patient_id}"
     start = (clock.now() + timedelta(days=2)).replace(microsecond=0).isoformat() + "Z"
-    appointment = build_appointment(ref, LOCATION, start)
+    description = ANTENATAL if maternal else "SYNTHETIC: follow-up visit request"
+    appointment = build_appointment(ref, LOCATION, start, description)
     try:
         appointment_id = send_appointment(client, appointment)
     except HospitalRejected as exc:
@@ -97,6 +106,8 @@ def request_visit(db: Session, case: CareCase, actor, client: httpx.Client) -> H
         transition(
             db, case, "APPOINTMENT_BOOKED", actor, "Simulated clinic accepted the visit request"
         )
+    elif maternal and case.state == "navigating":
+        transition(db, case, "visit_booked", actor, "Simulated clinic accepted the visit request")
     else:
         db.commit()
     return link
@@ -104,8 +115,12 @@ def request_visit(db: Session, case: CareCase, actor, client: httpx.Client) -> H
 
 def _apply(db: Session, case: CareCase, milestones: list[str]) -> CareCase:
     """Move the case only along transitions the pathway already allows."""
+    maternal = case.pathway_id == "maternal"
+    mapping = MATERNAL_MILESTONE if maternal else MILESTONE_STATE
+    done_code = "care_plan_recorded" if maternal else "care-started"
+    done_state = "with_hospital" if maternal else "HANDED_OFF"
     for code in milestones:
-        target = MILESTONE_STATE.get(code)
+        target = mapping.get(code)
         if target is None or case.state == target:
             continue
         pathway = load_pathway(case.pathway_id)
@@ -114,20 +129,24 @@ def _apply(db: Session, case: CareCase, milestones: list[str]) -> CareCase:
         if target not in pathway.states[case.state].next:
             continue
         case = transition(db, case, target, None, f"Simulated clinic reported {code}")
-    if "care-started" in milestones and case.state == "HANDED_OFF":
+    if done_code in milestones and case.state == done_state:
+        reference = f"milestone:{done_code}"
         already = db.scalar(
-            select(Evidence.id).where(
-                Evidence.case_id == case.id, Evidence.reference == "milestone:care-started"
-            )
+            select(Evidence.id).where(Evidence.case_id == case.id, Evidence.reference == reference)
         )
         if already is None:
+            note = (
+                "Simulated clinic reported that a care plan was recorded."
+                if maternal
+                else "Simulated clinic reported that care has started."
+            )
             add_evidence(
                 db,
                 case,
                 None,
                 "facility_confirmation",
-                "Simulated clinic reported that care has started.",
-                reference="milestone:care-started",
+                note,
+                reference=reference,
             )
     return case
 

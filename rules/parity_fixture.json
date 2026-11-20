@@ -1,0 +1,107 @@
+[
+  {
+    "name": "in range",
+    "reading": {"systolic": 118, "diastolic": 76, "urine_protein": "neg", "hb_band": "normal"},
+    "signs": [],
+    "context": {},
+    "level": "green"
+  },
+  {
+    "name": "high alone",
+    "reading": {"systolic": 148, "diastolic": 88, "urine_protein": "neg", "hb_band": "mild"},
+    "signs": [],
+    "context": {},
+    "level": "yellow"
+  },
+  {
+    "name": "severe",
+    "reading": {"systolic": 162, "diastolic": 100, "urine_protein": "neg", "hb_band": "normal"},
+    "signs": [],
+    "context": {},
+    "level": "red"
+  },
+  {
+    "name": "high with protein",
+    "reading": {"systolic": 142, "diastolic": 92, "urine_protein": "2+", "hb_band": "normal"},
+    "signs": [],
+    "context": {},
+    "level": "red"
+  },
+  {
+    "name": "protein alone",
+    "reading": {"systolic": 120, "diastolic": 80, "urine_protein": "1+", "hb_band": "normal"},
+    "signs": [],
+    "context": {},
+    "level": "yellow"
+  },
+  {
+    "name": "missing systolic",
+    "reading": {"diastolic": 80, "urine_protein": "neg", "hb_band": "normal"},
+    "signs": [],
+    "context": {},
+    "level": "yellow"
+  },
+  {
+    "name": "neuro pair",
+    "reading": {"systolic": 120, "diastolic": 80, "urine_protein": "neg", "hb_band": "normal"},
+    "signs": ["headache_severe", "vision_blurred"],
+    "context": {},
+    "level": "red"
+  },
+  {
+    "name": "prior yellow clean",
+    "reading": {"systolic": 118, "diastolic": 76, "urine_protein": "trace", "hb_band": "normal"},
+    "signs": [],
+    "context": {"prior_level": "yellow"},
+    "level": "green"
+  },
+  {
+    "name": "prior yellow plus sign",
+    "reading": {"systolic": 118, "diastolic": 76, "urine_protein": "neg", "hb_band": "normal"},
+    "signs": ["headache_only"],
+    "context": {"prior_level": "yellow"},
+    "level": "red"
+  },
+  {
+    "name": "severe hb",
+    "reading": {"systolic": 118, "diastolic": 76, "urine_protein": "neg", "hb_band": "severe"},
+    "signs": [],
+    "context": {},
+    "level": "red"
+  },
+  {
+    "name": "stale",
+    "reading": {
+      "systolic": 118,
+      "diastolic": 76,
+      "urine_protein": "neg",
+      "hb_band": "normal",
+      "taken_at": "2026-10-01T00:00:00Z",
+      "gestation_band": "28-36w"
+    },
+    "signs": [],
+    "context": {"now": "2026-10-21T00:00:00Z", "gestation_band": "28-36w"},
+    "level": "yellow"
+  },
+  {
+    "name": "not stale yet",
+    "reading": {
+      "systolic": 118,
+      "diastolic": 76,
+      "urine_protein": "neg",
+      "hb_band": "normal",
+      "taken_at": "2026-10-12T00:00:00Z",
+      "gestation_band": "28-36w"
+    },
+    "signs": [],
+    "context": {"now": "2026-10-21T00:00:00Z", "gestation_band": "28-36w"},
+    "level": "green"
+  },
+  {
+    "name": "sos",
+    "reading": {"systolic": 118, "diastolic": 76, "urine_protein": "neg", "hb_band": "normal"},
+    "signs": [],
+    "context": {"sos": true},
+    "level": "red"
+  }
+]

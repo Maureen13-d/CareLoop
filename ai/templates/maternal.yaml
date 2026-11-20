@@ -1,0 +1,24 @@
+# Discreet replies. PENDING CLINICAL REVIEW.
+# ASCII, one SMS, and none of the shared-phone banned words.
+version: "0.1-draft"
+status: PENDING CLINICAL REVIEW
+en:
+  red: "Please go to the nearest clinic now. A person will contact you."
+  yellow: "A navigator can call you about your check. Reply 1 if you want a call."
+  green: "Thanks. Next check-in is on the usual day. Reply HELP anytime."
+  crisis: "You matter. Please go to the nearest clinic now. A team member will reach out."
+  distress: "I am sorry this is hard. A team member will reach out. Reply HELP anytime."
+  confirm: "Okay. A navigator will contact you. Reply STOP at any time to stop messages."
+  messages_off: "Messages are off for this check. A person can still help you at the clinic."
+  unclear: "Sorry, I did not understand. Reply HELP to talk to a person."
+  no_diagnosis: "I cannot say what this means. Only a health worker can, after a visit."
+sw:
+  red: "Nenda kliniki iliyo karibu sasa. Mtu atakupigia."
+  yellow: "Mtu anaweza kupiga simu kuhusu hii. Jibu 1 kama unataka simu."
+  green: "Asante. Ukaguzi ujao ni siku ya kawaida. Jibu HELP wakati wowote."
+  crisis: "Wewe ni muhimu. Nenda kliniki iliyo karibu sasa. Mtu atakupigia."
+  distress: "Pole. Mtu atakupigia. Jibu HELP wakati wowote."
+  confirm: "Sawa. Mtu atakupigia. Jibu STOP kuacha ujumbe."
+  messages_off: "Ujumbe umezimwa. Mtu anaweza kusaidia kliniki."
+  unclear: "Samahani, sijaelewa. Jibu HELP kuzungumza na mtu."
+  no_diagnosis: "Siwezi kusema hii ina maana gani. Mtu wa afya ndiye anayeweza."

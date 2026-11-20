@@ -19,6 +19,18 @@ export const STAGE_SHORT: Record<string, string> = {
   CLOSED: "Closed",
   PATIENT_DECLINED: "Chose to stop",
   LOST_TO_FOLLOW_UP: "Closed by a person",
+  enrolled: "Enrolled",
+  home_screened: "Home check",
+  risk_flagged: "Needs a person",
+  navigating: "Navigating",
+  visit_booked: "Visit booked",
+  arrived: "Arrived",
+  with_hospital: "With the hospital",
+  delivery_planned: "Plan recorded",
+  postnatal_watch: "Postnatal watch",
+  closed: "Closed",
+  chose_to_stop: "Chose to stop",
+  closed_by_person: "Closed by a person",
 };
 
 export const ROLE_LABEL: Record<string, string> = {
@@ -28,6 +40,7 @@ export const ROLE_LABEL: Record<string, string> = {
   program_manager: "Program manager",
   admin: "Admin",
   patient: "Patient",
+  chw: "Community health promoter",
 };
 
 export function stageShort(state: string): string {

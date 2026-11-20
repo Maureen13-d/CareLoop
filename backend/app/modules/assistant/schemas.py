@@ -13,16 +13,20 @@ class AssistantRequest(BaseModel):
     channel: Channel = "web"
     text: str | None = Field(default=None, max_length=1000)
     menu_choice: str | None = Field(default=None, max_length=2)
-    menu_context: Literal["worry_menu"] | None = None  # which menu the choice answers
-    language: Literal["en"] = "en"
+    menu_context: Literal["worry_menu", "maternal_home", "maternal_confirm"] | None = None
+    language: Literal["en", "sw"] = "en"
+    pathway: Literal["cervical_cancer", "maternal"] | None = None
     case_state: str | None = None  # optional context from the pathway
     case_id: int | None = None  # when set, a confirmed worry or handoff can open a navigator task
     confirm_flag: str | None = Field(default=None, max_length=40)
+    checkin: dict[str, str] | None = None
+    prior_level: Literal["green", "yellow", "red"] | None = None
+    consent_sms: bool = True
 
     @model_validator(mode="after")
     def need_text_or_choice(self):
         has_text = bool(self.text and self.text.strip())
-        if not has_text and not self.menu_choice and not self.confirm_flag:
+        if not has_text and not self.menu_choice and not self.confirm_flag and self.checkin is None:
             raise ValueError("Provide text or menu_choice")
         return self
 
