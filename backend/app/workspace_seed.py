@@ -220,6 +220,7 @@ def _create_cases(db: Session) -> None:
         )
     db.commit()
     seed_reminder(db)
+    _create_followup(db)
 
 
 # Synthetic women on the maternal pathway. Names are fictional.
@@ -405,3 +406,64 @@ def _create_maternal(db: Session) -> None:
         )
         db.add(band)
         db.commit()
+
+
+def _create_followup(db: Session) -> None:
+    """Ten to twelve synthetic follow-up journeys for the CHW worklist. IDs, not names."""
+    from app.modules.followup.models import Enrolment
+    from app.modules.followup.register import register_followup
+    from app.modules.followup.schemas import RegisterIn
+
+    david = db.scalar(select(User).where(User.username == "david"))
+    stories = (
+        ("concerning", "screened", 9, "none", 0, None),
+        ("concerning", "screened", 1, "worse", 0, None),
+        ("concerning", "contacted", 4, "none", 0, None),
+        ("concerning", "joined", 3, "none", 0, None),
+        ("concerning", "barrier_identified", 6, "none", 0, "transport"),
+        ("urgent", "navigating", 2, "none", 0, None),
+        ("concerning", "visit_booked", 5, "none", 0, None),
+        ("concerning", "screened", 8, "none", 3, None),
+        ("concerning", "arrived", 7, "none", 0, None),
+        ("concerning", "with_hospital", 10, "none", 0, None),
+        ("concerning", "screened", 2, "none", 0, "fear"),
+        ("concerning", "joined", 3, "none", 0, "where"),
+    )
+    walks = {
+        "contacted": ["contacted"],
+        "joined": ["contacted", "joined"],
+        "barrier_identified": ["contacted", "joined", "barrier_identified"],
+        "navigating": ["contacted", "joined", "navigating"],
+        "visit_booked": ["contacted", "joined", "navigating", "visit_booked"],
+        "arrived": ["arrived"],
+        "with_hospital": ["arrived", "with_hospital"],
+    }
+    for index, (finding, state, days, symptom, missed, barrier) in enumerate(stories):
+        opened = register_followup(
+            db,
+            david,
+            RegisterIn(
+                age_band="30-34",
+                area_label=("Zone A", "Zone B", "Zone C", "Zone D")[index % 4],
+                screening_type="general",
+                finding=finding,
+                consent=True,
+                language="sw" if index % 2 else "en",
+                channel=("telegram", "sms", "ussd", "web")[index % 4],
+                contact=f"071000{index:04d}",
+                assigned_chw_username="grace",
+            ),
+        )
+        case = db.get(CareCase, opened["case_id"])
+        for step in walks.get(state, []):
+            case = transition(db, case, step, None, "synthetic_step")
+        enrolment = db.scalar(select(Enrolment).where(Enrolment.public_id == opened["public_id"]))
+        enrolment.symptom_flag = symptom
+        enrolment.missed_replies = missed
+        enrolment.barrier_label = barrier
+        enrolment.opened_at = clock.now() - timedelta(days=days)
+        case.opened_at = enrolment.opened_at
+        if state not in {"arrived", "with_hospital"} and days >= 5:
+            case.deadline_at = clock.now() - timedelta(hours=2)
+        db.commit()
+    run_deadline_check(db)
