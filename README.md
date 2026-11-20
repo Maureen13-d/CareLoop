@@ -245,6 +245,14 @@ npm run dev
 
 On macOS or Linux, the Python path is `.venv/bin/python` instead of `.venv/Scripts/python.exe`.
 
+Run both test suites from the repository root:
+
+```powershell
+powershell -File scripts/test.ps1
+```
+
+That command runs the backend pytest suite and the frontend type check. The backend tests force an in-memory database and do not touch `backend/careloop.db`.
+
 Open http://localhost:3000 and sign in as **amina** (navigator), **david** (clinician), **aisha** (patient) or **grace** (community health promoter). Every demo account uses the password `careloop-demo`. The first backend start seeds synthetic people across the cervical pathway and the maternal pathway. Restarting keeps that data. Delete `backend/careloop.db` to seed again.
 
 The phone at `/phone` is a simulator. `*XYZ#` is not a real short code. The maternal check-in is opt-in: send `M` from that menu. The hub simulator is at `/hub`.
