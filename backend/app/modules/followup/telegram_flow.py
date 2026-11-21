@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core import clock
 from app.modules.audit import service as audit
+from app.modules.auth.models import User
 from app.modules.followup import access
 from app.modules.followup.conversation import classify, respond
 from app.modules.followup.ids import parse_public_id
@@ -170,17 +171,69 @@ def _with_menu(message: dict) -> dict:
 def _clinic_for(enrolment: Enrolment | None) -> dict:
     areas = clinics().get("areas") or []
     chosen = areas[0]
-    area = (enrolment.area_label if enrolment else "") or ""
-    for item in areas:
-        if item["id"] in area.lower() or item["label"].lower() in area.lower():
-            chosen = item
-            break
+    matched = _matched_area(enrolment)
+    if matched is not None:
+        chosen = matched
     place = chosen["clinics"][0]
     return {
         "clinic": place["name"],
         "hours": place["hours"],
         "facility_key": place["name"].lower().replace(" ", "-"),
     }
+
+
+def _matched_area(enrolment: Enrolment | None) -> dict | None:
+    """A demo clinic only when the card area names one. No fallback place."""
+    area = (enrolment.area_label if enrolment else "") or ""
+    folded = area.lower()
+    if not folded:
+        return None
+    for item in clinics().get("areas") or []:
+        if item["id"] in folded or item["label"].lower() in folded:
+            return item
+    return None
+
+
+def _person_name(db, enrolment: Enrolment | None) -> str | None:
+    if enrolment is None or not enrolment.assigned_chw_id:
+        return None
+    user = db.get(User, enrolment.assigned_chw_id)
+    if user is None:
+        return None
+    name = (user.display_name or "").strip()
+    return name or None
+
+
+def _diagnosis_reply(db, session, enrolment: Enrolment | None) -> dict:
+    """Point at the person and clinic already on the card. Name nothing else."""
+    language = session.language or "en"
+    person = _person_name(db, enrolment)
+    place = _clinic_for(enrolment) if enrolment is not None else None
+    facts = []
+    if person and place:
+        message = _msg(
+            "refuse_diagnosis_both",
+            language,
+            person=person,
+            clinic=place["clinic"],
+            hours=place["hours"],
+        )
+        facts = [person, place["clinic"]]
+    elif person:
+        message = _msg("refuse_diagnosis_person", language, person=person)
+        facts = [person]
+    elif place:
+        message = _msg(
+            "refuse_diagnosis_place",
+            language,
+            clinic=place["clinic"],
+            hours=place["hours"],
+        )
+        facts = [place["clinic"]]
+    else:
+        message = _msg("refuse_diagnosis", language)
+    message["facts"] = facts
+    return message
 
 
 def _journey(enrolment: Enrolment | None, case: CareCase | None, language: str) -> str:
@@ -252,7 +305,7 @@ def _safety(db, session, enrolment, text: str) -> list[dict] | None:
     if label == "diagnosis":
         _task(db, enrolment, "followup_review", "high")
         _audit(db, enrolment, "diagnosis_request")
-        return [_msg("refuse_diagnosis", session.language)]
+        return [_diagnosis_reply(db, session, enrolment)]
     if label == "skip":
         _task(db, enrolment, "followup_review", "high")
         _audit(db, enrolment, "skip_request")
@@ -743,6 +796,10 @@ def _from_question(db, session, enrolment, text: str) -> list[dict]:
         return [_msg(picked, language, buttons=_inline("visit"))]
     if picked and picked.startswith("help_"):
         return _help_action(db, session, enrolment, "help:" + picked.split("_", 1)[1])
+    if picked == "ask_person":
+        _task(db, enrolment, "followup_review", "high")
+        _audit(db, enrolment, "diagnosis_request")
+        return [_diagnosis_reply(db, session, enrolment)]
     return []
 
 

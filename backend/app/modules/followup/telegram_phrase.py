@@ -44,6 +44,7 @@ ROUTE_KEYS = (
     "help_transport",
     "help_where",
     "help_sign",
+    "ask_person",
 )
 _BANNED = (
     "you are fine",
@@ -82,7 +83,8 @@ def phrase_messages(messages: list[dict], language: str) -> list[dict]:
         if message.get("urgent") or key in LOCKED or not original.strip():
             continue
         rewritten = _rewrite(original, language)
-        if rewritten and _keeps_facts(rewritten, original):
+        facts = [str(item) for item in message.get("facts") or []]
+        if rewritten and _keeps_facts(rewritten, original, facts):
             message["text"] = rewritten
             message["phrased"] = True
     return messages
@@ -196,7 +198,47 @@ def _model(base: str) -> str:
     return "gpt-4o-mini"
 
 
-def _keeps_facts(rewritten: str, original: str) -> bool:
+_ORDINARY = {
+    "a",
+    "an",
+    "and",
+    "any",
+    "ask",
+    "at",
+    "between",
+    "bring",
+    "can",
+    "clinic",
+    "come",
+    "for",
+    "go",
+    "have",
+    "if",
+    "issue",
+    "it",
+    "keep",
+    "many",
+    "or",
+    "person",
+    "please",
+    "see",
+    "still",
+    "talk",
+    "tell",
+    "thanks",
+    "that",
+    "the",
+    "this",
+    "to",
+    "visit",
+    "with",
+    "yes",
+    "you",
+    "your",
+}
+
+
+def _keeps_facts(rewritten: str, original: str, facts: list[str] | None = None) -> bool:
     if not rewritten or len(rewritten) > 600:
         return False
     low = rewritten.lower()
@@ -208,8 +250,33 @@ def _keeps_facts(rewritten: str, original: str) -> bool:
     clinic = _CLINIC.search(original)
     if clinic and clinic.group(1).strip().lower() not in low:
         return False
+    for fact in facts or []:
+        if fact.strip() and fact.strip().lower() not in low:
+            return False
+    if _invented_place(low, source) or _invented_name(rewritten, source):
+        return False
     missing_review = "pending clinical review" in source and "pending clinical review" not in low
     return not missing_review
+
+
+def _invented_place(rewritten: str, original: str) -> bool:
+    from app.modules.followup.telegram_copy import clinics
+
+    for area in clinics().get("areas") or []:
+        for place in area.get("clinics") or []:
+            name = str(place.get("name") or "").strip().lower()
+            if name and name in rewritten and name not in original:
+                return True
+    return False
+
+
+def _invented_name(rewritten: str, original: str) -> bool:
+    for word in re.findall(r"\b[A-Z][a-z]{2,}\b", rewritten):
+        token = word.lower()
+        if token in _ORDINARY or token in original:
+            continue
+        return True
+    return False
 
 
 def _first_line(text: str) -> str:
