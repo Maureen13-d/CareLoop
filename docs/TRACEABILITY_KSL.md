@@ -23,4 +23,4 @@ There is no `ksl-ready` tag. No approved Kenyan Sign Language clip exists, so a 
 | K14 | Deaf-aware follow-up | done | a8fbdb9 | backend/tests/test_ksl_followup.py | checkins.py, worklist.py, config/followup_checkins.yaml |
 | K15 | Guided call | done | 146143a | backend/tests/test_ksl_followup.py | backend/app/modules/ksl/guided.py, router.py, frontend/src/app/enter/EnterFlow.tsx |
 | K16 | Docs | done | 20907ee | none (docs only) | docs/KSL_DESIGN.md, KSL_DATA_PLAN.md, CONSENT_OUTLINE.md, VALIDATION_PROTOCOL.md, DEMO_SCRIPT_KSL.md, LIMITATIONS.md |
-| K17 | Tag ksl-ready | not tagged | | backend KSL tests and frontend/src/ksl/engine.test.js were run locally | .github/workflows/ci.yml |
+| K17 | Tag ksl-ready | not tagged | dc1b72f | backend KSL tests and frontend/src/ksl/engine.test.js were run locally | .github/workflows/ci.yml |
