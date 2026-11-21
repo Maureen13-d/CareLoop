@@ -332,6 +332,76 @@ def test_checkins_respect_cadence_quiet_hours_and_stop(client, auth, db_session)
     assert "template" in modes
 
 
+def test_telegram_real_update_and_send(client, monkeypatch):
+    os.environ["CARELOOP_TELEGRAM_WEBHOOK_SECRET"] = "test-secret"
+    sent: dict = {}
+
+    def fake_post(url, json, timeout):
+        sent["url"] = url
+        sent["json"] = json
+
+        class _Response:
+            def raise_for_status(self):
+                return None
+
+        return _Response()
+
+    monkeypatch.setenv("CARELOOP_TELEGRAM_BOT_TOKEN", "123456:test-token")
+    monkeypatch.setattr("app.modules.followup.telegram.httpx.post", fake_post)
+    res = client.post(
+        "/api/v1/followup/telegram/webhook",
+        json={
+            "update_id": 42,
+            "message": {
+                "message_id": 1,
+                "chat": {"id": 9001, "type": "private"},
+                "text": "/start",
+            },
+        },
+        headers={"X-Telegram-Bot-Api-Secret-Token": "test-secret"},
+    )
+    assert res.status_code == 200, res.text
+    assert "English" in res.json()["reply_text"]
+    assert sent["json"]["chat_id"] == "9001"
+    assert sent["json"]["text"] == res.json()["reply_text"]
+    assert sent["url"].endswith("/sendMessage")
+    assert "test-token" not in res.text
+    ignored = client.post(
+        "/api/v1/followup/telegram/webhook",
+        json={"update_id": 43},
+        headers={"X-Telegram-Bot-Api-Secret-Token": "test-secret"},
+    )
+    assert ignored.status_code == 200, ignored.text
+    assert ignored.json()["ok"] is True
+
+
+def test_telegram_delivers_the_simulated_code(client, auth):
+    os.environ["CARELOOP_TELEGRAM_WEBHOOK_SECRET"] = "test-secret"
+    os.environ["CARELOOP_EXPOSE_SIMULATED_CODES"] = "true"
+    opened = enrol(client, auth, channel="telegram")
+    headers = {"X-Telegram-Bot-Api-Secret-Token": "test-secret"}
+
+    def turn(update_id: int, text: str):
+        res = client.post(
+            "/api/v1/followup/telegram/webhook",
+            json={
+                "update_id": update_id,
+                "message": {"message_id": update_id, "chat": {"id": 77, "type": "private"}, "text": text},
+            },
+            headers=headers,
+        )
+        assert res.status_code == 200, res.text
+        return res.json()["reply_text"]
+
+    privacy = turn(1, "1")
+    assert "encrypted" in privacy.lower()
+    assert "card" in turn(2, "OK").lower()
+    asked = turn(3, opened["public_id"])
+    assert "SIMULATED code:" in asked
+    code = asked.split("SIMULATED code:", 1)[1].strip()
+    assert code.isdigit() and len(code) == 6
+
+
 def test_telegram_signature_window_and_stop(client, auth):
     os.environ["CARELOOP_TELEGRAM_WEBHOOK_SECRET"] = "test-secret"
     opened = enrol(client, auth, channel="telegram")

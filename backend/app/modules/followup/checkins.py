@@ -69,6 +69,10 @@ def run_checkins(db: Session, now=None) -> int:
         window_open = enrolment.window_open_until is not None and enrolment.window_open_until > now
         mode = "freeform" if window_open else "template"
         log_outbound(db, enrolment.public_id, enrolment.channel, "checkin", mode, body)
+        if enrolment.channel == "telegram":
+            from app.modules.followup.telegram import push_checkin
+
+            push_checkin(db, enrolment)
         audit.record(
             db,
             actor=None,

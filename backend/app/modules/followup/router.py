@@ -27,7 +27,13 @@ from app.modules.followup.conversation import (
 )
 from app.modules.followup.ids import parse_public_id
 from app.modules.followup.models import Enrolment
-from app.modules.followup.schemas import CheckIn, OutcomeIn, RegisterIn, TalkIn, TelegramIn
+from app.modules.followup.schemas import (
+    CheckIn,
+    OutcomeIn,
+    RegisterIn,
+    TalkIn,
+    TelegramIn,
+)
 from app.modules.followup.texts import slip_lines
 
 router = APIRouter(prefix="/followup", tags=["followup"])
@@ -66,11 +72,18 @@ def get_slip(public_id: str, db: Session = Depends(get_db), _user=Depends(screen
     enrolment = db.scalar(select(Enrolment).where(Enrolment.public_id == public_id))
     if enrolment is None:
         raise DomainError(404, "not_found", "ID not found")
+    qr_value = enrolment.public_id
+    deep_link = None
+    if enrolment.channel == "telegram":
+        deep_link = telegram.slip_link(db, enrolment.public_id)
+        db.commit()
+        qr_value = deep_link
     return {
         "synthetic": True,
         "public_id": enrolment.public_id,
         "lines": slip_lines(enrolment.language),
-        "qr_svg": _qr(enrolment.public_id),
+        "qr_svg": _qr(qr_value),
+        "deep_link": deep_link,
     }
 
 
@@ -215,17 +228,26 @@ def post_checkins(db: Session = Depends(get_db), user=Depends(require_roles(ROLE
 
 @router.post("/telegram/webhook")
 def telegram_webhook(
-    data: TelegramIn,
+    data: dict,
     db: Session = Depends(get_db),
     x_telegram_bot_api_secret_token: str | None = Header(default=None),
 ):
     telegram.require_signature(x_telegram_bot_api_secret_token)
-    return telegram.ingest(db, chat_id=data.chat_id, text=data.text, update_id=data.update_id)
+    parsed = telegram.parse_update(data)
+    if parsed is None:
+        return {"ok": True}
+    result = telegram.ingest(db, parsed)
+    if not result.get("duplicate"):
+        telegram.deliver(db, parsed["chat_id"], result)
+    return result
 
 
 @router.post("/telegram/simulate")
-def telegram_sim(data: TelegramIn, db: Session = Depends(get_db)):
-    result = telegram.ingest(db, chat_id=data.chat_id, text=data.text, update_id=data.update_id)
+def telegram_sim(data: dict, db: Session = Depends(get_db)):
+    parsed = telegram.parse_update(data)
+    if parsed is None:
+        return {"ok": True, "simulated": True}
+    result = telegram.ingest(db, parsed)
     result["simulated"] = True
     return result
 
