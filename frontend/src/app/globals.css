@@ -118,6 +118,45 @@
   }
 }
 
+/* Floating medical items on the sign-in page: a slow drift with a gentle bounce. */
+@keyframes cl-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(var(--dx, 12px), var(--dy, 12px)) rotate(var(--rot, 10deg));
+  }
+}
+
+@keyframes cl-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
+  }
+  50% {
+    transform: translateY(-16px);
+    animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+  }
+}
+
+.cl-drift {
+  animation: cl-drift 14s ease-in-out infinite;
+  will-change: transform;
+}
+
+.cl-bounce {
+  animation: cl-bounce 3s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cl-drift,
+  .cl-bounce {
+    animation: none;
+  }
+}
+
 /* The feature-phone screen in the basic-phone simulator. */
 .lcd {
   background:
