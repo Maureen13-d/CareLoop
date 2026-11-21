@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/worklist", label: "Chase", roles: ["chw", "navigator", "clinician", "admin", "program_manager"] },
   { href: "/facility", label: "Arrivals", roles: ["clinician", "navigator", "program_manager", "admin"] },
   { href: "/telegram", label: "Telegram", roles: ["clinician", "navigator", "admin", "chw"] },
+  { href: "/voice", label: "Voice", roles: ["clinician", "navigator", "admin", "chw"] },
   { href: "/phone", label: "Phone", roles: ["navigator", "clinician", "counsellor", "program_manager", "admin", "patient"] },
   { href: "/hub", label: "Hub", roles: ["chw", "navigator", "clinician", "program_manager", "admin"] },
   { href: "/chat", label: "Chat", roles: ["navigator", "clinician", "counsellor", "admin", "patient"] },

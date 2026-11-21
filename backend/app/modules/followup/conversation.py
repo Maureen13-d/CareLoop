@@ -178,7 +178,7 @@ def _pack(reply_key: str, language: str, channel: str, escalation: str | None, a
         replies = [
             {"id": "en", "label": "English"},
             {"id": "sw", "label": "Kiswahili"},
-            {"id": "ksl", "label": "Kenyan Sign Language"},
+            {"id": "ksl", "label": "American Sign Language"},
         ]
     result = {
         "reply_text": fit(line(reply_key, language), channel),

@@ -2,7 +2,7 @@
 
 export const BLEND_MS = 200;
 export const SPEEDS = [0.75, 1];
-export const HONESTY = "PLACEHOLDER MOTION: NOT KSL";
+export const HONESTY = "PLACEHOLDER MOTION: NOT ASL";
 export const TEST_LABEL = "TEST_MOTION_NOT_SIGN";
 export const PRESETS = [
   { id: "coast", skin: "#8d5524", cloth: "#0f6e6e" },
@@ -64,7 +64,7 @@ export function testWave(frames = 8) {
   return {
     label: TEST_LABEL,
     fps: 30,
-    caption: "This motion is a test wave. It is not Kenyan Sign Language.",
+    caption: "This motion is a test wave. It is not American Sign Language.",
     frames: body,
   };
 }

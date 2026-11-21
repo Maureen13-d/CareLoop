@@ -1,0 +1,61 @@
+# Synthetic voice-lab patients. PENDING CLINICAL REVIEW.
+# symptom is the tester's brief. say is a phrase the follow-up core already understands.
+# Nothing here is a real person, and no phone number is stored.
+
+cases:
+  - key: bleeding
+    age_band: "35-39"
+    area_label: "Demo Zone Kisumu"
+    language: en
+    finding: concerning
+    screening_type: cervical
+    symptom: "Suggestive bleeding since screening. Has not reached the clinic."
+    say: "bleeding"
+  - key: not-yet
+    age_band: "30-34"
+    area_label: "Demo Zone Nairobi"
+    language: en
+    finding: concerning
+    screening_type: general
+    symptom: "No clinic visit yet."
+    say: "not yet"
+  - key: fare
+    age_band: "40-44"
+    area_label: "Demo Zone Mombasa"
+    language: en
+    finding: concerning
+    screening_type: general
+    symptom: "Has not gone. The fare is what is stopping them."
+    say: "transport"
+  - key: worse
+    age_band: "25-29"
+    area_label: "Demo Zone Eldoret"
+    language: en
+    finding: urgent
+    screening_type: general
+    symptom: "Feels worse than at screening."
+    say: "worse"
+  - key: fear
+    age_band: "45-49"
+    area_label: "Demo Zone Nakuru"
+    language: en
+    finding: concerning
+    screening_type: general
+    symptom: "Has not gone because of fear."
+    say: "fear"
+  - key: damu
+    age_band: "35-39"
+    area_label: "Demo Zone Kisumu"
+    language: sw
+    finding: concerning
+    screening_type: cervical
+    symptom: "Anaripoti damu. Bado hajaenda kliniki."
+    say: "damu"
+  - key: bado
+    age_band: "30-34"
+    area_label: "Demo Zone Nairobi"
+    language: sw
+    finding: concerning
+    screening_type: general
+    symptom: "Bado hajaenda kliniki."
+    say: "bado"

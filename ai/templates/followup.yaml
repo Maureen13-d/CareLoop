@@ -3,11 +3,14 @@
 # Do not use the mapping keys off, on, yes, or no. YAML 1.1 reads those as booleans.
 
 en:
-  ask_language: "CareLoop\n1 English\n2 Kiswahili\n3 Kenyan Sign Language"
+  ask_language: "CareLoop\n1 English\n2 Kiswahili\n3 American Sign Language"
   ask_id: "Enter the ID on your card."
   ask_code: "Enter the code that was sent to you."
   id_rejected: "That ID or code was not accepted."
   status: "Your next step is to go to the clinic. Reply 1 if you have been, 2 if not yet, 5 if you feel worse."
+  voice_status: "This is CareLoop, a clinic check. Have you been to the clinic yet, or not yet? Tell me if you feel worse."
+  voice_not_yet: "We can help with what is stopping you. You can say fear, cost, transport, stigma, or where."
+  voice_stop_ack: "Calls stopped. Say start to turn them on."
   been: "Thank you. The clinic still needs to confirm the visit. Keep your card."
   not_yet: "We can help with what is stopping you. Reply with fear, cost, transport, stigma, or where."
   same: "Thank you for saying. Please still go to the clinic."
@@ -34,11 +37,14 @@ en:
   cant_go: "A person will follow up to help you get to the clinic. If you feel worse, go to the nearest clinic."
 
 sw:
-  ask_language: "CareLoop\n1 English\n2 Kiswahili\n3 Kenyan Sign Language"
+  ask_language: "CareLoop\n1 English\n2 Kiswahili\n3 American Sign Language"
   ask_id: "Andika nambari iliyo kwenye kadi yako."
   ask_code: "Andika nambari fupi uliyopewa."
   id_rejected: "Nambari hiyo haijakubaliwa."
   status: "Hatua yako inayofuata ni kwenda kliniki. Jibu 1 kama umefika, 2 kama bado, 5 kama umezidi."
+  voice_status: "Hii ni ukaguzi wa kliniki kutoka CareLoop. Umefika kliniki, au bado? Sema kama umezidi."
+  voice_not_yet: "Tunaweza kusaidia kilichokuzuia. Sema hofu, gharama, nauli, aibu, au wapi."
+  voice_stop_ack: "Simu zimesimamishwa. Sema start kuzianzisha."
   been: "Asante. Kliniki ndiyo itathibitisha. Hifadhi kadi yako."
   not_yet: "Tunaweza kusaidia kilichokuzuia. Jibu hofu, gharama, nauli, aibu, au wapi."
   same: "Asante kwa kusema. Tafadhali nenda kliniki."

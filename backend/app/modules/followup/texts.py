@@ -42,6 +42,18 @@ def line(key: str, language: str) -> str:
     return pack.get(key) or templates()["en"][key]
 
 
+def spoken(template_id: str, language: str) -> str:
+    """The same approved line, phrased for speaking. Text channels keep reply codes."""
+    voice_key = f"voice_{template_id}"
+    pack = templates().get(language) or templates()["en"]
+    if voice_key in pack:
+        return pack[voice_key]
+    english = templates()["en"]
+    if voice_key in english:
+        return english[voice_key]
+    return line(template_id, language)
+
+
 def slip_lines(language: str) -> list[str]:
     return [line("slip_1", language), line("slip_2", language), line("slip_3", language)]
 

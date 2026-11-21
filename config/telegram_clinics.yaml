@@ -1,0 +1,28 @@
+# Synthetic places for the demo. Not a live directory.
+# PENDING CLINICAL REVIEW
+synthetic: true
+areas:
+  - id: central
+    label: Central
+    clinics:
+      - name: Market clinic
+        hours: Mon to Fri, 8 to 4
+        directions: https://maps.example/market
+      - name: Station clinic
+        hours: Mon to Sat, 9 to 1
+        directions: https://maps.example/station
+  - id: east
+    label: East
+    clinics:
+      - name: Hill clinic
+        hours: Tue and Thu, 8 to 12
+        directions: https://maps.example/hill
+  - id: west
+    label: West
+    clinics:
+      - name: River clinic
+        hours: Mon to Fri, 8 to 3
+        directions: https://maps.example/river
+      - name: School clinic
+        hours: Wed, 9 to 1
+        directions: https://maps.example/school

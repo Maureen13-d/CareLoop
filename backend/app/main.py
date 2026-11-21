@@ -1,4 +1,5 @@
 import asyncio
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
@@ -15,6 +16,7 @@ from app.fhir import case_to_fhir_task
 from app.metrics_api import router as metrics_router
 from app.models import Case, CaseView
 from app.modules.analytics.router import router as analytics_router
+from app.modules.asl.router import router as asl_research_router
 from app.modules.assistant.router import router as assistant_router
 from app.modules.audit.router import router as audit_router
 from app.modules.auth.router import router as auth_router
@@ -54,6 +56,16 @@ async def lifespan(_app: FastAPI):
         task.cancel()
 
 
+def _browser_origins() -> list[str]:
+    configured = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+    if os.environ.get("CARELOOP_ENV", "").strip().lower() == "production":
+        return configured
+    for local in ("http://localhost:3000", "http://127.0.0.1:3000"):
+        if local not in configured:
+            configured.append(local)
+    return configured
+
+
 app = FastAPI(
     title="CareLoop API",
     version="0.1.0",
@@ -63,7 +75,7 @@ app = FastAPI(
 register_error_handlers(app)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
+    allow_origins=_browser_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -96,6 +108,7 @@ for module_router in (
     followup_router,
     ksl_router,
     ksl_research_router,
+    asl_research_router,
 ):
     api.include_router(module_router)
 

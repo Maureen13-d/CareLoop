@@ -126,7 +126,7 @@ export default function ResearchSamplePage() {
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
       <header>
-        <p className="text-sm text-clay">Research only</p>
+        <p className="text-sm text-clay">Kenyan Sign Language research sample. Not American Sign Language.</p>
         <h1 className="mt-1 font-serif text-4xl">One dataset word</h1>
         <p className="mt-2 max-w-2xl text-ink-soft">
           {clip

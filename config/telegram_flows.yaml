@@ -1,0 +1,77 @@
+# Patient-facing menus. Clinical decisions stay in the conversation core.
+# Button data is a short code. Never put a Patient ID here.
+main:
+  keyboard: reply
+  rows:
+    - - {text: "📍 My next step", action: next}
+      - {text: "🏥 Find a clinic", action: clinic}
+    - - {text: "💬 I need help", action: help}
+      - {text: "❓ What happens at a visit?", action: visit}
+    - - {text: "🌍 Language", action: language}
+      - {text: "⚙️ Settings and privacy", action: settings}
+help:
+  keyboard: inline
+  rows:
+    - - {text: "😟 I'm afraid", data: help:fear}
+      - {text: "💰 Cost", data: help:cost}
+    - - {text: "🚌 Transport", data: help:transport}
+      - {text: "🧭 I don't know where to go", data: help:where}
+    - - {text: "🤟 I need an interpreter", data: help:sign}
+      - {text: "🙋 Talk to a person", data: help:person}
+visit:
+  keyboard: inline
+  rows:
+    - - {text: What to bring, data: vis:bring}
+      - {text: How long it takes, data: vis:time}
+    - - {text: Can I bring someone, data: vis:someone}
+      - {text: Fees and cover, data: vis:fees}
+    - - {text: What if I'm scared, data: vis:scared}
+checkin:
+  keyboard: inline
+  rows:
+    - - {text: "Yes", data: chk:yes}
+      - {text: "Not yet", data: chk:not}
+      - {text: "I need help", data: chk:help}
+symptoms:
+  keyboard: inline
+  rows:
+    - - {text: Same, data: sym:same}
+      - {text: Better, data: sym:better}
+    - - {text: Worse, data: sym:worse}
+      - {text: Not sure, data: sym:unsure}
+barriers:
+  keyboard: inline
+  rows:
+    - - {text: Fear, data: bar:fear}
+      - {text: Cost, data: bar:cost}
+    - - {text: Transport, data: bar:transport}
+      - {text: Don't know where to go, data: bar:where}
+    - - {text: Other, data: bar:other}
+      - {text: Ask a person to help, data: bar:done}
+language:
+  keyboard: inline
+  rows:
+    - - {text: English, data: lang:en}
+      - {text: Kiswahili, data: lang:sw}
+    - - {text: Kenyan Sign Language, data: lang:ksl}
+privacy:
+  keyboard: inline
+  rows:
+    - - {text: OK, data: ok:yes}
+      - {text: No thanks, data: ok:no}
+settings:
+  keyboard: inline
+  rows:
+    - - {text: Pause check-ins, data: set:pause}
+      - {text: Stop messages, data: set:stop}
+    - - {text: How my information is used, data: set:privacy}
+      - {text: Remove me from this chat, data: set:unbind}
+    - - {text: Did you know tips, data: set:tips}
+      - {text: Myth or fact, data: set:myth}
+commands:
+  - {command: start, description_en: Open the menu, description_sw: Fungua menyu}
+  - {command: menu, description_en: Show the menu, description_sw: Onyesha menyu}
+  - {command: status, description_en: My next step, description_sw: Hatua yangu}
+  - {command: help, description_en: I need help, description_sw: Nahitaji msaada}
+  - {command: language, description_en: Change language, description_sw: Badili lugha}
+  - {command: stop, description_en: Stop messages, description_sw: Sitisha ujumbe}

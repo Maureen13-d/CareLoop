@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 Finding = Literal["concerning", "urgent", "not_concerning", "inadequate"]
-Channel = Literal["telegram", "sms", "ussd", "web"]
+Channel = Literal["telegram", "sms", "ussd", "web", "voice"]
 Language = Literal["en", "sw"]
 ScreeningCode = Literal["cervical", "blood_pressure", "hiv", "tb", "general"]
 
@@ -39,4 +39,9 @@ class OutcomeIn(BaseModel):
 class TelegramIn(BaseModel):
     update_id: str | None = None
     chat_id: str
+    text: str = ""
+
+
+class VoiceTurnIn(BaseModel):
+    public_id: str
     text: str = ""

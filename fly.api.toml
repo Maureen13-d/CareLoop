@@ -1,0 +1,33 @@
+app = "careloop-screening-api"
+primary_region = "jnb"
+
+[build]
+  dockerfile = "Dockerfile.api"
+
+[env]
+  CARELOOP_DATABASE_URL = "sqlite:////data/careloop.db"
+  CARELOOP_EXPOSE_SIMULATED_CODES = "true"
+  CORS_ORIGINS = "https://careloop-screening-web.fly.dev"
+  DATABASE_URL = "sqlite:////data/careloop.db"
+
+[[mounts]]
+  source = "careloop_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "40s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

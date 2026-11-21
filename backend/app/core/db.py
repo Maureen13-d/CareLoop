@@ -42,6 +42,7 @@ def import_models() -> None:
     from app.modules.auth import models as _b  # noqa: F401
     from app.modules.channels import models as _f  # noqa: F401
     from app.modules.followup import models as _j  # noqa: F401
+    from app.modules.followup import telegram_models as _t  # noqa: F401
     from app.modules.interop import models as _h  # noqa: F401
     from app.modules.ksl import models as _k  # noqa: F401
     from app.modules.maternal import models as _i  # noqa: F401
