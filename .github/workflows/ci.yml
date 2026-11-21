@@ -37,7 +37,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
-      - run: node --test src/ksl/engine.test.js src/ksl/researchLabel.test.js src/ksl/researchPose.test.js src/ksl/aslPose.test.js
+      - run: node --test src/ksl/engine.test.js src/ksl/researchLabel.test.js src/ksl/researchPose.test.js src/ksl/aslPose.test.js src/ksl/signReplies.test.js
       - run: npm run build
 
   ksl-assets:

@@ -53,6 +53,21 @@ MENU = {
     "can't go": "cant_go",
 }
 BARRIERS = {"fear", "cost", "transport", "stigma", "where"}
+GREETINGS = {
+    "hi",
+    "hello",
+    "i'm here",
+    "im here",
+    "good to see you",
+    "nice to meet you",
+    "okay",
+    "ok",
+    "thank you",
+    "you're welcome",
+    "youre welcome",
+    "goodbye",
+    "bye",
+}
 _active_db: Session | None = None
 _active_enrolment: Enrolment | None = None
 READY_REPLIES = [
@@ -251,6 +266,11 @@ def respond(db: Session, enrolment: Enrolment, channel: str, language: str, mess
         _task(db, enrolment, "followup_review", "high")
         result = _pack("refuse_skip", language, channel, "skip_request", ["open_task"])
         _audit(db, enrolment, "skip_request", channel, "skip_request")
+        return result
+
+    if low in GREETINGS:
+        result = _pack("status", language, channel, None, [])
+        _audit(db, enrolment, "greeting", channel, None)
         return result
 
     choice = MENU.get(low)

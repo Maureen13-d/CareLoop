@@ -1,19 +1,13 @@
 "use client";
 
-import { AslSample, SIGN_COUNT } from "@/ksl/AslSample";
-import { useEffect, useState } from "react";
+import { AslSample } from "@/ksl/AslSample";
+import { SIGN_ORDER, SIGN_REPLIES } from "@/ksl/signReplies.js";
+import { useCallback, useEffect, useState } from "react";
 import { simulatedCode } from "./actions";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const button = "min-h-14 w-full rounded-2xl bg-lagoon px-4 text-lg text-white";
 const answerButton = "min-h-12 rounded-2xl bg-lagoon px-3 text-base text-white";
-const FALLBACK_ANSWERS = [
-  { id: "been", label: "I have been" },
-  { id: "not_yet", label: "Not yet" },
-  { id: "worse", label: "I feel worse" },
-  { id: "transport", label: "Transport" },
-  { id: "fear", label: "Fear" },
-];
 
 type Reply = {
   reply_text: string;
@@ -69,6 +63,10 @@ export function EnterFlow() {
   const [error, setError] = useState("");
   const [language, setLanguage] = useState<"en" | "ksl">("en");
   const [signStep, setSignStep] = useState(0);
+  const [lineIds, setLineIds] = useState(SIGN_ORDER);
+  const linesReady = useCallback((ids: string[]) => {
+    if (ids.length) setLineIds(ids);
+  }, []);
 
   async function start() {
     setError("");
@@ -133,11 +131,12 @@ export function EnterFlow() {
 
   const danger = reply?.escalation_label === "danger_sign" || reply?.escalation_label === "worse";
   const signing = Boolean(token) && language === "ksl";
-  const answers = reply?.quick_replies?.length ? reply.quick_replies : FALLBACK_ANSWERS;
+  const lineId = lineIds[Math.min(signStep, Math.max(lineIds.length - 1, 0))] ?? SIGN_ORDER[0];
+  const answers = SIGN_REPLIES[lineId] ?? SIGN_REPLIES[SIGN_ORDER[0]];
 
   async function answer(id: string) {
     const accepted = await say(token, id);
-    if (accepted) setSignStep((value) => Math.min(value + 1, SIGN_COUNT - 1));
+    if (accepted) setSignStep((value) => Math.min(value + 1, Math.max(lineIds.length - 1, 0)));
   }
 
   return (
@@ -191,40 +190,38 @@ export function EnterFlow() {
             Continue
           </button>
         </div>
-      ) : (
-        language === "ksl" ? (
-          <>
-            <AslSample step={signStep} />
-            <div className="grid shrink-0 grid-cols-2 gap-2 bg-white px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-              {answers.map((item, index) => (
-                <button
-                  key={item.id}
-                  className={`${answerButton} ${index === answers.length - 1 && answers.length % 2 === 1 ? "col-span-2" : ""}`}
-                  type="button"
-                  onClick={() => answer(item.id)}
-                >
-                  {item.label}
-                </button>
-              ))}
-              {error ? <p className="col-span-2 text-sm">{error}</p> : null}
-            </div>
-          </>
-        ) : (
-          <div className="space-y-3">
-            <Guide
-              text={reply?.spoken_text || reply?.reply_text || "Your next step is to go to the clinic."}
-              danger={Boolean(danger)}
-            />
-            <p className="text-lg">Have you been able to get to care?</p>
-            <div className="grid grid-cols-1 gap-2">
-              {(reply?.quick_replies ?? []).map((item) => (
-                <button key={item.id} className={button} type="button" onClick={() => say(token, item.id)}>
-                  {item.label}
-                </button>
-              ))}
-            </div>
+      ) : language === "ksl" ? (
+        <>
+          <AslSample step={signStep} onLines={linesReady} />
+          <div className="grid shrink-0 grid-cols-2 gap-2 bg-white px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            {answers.map((item, index) => (
+              <button
+                key={item.id}
+                className={`${answerButton} ${index === answers.length - 1 && answers.length % 2 === 1 ? "col-span-2" : ""}`}
+                type="button"
+                onClick={() => answer(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+            {error ? <p className="col-span-2 text-sm">{error}</p> : null}
           </div>
-        )
+        </>
+      ) : (
+        <div className="space-y-3">
+          <Guide
+            text={reply?.spoken_text || reply?.reply_text || "Your next step is to go to the clinic."}
+            danger={Boolean(danger)}
+          />
+          <p className="text-lg">Have you been able to get to care?</p>
+          <div className="grid grid-cols-1 gap-2">
+            {(reply?.quick_replies ?? []).map((item) => (
+              <button key={item.id} className={button} type="button" onClick={() => say(token, item.id)}>
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
       {error && !signing ? <p className="text-lg">{error}</p> : null}
     </main>

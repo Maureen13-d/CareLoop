@@ -1,42 +1,40 @@
-"""Stream How2Sign-MV3D archives and keep a few real sentences.
-
-The archives are about 1GB. This script does not write the archive. It reads
-the tar stream, saves only the named clips as JSON, and stops each archive
-once those clips are found.
-"""
-
+"""Stream How2Sign-MV3D archives and keep a few real sentences."""
 from __future__ import annotations
-
 import json
 import urllib.request
 from pathlib import Path
-
 import numpy as np
-
 ROOT = Path(__file__).resolve().parents[1]
 ASL = ROOT / "data" / "external" / "asl"
 OUT = ASL / "packets"
 BASE = "https://huggingface.co/datasets/mage0001/How2Sign-MV3D/resolve/main/"
-
-# Real How2Sign lines. The English is what the signer said.
 PICKS = {
     "--8pSDeC-fg_0-5": "data/train-00000.tar",
     "1xKU91ggLeI_2-5": "data/train-00000.tar",
     "--8pSDeC-fg_7-5": "data/train-00006.tar",
     "--8pSDeC-fg_1-5": "data/train-00001.tar",
     "g1HXoDkax5A_20-3": "data/test-00000.tar",
+    "06jk1stVwMI_2-5": "data/train-00001.tar",
+    "CE23zzfUBDw_7-5": "data/train-00005.tar",
+    "cQBrXCcfDyc_22-5": "data/train-00002.tar",
+    "Cu1rDgWOZ9w_15-8": "data/train-00010.tar",
+    "5dodEz2r56M_16-8": "data/train-00008.tar",
     "-0N0jbyBW6g_11-5": "data/train-00000.tar",
     "-F6vN4bOBWs_16-8": "data/train-00000.tar",
 }
 ORDER = list(PICKS)
-
-
+KNOWN = {
+    "06jk1stVwMI_2-5": "Are you comfortable?",
+    "CE23zzfUBDw_7-5": "Have you seen any problems with that?",
+    "cQBrXCcfDyc_22-5": "Are you ready?",
+    "Cu1rDgWOZ9w_15-8": "See you in the next step.",
+    "5dodEz2r56M_16-8": "Take care.",
+}
 class Reader:
     def __init__(self, response) -> None:
         self.response = response
         self.buf = b""
         self.offset = 0
-
     def read(self, count: int) -> bytes:
         while len(self.buf) < count:
             chunk = self.response.read(1024 * 1024)
@@ -47,8 +45,6 @@ class Reader:
         self.buf = self.buf[count:]
         self.offset += len(data)
         return data
-
-
 def sentences() -> dict[str, str]:
     text: dict[str, str] = {}
     for path in (ASL / "how2sign_test_sentences.csv", ASL / "how2sign_train_sentences.csv"):
@@ -61,8 +57,6 @@ def sentences() -> dict[str, str]:
             name = parts[3].replace("-rgb_front", "").replace("-rgb_side", "")
             text[name] = parts[6]
     return text
-
-
 def open_tar(archive: str, start: int) -> Reader:
     headers = {"User-Agent": "CareLoop-research/0.1"}
     if start:
@@ -74,14 +68,10 @@ def open_tar(archive: str, start: int) -> Reader:
     reader = Reader(response)
     reader.offset = start
     return reader
-
-
 def header_name(header: bytes) -> tuple[str, int, bytes]:
     name = header[0:100].split(b"\0", 1)[0].decode("utf-8", "replace")
     size = int(header[124:136].split(b"\0", 1)[0].strip() or b"0", 8)
     return name, size, header[156:157]
-
-
 def packet(sample_id: str, blob: bytes, text: dict[str, str], source: str) -> dict:
     path = OUT / "_one.npz"
     path.write_bytes(blob)
@@ -93,39 +83,17 @@ def packet(sample_id: str, blob: bytes, text: dict[str, str], source: str) -> di
     path.unlink(missing_ok=True)
     frames = []
     for index in range(proj.shape[0]):
-        frames.append(
-            {
-                "proj": [[round(float(point[0]), 1), round(float(point[1]), 1)] for point in proj[index]],
-                "left_hand": bool(hands[index, 0]),
-                "right_hand": bool(hands[index, 1]),
-            }
-        )
-    return {
-        "id": stored or sample_id,
-        "sentence": text.get(sample_id) or text.get(stored, ""),
-        "sample_id": stored or sample_id,
-        "fps": fps,
-        "source": source,
-        "license": "CC BY-NC 4.0",
-        "frames": frames,
-    }
-
-
+        frames.append({"proj": [[round(float(point[0]), 1), round(float(point[1]), 1)] for point in proj[index]], "left_hand": bool(hands[index, 0]), "right_hand": bool(hands[index, 1])})
+    sentence = text.get(sample_id) or text.get(stored) or KNOWN.get(sample_id) or KNOWN.get(stored, "")
+    return {"id": stored or sample_id, "sentence": sentence, "sample_id": stored or sample_id, "fps": fps, "source": source, "license": "CC BY-NC 4.0", "frames": frames}
 def remember(body: dict) -> None:
     manifest_path = OUT / "manifest.json"
     rows = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.is_file() else []
     rows = [row for row in rows if row.get("id") != body["id"]]
     rows.append({"id": body["id"], "sentence": body["sentence"], "frames": len(body["frames"])})
-    front = []
-    for sample_id in ORDER:
-        match = next((row for row in rows if row["id"] == sample_id), None)
-        if match:
-            front.append(match)
-    rest = [row for row in rows if row["id"] not in ORDER]
-    rest.sort(key=lambda row: row["sentence"].lower())
+    front = [row for sample_id in ORDER for row in rows if row["id"] == sample_id]
+    rest = sorted((row for row in rows if row["id"] not in ORDER), key=lambda row: row["sentence"].lower())
     manifest_path.write_text(json.dumps(front + rest), encoding="utf-8")
-
-
 def take(archive: str, wanted: set[str], text: dict[str, str]) -> None:
     wanted = {sample_id for sample_id in wanted if not (OUT / f"{sample_id}.json").is_file()}
     print(f"stream {archive} for {sorted(wanted)}", flush=True)
@@ -162,10 +130,7 @@ def take(archive: str, wanted: set[str], text: dict[str, str]) -> None:
                 if sample_id not in wanted:
                     continue
                 body = packet(sample_id, data, text, f"How2Sign-MV3D {archive} {name}")
-                (OUT / f"{body['id']}.json").write_text(
-                    json.dumps(body, separators=(",", ":")),
-                    encoding="utf-8",
-                )
+                (OUT / f"{body['id']}.json").write_text(json.dumps(body, separators=(",", ":")), encoding="utf-8")
                 remember(body)
                 wanted.remove(sample_id)
                 print(f"kept {body['id']} {len(body['frames'])}f {body['sentence']}", flush=True)
@@ -173,10 +138,7 @@ def take(archive: str, wanted: set[str], text: dict[str, str]) -> None:
             attempts += 1
             pending_name = ""
             print(f"retry {attempts} at {resume} after {exc.__class__.__name__}", flush=True)
-    missing = ", ".join(sorted(wanted))
-    print(f"done {archive} missing={missing or 'none'}", flush=True)
-
-
+    print(f"done {archive} missing={', '.join(sorted(wanted)) or 'none'}", flush=True)
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     text = sentences()
@@ -186,7 +148,5 @@ def main() -> int:
     for archive, wanted in by_archive.items():
         take(archive, wanted, text)
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

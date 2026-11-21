@@ -1,21 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { frameLines } from "./aslPose.js";
+import { SIGN_ORDER } from "./signReplies.js";
+
+const SKIN = "#d7a27a";
+const HAND = "#8a5a3c";
+const HAIR = "#3a2a22";
+const SHIRT = "#1a6b63";
+const PANTS = "#2c3338";
+const SHOE = "#1b2428";
+const INK = "#102027";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-const SHOWCASE = [
-  "--8pSDeC-fg_0-5",
-  "1xKU91ggLeI_2-5",
-  "--8pSDeC-fg_7-5",
-  "--8pSDeC-fg_1-5",
-  "g1HXoDkax5A_20-3",
-  "-0N0jbyBW6g_11-5",
-  "-F6vN4bOBWs_16-8",
-];
-
-export const SIGN_COUNT = SHOWCASE.length;
+export const SIGN_COUNT = SIGN_ORDER.length;
 
 type Frame = {
   proj: number[][];
@@ -59,22 +57,135 @@ function paint(canvas: HTMLCanvasElement | null, clip: Clip | null, index: numbe
   );
   const originX = width / 2 - ((minX + maxX) / 2) * scale;
   const originY = (height - caption) / 2 - ((minY + maxY) / 2) * scale;
-  context.strokeStyle = "#102027";
-  context.lineWidth = Math.max(4, width / 140);
-  context.lineCap = "round";
+  const at = (joint: number) => [
+    originX + points[joint][0] * scale,
+    originY + points[joint][1] * scale,
+  ];
+  const span = Math.hypot(at(16)[0] - at(17)[0], at(16)[1] - at(17)[1]);
+  const thick = Math.max(8, span * 0.22);
+  const footL = at(10);
+  const footR = at(11);
+  context.fillStyle = "rgba(16,32,39,0.08)";
   context.beginPath();
-  for (const [x1, y1, x2, y2] of frameLines(points, !frame.left_hand, !frame.right_hand)) {
-    context.moveTo(originX + x1 * scale, originY + y1 * scale);
-    context.lineTo(originX + x2 * scale, originY + y2 * scale);
-  }
+  context.ellipse(
+    (footL[0] + footR[0]) / 2,
+    Math.max(footL[1], footR[1]),
+    span * 0.85,
+    span * 0.14,
+    0,
+    0,
+    Math.PI * 2,
+  );
+  context.fill();
+  const limb = (a: number, b: number, color: string, weight: number) => {
+    const start = at(a);
+    const end = at(b);
+    context.strokeStyle = color;
+    context.lineWidth = weight;
+    context.lineCap = "round";
+    context.beginPath();
+    context.moveTo(start[0], start[1]);
+    context.lineTo(end[0], end[1]);
+    context.stroke();
+  };
+  limb(1, 4, PANTS, thick);
+  limb(4, 7, PANTS, thick * 0.85);
+  limb(7, 10, SHOE, thick * 0.55);
+  limb(2, 5, PANTS, thick);
+  limb(5, 8, PANTS, thick * 0.85);
+  limb(8, 11, SHOE, thick * 0.55);
+  limb(16, 18, SHIRT, thick * 0.72);
+  limb(17, 19, SHIRT, thick * 0.72);
+  limb(18, 20, SKIN, thick * 0.48);
+  limb(19, 21, SKIN, thick * 0.48);
+  const widen = (joint: number, away: number, extra: number) => {
+    const point = at(joint);
+    const other = at(away);
+    const dx = point[0] - other[0];
+    const dy = point[1] - other[1];
+    const length = Math.hypot(dx, dy) || 1;
+    return [point[0] + (dx / length) * extra, point[1] + (dy / length) * extra];
+  };
+  const leftShoulder = widen(16, 17, span * 0.08);
+  const rightShoulder = widen(17, 16, span * 0.08);
+  const leftHip = widen(1, 2, span * 0.06);
+  const rightHip = widen(2, 1, span * 0.06);
+  context.fillStyle = SHIRT;
+  context.beginPath();
+  context.moveTo(leftShoulder[0], leftShoulder[1]);
+  context.lineTo(rightShoulder[0], rightShoulder[1]);
+  context.lineTo(rightHip[0], rightHip[1]);
+  context.lineTo(leftHip[0], leftHip[1]);
+  context.closePath();
+  context.fill();
+  limb(12, 15, SKIN, thick * 0.42);
+  const neck = at(12);
+  const crown = at(15);
+  const eyeL = at(23);
+  const eyeR = at(24);
+  const headR = Math.max(span * 0.28, Math.hypot(crown[0] - neck[0], crown[1] - neck[1]) * 0.72);
+  const headX = crown[0] * 0.4 + (eyeL[0] + eyeR[0]) * 0.3;
+  const headY = crown[1] * 0.4 + (eyeL[1] + eyeR[1]) * 0.3;
+  context.fillStyle = SKIN;
+  context.beginPath();
+  context.ellipse(headX, headY, headR * 0.86, headR, 0, 0, Math.PI * 2);
+  context.fill();
+  context.save();
+  context.beginPath();
+  context.ellipse(headX, headY, headR * 0.86, headR, 0, 0, Math.PI * 2);
+  context.clip();
+  context.fillStyle = HAIR;
+  context.fillRect(headX - headR, headY - headR * 1.15, headR * 2, headR * 0.7);
+  context.restore();
+  context.fillStyle = INK;
+  context.beginPath();
+  context.arc(eyeL[0], eyeL[1], Math.max(2, headR * 0.07), 0, Math.PI * 2);
+  context.arc(eyeR[0], eyeR[1], Math.max(2, headR * 0.07), 0, Math.PI * 2);
+  context.fill();
+  const jaw = at(22);
+  context.strokeStyle = "#6b3a32";
+  context.lineWidth = Math.max(2, headR * 0.06);
+  context.beginPath();
+  context.arc(headX, (eyeL[1] + eyeR[1] + jaw[1]) / 3, headR * 0.22, 0.15 * Math.PI, 0.85 * Math.PI);
   context.stroke();
-  context.fillStyle = "#102027";
+  const hand = (wrist: number, start: number, show: boolean) => {
+    if (!show) return;
+    context.strokeStyle = HAND;
+    context.lineWidth = thick * 0.2;
+    context.lineCap = "round";
+    context.beginPath();
+    for (let finger = 0; finger < 5; finger += 1) {
+      const joint = start + finger * 3;
+      const chain = [wrist, joint, joint + 1, joint + 2];
+      for (let link = 0; link < chain.length - 1; link += 1) {
+        const from = at(chain[link]);
+        const to = at(chain[link + 1]);
+        context.moveTo(from[0], from[1]);
+        context.lineTo(to[0], to[1]);
+      }
+    }
+    context.stroke();
+    const palm = at(wrist);
+    context.fillStyle = SKIN;
+    context.beginPath();
+    context.arc(palm[0], palm[1], thick * 0.28, 0, Math.PI * 2);
+    context.fill();
+  };
+  hand(20, 25, frame.left_hand);
+  hand(21, 40, frame.right_hand);
+  context.fillStyle = INK;
   context.font = `${Math.max(32, Math.round(width / 18))}px sans-serif`;
   context.textAlign = "center";
   context.fillText(clip?.sentence ?? "", width / 2, height - caption / 3);
 }
 
-export function AslSample({ step }: { step: number }) {
+export function AslSample({
+  step,
+  onLines,
+}: {
+  step: number;
+  onLines?: (ids: string[]) => void;
+}) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [clips, setClips] = useState<Clip[]>([]);
   const [problem, setProblem] = useState("");
@@ -83,14 +194,18 @@ export function AslSample({ step }: { step: number }) {
   useEffect(() => {
     let cancelled = false;
     Promise.all(
-      SHOWCASE.map(async (id) => {
+      SIGN_ORDER.map(async (id) => {
         const response = await fetch(`${API}/api/v1/dev/asl-research/clips/${id}`);
-        if (!response.ok) throw new Error("That ASL sentence is not available.");
+        if (!response.ok) return null;
         return response.json() as Promise<Clip>;
       }),
     )
       .then((body) => {
-        if (!cancelled) setClips(body);
+        if (cancelled) return;
+        const ready = body.filter((item): item is Clip => item !== null);
+        setClips(ready);
+        onLines?.(ready.map((item) => item.id));
+        if (!ready.length) setProblem("The ASL sentences could not load.");
       })
       .catch((error: unknown) => {
         if (!cancelled) setProblem(error instanceof Error ? error.message : "The ASL sentence could not load.");
@@ -98,7 +213,7 @@ export function AslSample({ step }: { step: number }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [onLines]);
 
   useEffect(() => {
     const frames = clip?.frames ?? [];
