@@ -21,6 +21,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.channels.router import router as channels_router
 from app.modules.followup.router import router as followup_router
 from app.modules.interop.router import router as hospital_router
+from app.modules.ksl.research.router import router as ksl_research_router
 from app.modules.ksl.router import router as ksl_router
 from app.modules.maternal.device_router import router as device_router
 from app.modules.maternal.router import router as maternal_router
@@ -94,6 +95,7 @@ for module_router in (
     device_router,
     followup_router,
     ksl_router,
+    ksl_research_router,
 ):
     api.include_router(module_router)
 

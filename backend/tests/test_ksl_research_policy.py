@@ -16,8 +16,8 @@ from app.modules.ksl.research.fetch import DatasetRefused, download, run
 from app.modules.ksl.research.policy import ResearchDisabled, license_verified
 
 ROOT = Path(__file__).resolve().parents[2]
+# main.py mounts the dev research router. Patient, Telegram, and clip routes do not.
 PATIENT_FILES = [
-    "backend/app/main.py",
     "backend/app/modules/ksl/router.py",
     "backend/app/modules/ksl/registry.py",
     "backend/app/modules/ksl/manifest.py",

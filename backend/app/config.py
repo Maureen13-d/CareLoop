@@ -6,7 +6,7 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="CARELOOP_")
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="CARELOOP_", extra="ignore")
     cors_origins: list[str] = ["http://localhost:3000"]
     seed_cases: int = 25
     seed: int = 42
