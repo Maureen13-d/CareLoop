@@ -1,5 +1,6 @@
 "use client";
 
+import { SigningAvatar } from "@/ksl/SigningAvatar";
 import { useEffect, useState } from "react";
 import { simulatedCode } from "./actions";
 
@@ -12,6 +13,8 @@ type Reply = {
   escalation_label: string | null;
   quick_replies: { id: string; label: string }[];
   access_token?: string;
+  template_id?: string;
+  ksl?: { caption?: string; available?: boolean };
 };
 
 function Guide({ text, danger }: { text: string; danger: boolean }) {
@@ -56,6 +59,7 @@ export function EnterFlow() {
   const [hint, setHint] = useState("");
   const [reply, setReply] = useState<Reply | null>(null);
   const [error, setError] = useState("");
+  const [language, setLanguage] = useState<"en" | "ksl">("en");
 
   async function start() {
     setError("");
@@ -89,13 +93,18 @@ export function EnterFlow() {
   }
 
   async function say(bearer: string, message: string) {
-    const res = await fetch(`${API}/api/v1/followup/talk`, {
+    const path = language === "ksl" ? "/api/v1/ksl/talk" : "/api/v1/followup/talk";
+    const body =
+      language === "ksl"
+        ? { message, channel: "web" }
+        : { message, channel: "web", language: "en" };
+    const res = await fetch(`${API}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${bearer}` },
-      body: JSON.stringify({ message, channel: "web", language: "en" }),
+      body: JSON.stringify(body),
     });
-    const body = (await res.json()) as Reply;
-    setReply(body);
+    const payload = (await res.json()) as Reply;
+    setReply(payload);
   }
 
   const danger = reply?.escalation_label === "danger_sign" || reply?.escalation_label === "worse";
@@ -106,6 +115,14 @@ export function EnterFlow() {
       <h1 className="text-3xl">Your card</h1>
       {!token ? (
         <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-2">
+            <button className={button} type="button" onClick={() => setLanguage("en")}>
+              {language === "en" ? "English selected" : "English"}
+            </button>
+            <button className={button} type="button" onClick={() => setLanguage("ksl")}>
+              {language === "ksl" ? "Kenyan Sign Language selected" : "Kenyan Sign Language"}
+            </button>
+          </div>
           <label className="block text-lg">
             ID
             <input
@@ -132,7 +149,28 @@ export function EnterFlow() {
         </div>
       ) : (
         <div className="space-y-3">
-          <Guide text={reply?.spoken_text || reply?.reply_text || "Your next step is to go to the clinic."} danger={Boolean(danger)} />
+          {language === "ksl" ? (
+            <SigningAvatar
+              caption={
+                reply?.ksl?.caption ||
+                reply?.spoken_text ||
+                reply?.reply_text ||
+                "Your next step is to go to the clinic."
+              }
+              danger={Boolean(danger)}
+              available={Boolean(reply?.ksl?.available)}
+            />
+          ) : (
+            <Guide
+              text={reply?.spoken_text || reply?.reply_text || "Your next step is to go to the clinic."}
+              danger={Boolean(danger)}
+            />
+          )}
+          {language === "ksl" ? (
+            <p className="text-sm">
+              You can answer with taps. The camera stays off. Recognition not enabled in this build.
+            </p>
+          ) : null}
           <p className="text-lg">Have you been able to get to care?</p>
           <div className="grid grid-cols-1 gap-2">
             {(reply?.quick_replies ?? []).map((item) => (
