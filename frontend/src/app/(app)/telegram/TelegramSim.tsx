@@ -27,13 +27,6 @@ export function TelegramSim() {
     if (turns.length) endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [turns.length]);
 
-  useEffect(() => {
-    const last = turns.at(-1);
-    if (last?.who === "guide" && ASKS_FOR_CARD.test(last.text)) {
-      setText((current) => current || DEMO_CARD_ID);
-    }
-  }, [turns]);
-
   async function send(value: string, callback?: string) {
     const mine = value.trim();
     if (!mine && !callback) return;
@@ -52,8 +45,11 @@ export function TelegramSim() {
         }),
       });
       const body = (await res.json()) as { reply_text?: string; buttons?: Button[] };
+      const replyText = body.reply_text ?? "";
       setButtons(body.buttons ?? []);
-      setTurns((current) => [...current, { who: "guide", text: body.reply_text ?? "" }]);
+      setTurns((current) => [...current, { who: "guide", text: replyText }]);
+      // When the guide asks for a card, fill in the demo card so the next tap sends it.
+      if (ASKS_FOR_CARD.test(replyText)) setText((current) => current || DEMO_CARD_ID);
     } catch {
       setTurns((current) => [...current, { who: "guide", text: `Could not reach the API at ${API}.` }]);
     } finally {

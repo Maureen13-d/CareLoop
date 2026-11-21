@@ -156,6 +156,14 @@ def _result(reading: Reading, case_id: int | None, duplicate: bool) -> dict:
     }
 
 
+HUB_SUMMARY = {
+    "yellow": "A home reading was labelled yellow. A navigator may call. "
+    "Decision support only. PENDING CLINICAL REVIEW.",
+    "red": "A home reading was labelled red. The person was told to go to a clinic now. "
+    "Decision support only. PENDING CLINICAL REVIEW.",
+}
+
+
 def _flag_case(db: Session, patient: Patient, pregnancy: Pregnancy, level: str):
     case = find_open_case(db, patient.id, "maternal")
     if case is None:
@@ -178,6 +186,10 @@ def _flag_case(db: Session, patient: Patient, pregnancy: Pregnancy, level: str):
     )
     if level == "red" and task.priority != "urgent":
         task.priority = "urgent"
+    # Say which colour it was, so yellow and red read differently on the navigator's page.
+    # A later yellow never softens an open red.
+    if level == "red" or task.priority != "urgent":
+        task.summary = HUB_SUMMARY[level]
     db.commit()
     return case
 

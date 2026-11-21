@@ -86,7 +86,7 @@ export function HubSim({ booklets }: { booklets: Booklet[] }) {
     if (!booklet) {
       setError(
         booklets.length === 0
-          ? "The light on this screen is the label. Booklets stay with the community health promoter, so this reading is not sent."
+          ? "No booklet is linked to this account, so this reading is not sent. If you feel unwell, go to the nearest clinic."
           : "Choose a booklet.",
       );
       return;
@@ -138,7 +138,7 @@ export function HubSim({ booklets }: { booklets: Booklet[] }) {
         <h2 id="reading-heading" className="text-lg">
           The reading
         </h2>
-        {booklets.length > 0 ? (
+        {booklets.length > 1 ? (
           <div className="space-y-1.5">
             <label htmlFor="hub-booklet" className="block text-sm font-medium text-ink">
               Booklet
@@ -156,8 +156,13 @@ export function HubSim({ booklets }: { booklets: Booklet[] }) {
               ))}
             </select>
           </div>
+        ) : booklets.length === 1 ? (
+          <p className="text-sm text-ink-2">
+            Sending to {booklets[0].name.toLowerCase()}, <span className="font-medium text-ink">{booklets[0].ref}</span>. The light
+            updates as you move the reading.
+          </p>
         ) : (
-          <p className="text-sm text-ink-2">The light updates as you move the reading. A booklet is not listed here.</p>
+          <p className="text-sm text-ink-2">The light updates as you move the reading. No booklet is linked to this account.</p>
         )}
 
         <div className="grid gap-5 sm:grid-cols-3">
