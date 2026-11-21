@@ -66,7 +66,7 @@ CHW actions today are call, home visit, transport support, counsellor, and escal
 | ID | Title | Status | What already exists | What is missing |
 |---|---|---|---|---|
 | K00 | Audit and plan | Done in this document | Stack, languages, core return shape, and the card. | Nothing further for this feature. |
-| K01 | Asset policy | Not started | `.gitignore` blocks model weights and local databases. CI runs ruff, a subset of pytest, and the frontend build. | Ignore rules and a CI check for raw video, raw mocap, signer photos, and oversized binaries. |
+| K01 | Asset policy | Done | `.gitignore` blocks model weights, local databases, raw video, raw mocap, and signer-photo folders. `scripts/check_ksl_assets.py` rejects those files and anything over 3 MB that is not a Git LFS pointer. Approved rendered video is allowed only as an LFS pointer under `assets/ksl/approved/`. | Nothing further for this feature. |
 | K02 | Motion packet spec | Not started | No motion format. | `docs/KMP_SPEC.md`, a JSON schema, a validator, and a test clip labelled `TEST_MOTION_NOT_SIGN`. |
 | K03 | Clip tables and manifest | Not started | `create_all` on SQLAlchemy models. Lines live in YAML. | `ksl_signers`, `ksl_clips`, `ksl_reviews`, and `config/ksl_phrase_manifest.yaml`. No signer names or photos in the database. |
 | K04 | Clip registry API | Not started | Follow-up routes under the API. | `GET /ksl/clip/{template_id}` serves a clip only when it is approved and the source-text hash still matches. |

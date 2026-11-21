@@ -4,8 +4,8 @@ Feature commits on `feat/ksl-avatar`. Search with `git log --grep "Feature: K00"
 
 | Feature | Title | Status | Commits | Tests | Files |
 |---|---|---|---|---|---|
-| K00 | Audit and plan | done | this commit | none (docs only) | docs/AUDIT_KSL.md |
-| K01 | Asset policy | not started | | | |
+| K00 | Audit and plan | done | e53e9bf | none (docs only) | docs/AUDIT_KSL.md |
+| K01 | Asset policy | done | see the K01 commit | scripts/test_ksl_asset_policy.py | .gitignore, .gitattributes, scripts/check_ksl_assets.py, .github/workflows/ci.yml, assets/ksl/ |
 | K02 | Motion packet spec | not started | | | |
 | K03 | Clip tables and manifest | not started | | | |
 | K04 | Clip registry API | not started | | | |
