@@ -7,6 +7,12 @@ os.environ["CARELOOP_DEMO_SCENARIO"] = "false"
 os.environ["CARELOOP_SEED_CASES"] = "25"
 os.environ["CARELOOP_SEED"] = "42"
 os.environ["CARELOOP_SEED_WORKSPACE"] = "false"
+os.environ["TELEGRAM_BOT_TOKEN"] = ""
+os.environ["TELEGRAM_WEBHOOK_SECRET"] = ""
+os.environ["TELEGRAM_BOT_USERNAME"] = ""
+os.environ["PUBLIC_BASE_URL"] = ""
+os.environ["CARELOOP_TELEGRAM_BOT_TOKEN"] = ""
+os.environ["CARELOOP_TELEGRAM_WEBHOOK_SECRET"] = ""
 
 import pytest
 from fastapi.testclient import TestClient
