@@ -1,25 +1,11 @@
-import Link from "next/link";
+import { FilePlus } from "lucide-react";
 import { redirect } from "next/navigation";
-import { Notice } from "@/components/ui";
+import { CaseList, type CaseRow } from "./CaseList";
+import { ButtonLink, EmptyState, FilterTabs, Notice, Page, PageHeader } from "@/components/ui";
 import { ApiError, api } from "@/lib/api";
-import { stageShort } from "@/lib/format";
 import { getSession } from "@/lib/session";
 
 export const instant = false;
-
-type CaseRow = {
-  id: number;
-  patient_ref: string | null;
-  patient_display_name: string | null;
-  state: string;
-  state_label: string;
-  urgency: string;
-  owner_user_name: string | null;
-  unowned: boolean;
-  overdue: boolean;
-  hours_overdue: number | null;
-  open_escalations: number;
-};
 
 const FILTERS = [
   { id: "open", label: "Open" },
@@ -27,6 +13,13 @@ const FILTERS = [
   { id: "unowned", label: "No owner" },
   { id: "all", label: "Everything" },
 ] as const;
+
+const EMPTY: Record<string, string> = {
+  open: "No journeys are open. A case opens when a clinician records a concerning finding with consent.",
+  overdue: "No open journey is past its assumed deadline.",
+  unowned: "Every open journey has an owner.",
+  all: "No cases have been recorded yet.",
+};
 
 function queryFor(filter: string): string {
   if (filter === "overdue") return "/cases?status=open&overdue=true&limit=100";
@@ -55,72 +48,33 @@ export default async function DeskPage({
   }
 
   return (
-    <main className="space-y-6 px-4 py-6 md:px-0 md:py-0">
-      <header>
-        <p className="text-sm text-lagoon">Cases</p>
-        <h1 className="mt-1 text-4xl">Everyone on the pathway</h1>
-        <p className="mt-2 max-w-xl text-ink-soft">
-          A case opens when a clinician records a concerning finding and the person has agreed
-          to be contacted. Names here are synthetic.
-        </p>
-      </header>
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter cases">
-        {FILTERS.map((item) => (
-          <Link
-            key={item.id}
-            href={item.id === "open" ? "/desk" : `/desk?filter=${item.id}`}
-            className={`rounded-full px-3 py-1.5 text-sm ${
-              active === item.id ? "bg-ink text-white" : "border border-line bg-paper-2"
-            }`}
-            aria-current={active === item.id ? "page" : undefined}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </div>
+    <Page>
+      <PageHeader
+        title="Everyone on the pathway"
+        description="A case opens when a clinician records a concerning finding and the person has agreed to be contacted. Names here are synthetic."
+        actions={
+          user.role === "clinician" ? (
+            <ButtonLink href="/intake" variant="primary">
+              <FilePlus aria-hidden="true" />
+              Open a case
+            </ButtonLink>
+          ) : undefined
+        }
+      />
+      <FilterTabs
+        label="Filter cases"
+        active={active}
+        items={FILTERS.map((item) => ({
+          id: item.id,
+          label: item.label,
+          href: item.id === "open" ? "/desk" : `/desk?filter=${item.id}`,
+        }))}
+      />
       {problem ? <Notice tone="bad">{problem}</Notice> : null}
-      {cases.length === 0 && !problem ? (
-        <p>No cases in this view.</p>
-      ) : (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-paper-2">
-          <table className="w-full text-left text-sm">
-            <thead className="text-ink-soft">
-              <tr className="border-b border-line">
-                <th className="px-4 py-3 font-medium">Person</th>
-                <th className="px-4 py-3 font-medium">Where</th>
-                <th className="px-4 py-3 font-medium">Owner</th>
-                <th className="px-4 py-3 font-medium">Attention</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cases.map((item) => (
-                <tr key={item.id} className="border-b border-line last:border-0">
-                  <td className="px-4 py-3">
-                    <Link href={`/desk/${item.id}`} className="font-medium underline decoration-line underline-offset-2">
-                      {item.patient_display_name}
-                    </Link>
-                    <span className="mt-0.5 block text-ink-soft">{item.patient_ref}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {stageShort(item.state)}
-                    {item.urgency === "urgent" ? (
-                      <span className="ml-2 rounded-full bg-[#f8e8e4] px-2 py-0.5 text-xs text-danger">Urgent</span>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-3">{item.owner_user_name ?? "Unowned"}</td>
-                  <td className="px-4 py-3 text-clay">
-                    {item.overdue
-                      ? `${item.hours_overdue}h past deadline`
-                      : item.open_escalations
-                        ? "Escalated"
-                        : "On time"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </main>
+      {!problem && cases.length === 0 ? (
+        <EmptyState title="No cases in this view">{EMPTY[active]}</EmptyState>
+      ) : null}
+      {cases.length > 0 ? <CaseList key={active} rows={cases} /> : null}
+    </Page>
   );
 }

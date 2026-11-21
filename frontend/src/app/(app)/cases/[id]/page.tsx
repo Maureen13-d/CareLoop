@@ -1,60 +1,40 @@
 export const instant = false;
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CHANNEL_LABEL, fmtStage, fmtTime } from "@/components/OutreachKind";
 import {
-  STAGES,
-  getCaseDetail,
-  type CaseStatus,
-  type OutreachEvent,
-  type Stage,
-} from "@/lib/outreach-api";
+  Badge,
+  Banner,
+  Card,
+  JourneyStepper,
+  Notice,
+  Page,
+  PageHeader,
+  SectionHeader,
+  Timeline,
+  TimelineItem,
+  type Tone,
+} from "@/components/ui";
+import { STAGES, getCaseDetail, type CaseStatus, type OutreachEvent } from "@/lib/outreach-api";
 import { markAttended } from "./actions";
 import { AttendedButton } from "./AttendedButton";
 
-const STATUS: Record<CaseStatus, { label: string; blurb: string; classes: string }> = {
-  on_track: {
-    label: "On track",
-    blurb: "Within the expected timeframe for this stage.",
-    classes: "bg-green-100 text-green-900 dark:bg-green-900/40 dark:text-green-100",
-  },
-  overdue: {
-    label: "Overdue",
-    blurb: "Past the target timeframe. Automated outreach is in progress.",
-    classes: "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100",
-  },
+const STATUS: Record<CaseStatus, { label: string; blurb: string; tone: Tone }> = {
+  on_track: { label: "On track", blurb: "Within the expected timeframe for this stage.", tone: "teal" },
+  overdue: { label: "Overdue", blurb: "Past the target timeframe. Automated outreach is in progress.", tone: "warn" },
   escalated: {
     label: "Escalated",
     blurb: "Automated outreach is exhausted. A care coordinator needs to step in.",
-    classes: "bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-100",
+    tone: "danger",
   },
-  closed: {
-    label: "Closed",
-    blurb: "This case has finished the pathway.",
-    classes: "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100",
-  },
+  closed: { label: "Closed", blurb: "This case has finished the pathway.", tone: "neutral" },
 };
-
-const CHANNEL_LABEL: Record<string, string> = {
-  sms: "SMS reminder",
-  call: "Phone call",
-  home_visit: "Home visit (CHW)",
-  coordinator: "Escalated to care coordinator",
-  clinic: "Clinic visit",
-};
-
-const fmtStage = (s: string) => s.replace(/_/g, " ");
-const fmtTime = (iso: string) =>
-  new Date(iso).toLocaleString("en-GB", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "UTC",
-  });
 
 function eventTitle(e: OutreachEvent): string {
   if (e.kind === "response") {
     return `Patient attended (after ${e.attempt} outreach contact${e.attempt === 1 ? "" : "s"})`;
   }
-  return `${CHANNEL_LABEL[e.channel]} · attempt ${e.attempt}`;
+  if (e.kind === "escalation") return `Escalated to a care coordinator, attempt ${e.attempt}`;
+  return `${CHANNEL_LABEL[e.channel]}, attempt ${e.attempt}`;
 }
 
 export default async function CasePage({
@@ -71,134 +51,103 @@ export default async function CasePage({
 
   const { case: c, status, next_stages: nextStages, events } = detail;
   const s = STATUS[status];
-  const visited = new Set<Stage>(c.history.map((h) => h.stage));
-  const justAttended = attended && STAGES.includes(attended as Stage) ? attended : null;
+  const justAttended = attended && (STAGES as readonly string[]).includes(attended) ? attended : null;
 
   return (
-    <main className="mx-auto max-w-3xl space-y-8 p-6 sm:p-8">
-      <nav aria-label="Breadcrumb">
-        <Link href="/outreach" className="text-sm underline underline-offset-2">
-          ← Back to outreach queue
-        </Link>
-      </nav>
+    <Page>
+      <PageHeader
+        back={{ href: "/outreach", label: "Follow-up ladder" }}
+        title={`Case ${c.id}`}
+        description={
+          <>
+            {s.blurb} In {fmtStage(c.stage).toLowerCase()} since{" "}
+            <time dateTime={c.stage_entered_at}>{fmtTime(c.stage_entered_at)} UTC</time>.
+          </>
+        }
+        meta={
+          <>
+            <Badge tone="outline">{c.patient_ref}</Badge>
+            <Badge tone={s.tone}>{s.label}</Badge>
+          </>
+        }
+      />
 
-      <p
-        role="note"
-        className="rounded-md bg-amber-100 p-2 text-sm text-amber-900 dark:bg-amber-900/40 dark:text-amber-100"
-      >
-        Synthetic data only. Contacts are simulated; nothing is actually sent. Pathway timings are unreviewed placeholders pending clinical review.
-      </p>
+      <Banner>
+        Synthetic data only. Contacts are simulated; nothing is actually sent. Pathway timings are unreviewed placeholders
+        pending clinical review.
+      </Banner>
 
-      {justAttended && (
-        <div
-          role="status"
-          className="rounded-md border border-green-700 bg-green-50 p-4 text-green-950 dark:bg-green-900/30 dark:text-green-50"
-        >
-          <strong>Loop closed.</strong> The patient attended and the case moved to{" "}
-          {fmtStage(justAttended)}. The outreach ladder has been reset for this stage.
-        </div>
-      )}
+      {justAttended ? (
+        <Notice tone="ok" title="Loop closed">
+          The patient attended and the case moved to {fmtStage(justAttended).toLowerCase()}. The outreach ladder has been
+          reset for this stage.
+        </Notice>
+      ) : null}
 
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">
-          Case {c.id} <span className="font-normal">· {c.patient_ref}</span>
-        </h1>
-        <div className="flex flex-wrap items-center gap-3">
-          <span className={`rounded-full px-3 py-1 text-sm font-medium ${s.classes}`}>
-            {s.label}
-          </span>
-          <span className="text-sm text-neutral-600 dark:text-neutral-300">{s.blurb}</span>
-        </div>
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
-          In <span className="capitalize">{fmtStage(c.stage)}</span> since{" "}
-          <time dateTime={c.stage_entered_at}>{fmtTime(c.stage_entered_at)} UTC</time>
-        </p>
-      </header>
-
-      <section aria-labelledby="progress-heading" className="space-y-3">
-        <h2 id="progress-heading" className="text-lg font-medium">
+      <Card as="section" aria-labelledby="progress-heading">
+        <h2 id="progress-heading" className="sr-only">
           Pathway progress
         </h2>
-        <ol aria-label="Care pathway stages" className="flex flex-wrap gap-2 text-sm">
-          {STAGES.map((stage) => {
-            const isCurrent = stage === c.stage;
-            const isDone = visited.has(stage) && !isCurrent;
-            const style = isCurrent
-              ? "border-teal-700 bg-teal-700 text-white"
-              : isDone
-                ? "border-green-700 text-green-900 dark:text-green-100"
-                : "border-black/20 text-neutral-600 dark:border-white/25 dark:text-neutral-300";
-            return (
-              <li
-                key={stage}
-                aria-current={isCurrent ? "step" : undefined}
-                className={`rounded-full border px-3 py-1 capitalize ${style}`}
-              >
-                {isDone && <span aria-hidden="true">✓ </span>}
-                {fmtStage(stage)}
-                {isDone && <span className="sr-only"> (completed)</span>}
-              </li>
-            );
-          })}
-        </ol>
-      </section>
+        <JourneyStepper
+          label="Care pathway stages"
+          steps={STAGES.map((stage) => ({ id: stage, label: fmtStage(stage) }))}
+          current={c.stage}
+          finished={status === "closed"}
+        />
+      </Card>
 
-      <section aria-labelledby="action-heading" className="space-y-3">
-        <h2 id="action-heading" className="text-lg font-medium">
-          Record patient attendance
-        </h2>
-        {nextStages.length === 0 ? (
-          <p>This case is closed. No further action is needed.</p>
-        ) : (
-          <>
-            <p>
-              {nextStages.length > 1
-                ? "The next step depends on the outcome of the visit. Choose one:"
-                : "Confirm that the patient attended. The case will advance and the outreach ladder will reset."}
-            </p>
-            <div className="flex flex-wrap gap-3">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+        <Card as="section" aria-labelledby="action-heading">
+          <SectionHeader
+            id="action-heading"
+            title="Record patient attendance"
+            description={
+              nextStages.length === 0
+                ? "This case is closed. No further action is needed."
+                : nextStages.length > 1
+                  ? "The next step depends on the outcome of the visit. Choose one."
+                  : "Confirm that the patient attended. The case will advance and the outreach ladder will reset."
+            }
+          />
+          {nextStages.length > 0 ? (
+            <div className="mt-5 flex flex-wrap gap-3">
               {nextStages.map((next) => (
                 <form key={next} action={markAttended}>
                   <input type="hidden" name="caseId" value={c.id} />
                   <input type="hidden" name="toStage" value={next} />
-                  <AttendedButton label={`Patient attended → ${fmtStage(next)}`} />
+                  <AttendedButton label={`Attended, move to ${fmtStage(next).toLowerCase()}`} />
                 </form>
               ))}
             </div>
-          </>
-        )}
-      </section>
+          ) : null}
+        </Card>
 
-      <section aria-labelledby="timeline-heading" className="space-y-3">
-        <h2 id="timeline-heading" className="text-lg font-medium">
-          Outreach timeline
-        </h2>
-        {events.length === 0 ? (
-          <p>No outreach recorded yet.</p>
-        ) : (
-          <ol className="space-y-4 border-l border-black/15 pl-4 dark:border-white/20">
-            {events.map((e) => (
-              <li
-                key={e.id}
-                className={
-                  e.kind === "response"
-                    ? "rounded-md bg-green-50 p-3 dark:bg-green-900/30"
-                    : e.kind === "escalation"
-                      ? "rounded-md bg-red-50 p-3 dark:bg-red-900/30"
-                      : "p-3"
-                }
-              >
-                <p className="font-medium">{eventTitle(e)}</p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-300">
-                  <time dateTime={e.created_at}>{fmtTime(e.created_at)} UTC</time> ·{" "}
-                  <span className="capitalize">{fmtStage(e.stage)}</span> stage
-                </p>
-                <p className="text-sm">{e.message}</p>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
-    </main>
+        <Card as="section" aria-labelledby="timeline-heading">
+          <SectionHeader id="timeline-heading" title="Outreach timeline" description="Times are UTC." />
+          <div className="mt-5">
+            {events.length === 0 ? (
+              <p className="text-sm text-ink-2">No outreach recorded yet.</p>
+            ) : (
+              <Timeline label="Outreach contacts">
+                {events.map((e) => (
+                  <TimelineItem
+                    key={e.id}
+                    tone={e.kind === "response" ? "ok" : e.kind === "escalation" ? "danger" : "default"}
+                    title={eventTitle(e)}
+                    meta={
+                      <>
+                        <time dateTime={e.created_at}>{fmtTime(e.created_at)}</time>, {fmtStage(e.stage).toLowerCase()} stage
+                      </>
+                    }
+                  >
+                    <span className="text-ink-2">{e.message}</span>
+                  </TimelineItem>
+                ))}
+              </Timeline>
+            )}
+          </div>
+        </Card>
+      </div>
+    </Page>
   );
 }

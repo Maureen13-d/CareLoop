@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { controlClasses } from "@/components/ui/field";
 import { sendHub } from "./actions";
 import { encodeSms, renderSms, triageMaternal } from "@/lib/maternalTriage";
 
@@ -121,124 +122,225 @@ export function HubSim({ booklets }: { booklets: Booklet[] }) {
     setBusy(false);
   }
 
+  const LAMPS = [
+    { level: "green", word: "Green", meaning: "A usual day", dot: "bg-[#2f8a4c]" },
+    { level: "yellow", word: "Yellow", meaning: "A navigator may call", dot: "bg-[#d99a1e]" },
+    { level: "red", word: "Red", meaning: "Go to a clinic now", dot: "bg-danger" },
+  ];
+
   return (
-    <div className="space-y-6">
-      <fieldset className="space-y-3">
-        <legend className="text-sm font-medium">Booklet</legend>
-        <select
-          className="min-h-12 w-full rounded-xl border border-line bg-white px-3"
-          value={booklet}
-          onChange={(event) => setBooklet(event.target.value)}
-        >
-          {booklets.length === 0 ? <option value="">No booklet seeded</option> : null}
-          {booklets.map((item) => (
-            <option key={item.ref} value={item.ref}>
-              {item.ref} · {item.name}
-            </option>
-          ))}
-        </select>
-      </fieldset>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Slider label="Systolic" value={sys} min={80} max={200} onChange={setSys} />
-        <Slider label="Diastolic" value={dia} min={40} max={140} onChange={setDia} />
-        <Slider label="Pulse" value={pulse} min={40} max={160} onChange={setPulse} />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm">
-          Urine protein
-          <select className="mt-1 min-h-12 w-full rounded-xl border border-line bg-white px-3" value={urine} onChange={(event) => setUrine(event.target.value)}>
-            {["neg", "trace", "1+", "2+", "3+", "unknown"].map((item) => (
-              <option key={item}>{item}</option>
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+      <section aria-labelledby="reading-heading" className="space-y-6 rounded-2xl border border-line bg-surface p-5 shadow-raised sm:p-6">
+        <h2 id="reading-heading" className="text-lg">
+          The reading
+        </h2>
+        <div className="space-y-1.5">
+          <label htmlFor="hub-booklet" className="block text-sm font-medium text-ink">
+            Booklet
+          </label>
+          <select
+            id="hub-booklet"
+            className={controlClasses}
+            value={booklet}
+            onChange={(event) => setBooklet(event.target.value)}
+          >
+            {booklets.length === 0 ? <option value="">No booklet seeded</option> : null}
+            {booklets.map((item) => (
+              <option key={item.ref} value={item.ref}>
+                {item.ref}, {item.name}
+              </option>
             ))}
           </select>
-        </label>
-        <label className="block text-sm">
-          Haemoglobin band
-          <select className="mt-1 min-h-12 w-full rounded-xl border border-line bg-white px-3" value={hb} onChange={(event) => setHb(event.target.value)}>
-            {["normal", "mild", "moderate", "severe", "unknown"].map((item) => (
-              <option key={item}>{item}</option>
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-3">
+          <Slider label="Systolic" unit="mmHg" value={sys} min={80} max={200} onChange={setSys} />
+          <Slider label="Diastolic" unit="mmHg" value={dia} min={40} max={140} onChange={setDia} />
+          <Slider label="Pulse" unit="bpm" value={pulse} min={40} max={160} onChange={setPulse} />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label htmlFor="hub-urine" className="block text-sm font-medium text-ink">
+              Urine protein
+            </label>
+            <select id="hub-urine" className={controlClasses} value={urine} onChange={(event) => setUrine(event.target.value)}>
+              {["neg", "trace", "1+", "2+", "3+", "unknown"].map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="hub-hb" className="block text-sm font-medium text-ink">
+              Haemoglobin band
+            </label>
+            <select id="hub-hb" className={controlClasses} value={hb} onChange={(event) => setHb(event.target.value)}>
+              {["normal", "mild", "moderate", "severe", "unknown"].map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <fieldset>
+          <legend className="text-sm font-medium text-ink">Danger signs</legend>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {SIGNS.map(([id, label]) => (
+              <label
+                key={id}
+                className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-line bg-surface px-3 text-sm has-[:checked]:border-danger/40 has-[:checked]:bg-danger-bg"
+              >
+                <input type="checkbox" className="size-4 accent-deep" checked={signs.includes(id)} onChange={() => toggle(id)} />
+                {label}
+              </label>
             ))}
+          </div>
+        </fieldset>
+      </section>
+
+      <section
+        aria-labelledby="device-heading"
+        className="on-dark space-y-5 rounded-2xl bg-emerald p-5 text-white shadow-float sm:p-6 lg:sticky lg:top-6"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <h2 id="device-heading" className="text-lg text-white">
+            Hub HUB-0007
+          </h2>
+          <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[0.8125rem] text-on-dark">Simulated</span>
+        </div>
+
+        <ul className="space-y-2" aria-label="On-device light">
+          {LAMPS.map((lamp) => {
+            const on = local.level === lamp.level;
+            return (
+              <li
+                key={lamp.level}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${on ? "bg-white text-ink" : "bg-white/[0.06] text-on-dark-2"}`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`size-3.5 shrink-0 rounded-full ${on ? `${lamp.dot} ring-4 ring-black/5` : "bg-white/20"}`}
+                />
+                <span className="text-sm">
+                  <span className="font-semibold">{lamp.word}</span>, {lamp.meaning.toLowerCase()}
+                </span>
+                <span className="ml-auto text-[0.75rem] font-medium">{on ? "On" : "Off"}</span>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="rounded-xl bg-black/20 px-4 py-3 text-sm">
+          <p className="text-on-dark-2">Reply the person would get</p>
+          <p className="mt-1 text-white">{reply}</p>
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="hub-language" className="block text-sm text-on-dark">
+            Reply language
+          </label>
+          <select
+            id="hub-language"
+            className="min-h-10 w-full rounded-xl border border-white/20 bg-white/10 px-3 text-sm text-white [&>option]:text-ink"
+            value={language}
+            onChange={(event) => setLanguage(event.target.value as "en" | "sw")}
+          >
+            <option value="en">English</option>
+            <option value="sw">Swahili</option>
           </select>
-        </label>
-      </div>
-
-      <fieldset>
-        <legend className="text-sm font-medium">Danger signs</legend>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {SIGNS.map(([id, label]) => (
-            <label key={id} className="flex min-h-12 items-center gap-3 rounded-xl border border-line bg-white px-3">
-              <input type="checkbox" checked={signs.includes(id)} onChange={() => toggle(id)} />
-              {label}
-            </label>
-          ))}
         </div>
-      </fieldset>
 
-      <fieldset>
-        <legend className="text-sm font-medium">Link</legend>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {(["data", "sms", "offline"] as Link[]).map((item) => (
-            <label key={item} className="flex min-h-12 items-center gap-2 rounded-full border border-line bg-white px-4">
-              <input type="radio" name="link" checked={link === item} onChange={() => setLink(item)} />
-              {item === "data" ? "Data" : item === "sms" ? "SMS" : "Offline"}
-            </label>
-          ))}
+        <fieldset>
+          <legend className="text-sm text-on-dark">Link</legend>
+          <div className="mt-2 grid grid-cols-3 gap-1 rounded-full bg-black/20 p-1">
+            {(["data", "sms", "offline"] as Link[]).map((item) => (
+              <label
+                key={item}
+                className="flex min-h-9 cursor-pointer items-center justify-center rounded-full text-sm text-on-dark has-[:checked]:bg-white has-[:checked]:font-medium has-[:checked]:text-emerald has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-on-dark"
+              >
+                <input type="radio" name="link" className="sr-only" checked={link === item} onChange={() => setLink(item)} />
+                {item === "data" ? "Data" : item === "sms" ? "SMS" : "Offline"}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div className="space-y-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => submit(false)}
+            className="min-h-11 w-full rounded-full bg-on-dark text-[0.9375rem] font-medium text-emerald hover:bg-white disabled:opacity-60"
+          >
+            {busy ? "Sending…" : "Send reading"}
+          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => submit(true)}
+              className="min-h-10 rounded-full border border-white/25 text-sm text-white hover:bg-white/10 disabled:opacity-60"
+            >
+              Send it again
+            </button>
+            <button
+              type="button"
+              disabled={busy || queue.length === 0}
+              onClick={flush}
+              className="min-h-10 rounded-full border border-white/25 text-sm text-white hover:bg-white/10 disabled:opacity-50"
+            >
+              Send {queue.length} queued
+            </button>
+          </div>
         </div>
-      </fieldset>
 
-      <div className="grid gap-2 sm:grid-cols-3" aria-label="On-device level">
-        <Lamp word="Green · usual day" on={local.level === "green"} />
-        <Lamp word="Yellow · navigator" on={local.level === "yellow"} />
-        <Lamp word="Red · go now" on={local.level === "red"} />
-      </div>
-      <p className="text-sm">
-        On-device label: {local.level}. {reply}
-      </p>
-      <label className="flex items-center gap-2 text-sm">
-        Reply language
-        <select className="min-h-12 rounded-xl border border-line bg-white px-3" value={language} onChange={(event) => setLanguage(event.target.value as "en" | "sw")}>
-          <option value="en">English</option>
-          <option value="sw">Swahili</option>
-        </select>
-      </label>
-
-      <div className="flex flex-wrap gap-2">
-        <button type="button" disabled={busy} onClick={() => submit(false)} className="min-h-12 rounded-full bg-lagoon px-4 text-white">
-          Send reading
-        </button>
-        <button type="button" disabled={busy} onClick={() => submit(true)} className="min-h-12 rounded-full border border-line bg-white px-4">
-          Send the same reading again
-        </button>
-        <button type="button" disabled={busy || queue.length === 0} onClick={flush} className="min-h-12 rounded-full border border-line bg-white px-4">
-          Send {queue.length} queued
-        </button>
-      </div>
-      {error ? <p className="text-sm text-danger">{error}</p> : null}
-      {result ? (
-        <p className="text-sm">
-          Server label: {result.level}
-          {result.duplicate ? " · duplicate ignored" : ""} · {result.via}. A colour is a label, not a diagnosis.
-        </p>
-      ) : null}
+        <div aria-live="polite" className="space-y-2">
+          {error ? <p className="rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p> : null}
+          {result ? (
+            <p className="rounded-xl bg-white/10 px-3 py-2 text-sm text-white">
+              Server label: <span className="font-semibold">{result.level}</span>
+              {result.duplicate ? ", duplicate ignored" : ""}, sent by {result.via}. A colour is a label, not a diagnosis.
+            </p>
+          ) : null}
+        </div>
+      </section>
     </div>
   );
 }
 
-function Slider({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (value: number) => void }) {
+function Slider({
+  label,
+  unit,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  unit: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (value: number) => void;
+}) {
+  const id = `hub-${label.toLowerCase()}`;
   return (
-    <label className="block text-sm">
-      {label} · {value}
-      <input className="mt-2 block w-full" type="range" min={min} max={max} value={value} onChange={(event) => onChange(Number(event.target.value))} />
-    </label>
-  );
-}
-
-function Lamp({ word, on }: { word: string; on: boolean }) {
-  return (
-    <p className={`min-h-12 rounded-2xl border-2 px-3 py-2 text-sm ${on ? "border-ink bg-white font-medium" : "border-line text-ink-soft"}`}>
-      {word} · {on ? "on" : "off"}
-    </p>
+    <div>
+      <label htmlFor={id} className="flex items-baseline justify-between text-sm font-medium text-ink">
+        {label}
+        <span className="text-lg font-semibold tabular-nums">
+          {value} <span className="text-[0.75rem] font-normal text-ink-2">{unit}</span>
+        </span>
+      </label>
+      <input
+        id={id}
+        className="mt-2 block w-full accent-deep"
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+      />
+    </div>
   );
 }

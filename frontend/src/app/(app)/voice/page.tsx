@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Banner } from "@/components/ui";
+import { Badge, Banner, Page, PageHeader } from "@/components/ui";
 import { getSession } from "@/lib/session";
 import { loadVoiceCases } from "./actions";
 import { VoiceLab } from "./VoiceLab";
@@ -18,20 +18,17 @@ export default async function VoicePage() {
   }
 
   return (
-    <main className="space-y-6 px-4 py-6 md:px-0 md:py-0">
-      <header className="max-w-2xl">
-        <p className="text-sm text-lagoon">Voice check-in · synthetic</p>
-        <h1 className="mt-1 text-4xl">The same follow-up, spoken.</h1>
-        <p className="mt-3 text-ink-soft">
-          Pick a seeded person, hear the clinic check, and answer in words. Msingi speaks and
-          listens. No phone call is placed.
-        </p>
-      </header>
+    <Page>
+      <PageHeader
+        title="The same follow-up, spoken."
+        description="Pick a seeded person, hear the clinic check, and answer in words. Msingi speaks and listens. No phone call is placed."
+        meta={<Badge tone="outline">Synthetic voice check-in</Badge>}
+      />
       <Banner>
         These people are synthetic, with suggestive symptoms for the test. The guide does not
         diagnose. If they sound worse, it tells them to go to the nearest clinic.
       </Banner>
-      {error ? <p className="text-sm text-clay">{error}</p> : <VoiceLab cases={cases} />}
-    </main>
+      {error ? <p className="text-sm text-danger">{error}</p> : <VoiceLab cases={cases} />}
+    </Page>
   );
 }
