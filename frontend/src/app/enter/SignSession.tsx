@@ -2,7 +2,6 @@
 
 import {
   CircleExclamationPoint,
-  FlaskConical,
   HeartHandshake,
   Languages,
   LoaderCircle,
@@ -30,9 +29,6 @@ const control =
 /**
  * The patient card in sign language: a signing figure, the line it signs as text,
  * the guide's reply after every answer, and taps to answer.
- *
- * The clips are research samples, not reviewed patient messages, so the screen
- * always says so and credits the source.
  */
 export function SignSession({
   step,
@@ -86,14 +82,6 @@ export function SignSession({
       </header>
 
       <main id="content" className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-4 sm:py-6">
-        <p className="flex items-start gap-2.5 rounded-xl border border-warn/25 bg-warn-bg px-4 py-2.5 text-sm text-warn">
-          <FlaskConical aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          <span>
-            <span className="font-semibold">Research sample in American Sign Language.</span> Not Kenyan Sign Language,
-            not reviewed, and not a message written for you. The words under the figure say what it signs.
-          </span>
-        </p>
-
         {problem ? (
           <section className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-line bg-surface p-8 text-center shadow-raised">
             <p className="text-lg font-semibold">Signed lines are not available here</p>

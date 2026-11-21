@@ -9,6 +9,7 @@ primary_region = "jnb"
   CARELOOP_EXPOSE_SIMULATED_CODES = "true"
   CORS_ORIGINS = "https://careloop-screening-web.fly.dev"
   DATABASE_URL = "sqlite:////data/careloop.db"
+  ASL_RESEARCH_PACKETS = "/srv/data/external/asl/packets"
 
 [[mounts]]
   source = "careloop_data"
