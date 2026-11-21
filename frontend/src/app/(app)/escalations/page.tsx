@@ -27,6 +27,7 @@ const SOURCE_LABEL: Record<string, string> = {
   channel: "Basic phone",
   checkin: "Check-in",
   system: "Guide",
+  device: "Cuff hub",
 };
 
 type CaseRow = {
@@ -171,7 +172,9 @@ export default async function EscalationsPage({
   }
 
   for (const task of tasks) {
-    if (!GUIDE_SOURCES.has(task.source ?? "")) continue;
+    // A red hub reading is escalated. A yellow one stays a note on the navigator's Today page.
+    const redReading = task.source === "device" && task.priority === "urgent";
+    if (!GUIDE_SOURCES.has(task.source ?? "") && !redReading) continue;
     const item =
       task.case_id == null
         ? ensure(null, { name: task.patient_display_name, ref: task.patient_ref })
@@ -203,7 +206,7 @@ export default async function EscalationsPage({
     <Page>
       <PageHeader
         title="Escalated by the guide"
-        description="Cases the guide handed to a person, from the chat, the phone, Telegram or a check-in. The person’s own words are not on this list."
+        description="Cases the guide handed to a person, from the chat, the phone, Telegram, a check-in or a red cuff hub reading. The person’s own words are not on this list."
         meta={<Badge tone={list.length ? "danger" : "neutral"}>{list.length} waiting</Badge>}
       />
       {error ? <Notice tone="bad">{error}</Notice> : null}

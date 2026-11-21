@@ -17,7 +17,16 @@ from app.modules.auth.models import (
     ROLE_PATIENT,
     ROLE_PROGRAM_MANAGER,
 )
-from app.modules.followup import access, checkins, facility, register, telegram, voice, worklist
+from app.modules.followup import (
+    access,
+    checkins,
+    facility,
+    links,
+    register,
+    telegram,
+    voice,
+    worklist,
+)
 from app.modules.followup.access import REJECTED, read_token
 from app.modules.followup.cohort import build_cohort, report
 from app.modules.followup.conversation import (
@@ -137,6 +146,12 @@ def dev_code(public_id: str, _user=Depends(dev_reader)):
     if not code:
         raise DomainError(404, "not_found", "No simulated code")
     return {"public_id": public_id, "simulated_code": code, "simulated": True, "synthetic": True}
+
+
+@router.get("/my-booklet")
+def my_booklet(db: Session = Depends(get_db), user=Depends(require_roles(ROLE_PATIENT))):
+    """The signed-in patient's own booklet, for the Cuff hub. Never anyone else's."""
+    return {"ref": links.booklet_for_user(db, user), "synthetic": True}
 
 
 @router.get("/me")

@@ -86,6 +86,24 @@ function Speak({ text, muted }: { text: string; muted: boolean }) {
   return null;
 }
 
+type CodeResult = { code?: string } | { error: string };
+
+/** Ask the server to send a sign-in code for a card. No component state here. */
+async function startAccess(id: string): Promise<CodeResult> {
+  try {
+    const res = await fetch(`${API}/api/v1/followup/access/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ public_id: id, client_key: "web-demo" }),
+    });
+    const payload = (await res.json()) as { simulated_code?: string };
+    if (!res.ok) return { error: "That ID was not accepted." };
+    return { code: payload.simulated_code };
+  } catch {
+    return { error: "The card could not reach the server." };
+  }
+}
+
 export function EnterFlow() {
   const [publicId, setPublicId] = useState(DEMO_CARD_ID);
   const [code, setCode] = useState("");
@@ -102,37 +120,35 @@ export function EnterFlow() {
     if (ids.length) setLineIds(ids);
   }, []);
 
-  const requestCode = useCallback(async (cardId: string) => {
-    const id = cardId.trim();
-    if (!id) return;
-    const seq = ++requestSeq.current;
-    setError("");
-    setHint("");
-    try {
-      const res = await fetch(`${API}/api/v1/followup/access/start`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ public_id: id, client_key: "web-demo" }),
-      });
-      const payload = (await res.json()) as { simulated_code?: string };
-      if (seq !== requestSeq.current) return;
-      if (!res.ok) {
-        setError("That ID was not accepted.");
-        return;
-      }
-      if (payload.simulated_code) {
-        setCode(payload.simulated_code);
-        setHint(`SIMULATED code: ${payload.simulated_code}`);
-      }
-    } catch {
-      if (seq === requestSeq.current) setError("The card could not reach the server.");
+  /** Show the outcome of a code request, unless a newer request has started since. */
+  const showCode = useCallback((seq: number, result: CodeResult) => {
+    if (seq !== requestSeq.current) return;
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+    if (result.code) {
+      setCode(result.code);
+      setHint(`SIMULATED code: ${result.code}`);
     }
   }, []);
 
+  const requestCode = useCallback(
+    (cardId: string) => {
+      const id = cardId.trim();
+      if (!id) return;
+      const seq = ++requestSeq.current;
+      void startAccess(id).then((result) => showCode(seq, result));
+    },
+    [showCode],
+  );
+
+  // A card ID that looks complete asks for its code straight away, including the pre-filled demo card.
   useEffect(() => {
     if (!CARD_ID.test(publicId.trim())) return;
-    void requestCode(publicId);
-  }, [publicId, requestCode]);
+    const seq = ++requestSeq.current;
+    void startAccess(publicId.trim()).then((result) => showCode(seq, result));
+  }, [publicId, showCode]);
 
   async function check() {
     setError("");
@@ -259,12 +275,16 @@ export function EnterFlow() {
               <input
                 id="card-id"
                 value={publicId}
-                onChange={(event) => setPublicId(event.target.value)}
+                onChange={(event) => {
+                  setPublicId(event.target.value);
+                  setError("");
+                  setHint("");
+                }}
                 autoComplete="off"
                 autoCapitalize="characters"
                 className={cx(controlClass({ size: "lg" }), "tracking-wider")}
               />
-              <button className={button} type="button" onClick={() => void requestCode(publicId)} disabled={!publicId.trim()}>
+              <button className={button} type="button" onClick={() => requestCode(publicId)} disabled={!publicId.trim()}>
                 Send a code
               </button>
               {hint ? (
