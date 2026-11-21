@@ -27,6 +27,30 @@ def _file_values(path: Path) -> dict[str, str]:
     return found
 
 
+def present(kind: str, dotenv_path: Path | None = None) -> str:
+    """First non-empty value. A blank name does not hide a later alias.
+
+    When the process already has the names set, an empty value means "not
+    configured" and the developer .env file is not opened.
+    """
+    seen = False
+    for name in ALIASES[kind]:
+        if name in os.environ:
+            seen = True
+            value = os.environ[name].strip()
+            if value:
+                return value
+    if seen and dotenv_path is None:
+        return ""
+    path = BACKEND_DIR / ".env" if dotenv_path is None else dotenv_path
+    file_values = _file_values(path)
+    for name in ALIASES[kind]:
+        value = file_values.get(name, "").strip()
+        if value:
+            return value
+    return ""
+
+
 def setting(kind: str, dotenv_path: Path | None = None) -> str:
     """An explicit environment value wins, including an empty string."""
     for name in ALIASES[kind]:
