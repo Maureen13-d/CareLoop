@@ -37,3 +37,33 @@ Thumbs.db
 *.onnx
 *.gguf
 *.db-journal
+
+# Open KSL pose dataset. Download with scripts/fetch_ksl_dataset.py. Never commit.
+data/external/
+*.npy
+*.npz
+
+# Raw KSL capture. Never commit video, mocap, or signer photos.
+# Rendered packs belong under assets/ksl/approved/ as Git LFS pointers.
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.wmv
+*.m4v
+*.mpg
+*.mpeg
+*.3gp
+*.bvh
+*.c3d
+*.fbx
+*.trc
+*.heic
+*.heif
+capture/
+raw_mocap/
+signer_photos/
+signer_footage/
+!assets/ksl/approved/**/*.mp4
+!assets/ksl/approved/**/*.webm

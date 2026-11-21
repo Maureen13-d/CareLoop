@@ -1,6 +1,6 @@
 """HTTP surface for follow-up. Cervical and maternal routes are unchanged."""
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, File, Form, Header, UploadFile
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -12,10 +12,11 @@ from app.modules.auth.models import (
     ROLE_ADMIN,
     ROLE_CHW,
     ROLE_CLINICIAN,
+    ROLE_COUNSELLOR,
     ROLE_NAVIGATOR,
     ROLE_PROGRAM_MANAGER,
 )
-from app.modules.followup import access, checkins, facility, register, telegram, worklist
+from app.modules.followup import access, checkins, facility, register, telegram, voice, worklist
 from app.modules.followup.access import REJECTED, read_token
 from app.modules.followup.cohort import build_cohort, report
 from app.modules.followup.conversation import (
@@ -27,7 +28,14 @@ from app.modules.followup.conversation import (
 )
 from app.modules.followup.ids import parse_public_id
 from app.modules.followup.models import Enrolment
-from app.modules.followup.schemas import CheckIn, OutcomeIn, RegisterIn, TalkIn, TelegramIn
+from app.modules.followup.schemas import (
+    CheckIn,
+    OutcomeIn,
+    RegisterIn,
+    TalkIn,
+    TelegramIn,
+    VoiceTurnIn,
+)
 from app.modules.followup.texts import slip_lines
 
 router = APIRouter(prefix="/followup", tags=["followup"])
@@ -35,7 +43,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=F
 screener = require_roles(ROLE_CLINICIAN)
 staff = require_roles(ROLE_CLINICIAN, ROLE_NAVIGATOR, ROLE_ADMIN, ROLE_PROGRAM_MANAGER, ROLE_CHW)
 facility_reader = require_roles(ROLE_CLINICIAN, ROLE_NAVIGATOR, ROLE_ADMIN, ROLE_PROGRAM_MANAGER)
-dev_reader = require_roles(ROLE_ADMIN, ROLE_CLINICIAN)
+dev_reader = require_roles(
+    ROLE_ADMIN,
+    ROLE_CLINICIAN,
+    ROLE_NAVIGATOR,
+    ROLE_COUNSELLOR,
+    ROLE_PROGRAM_MANAGER,
+    ROLE_CHW,
+)
 
 
 def _patient_id(token: str | None = Depends(oauth2_scheme)) -> str:
@@ -66,11 +81,18 @@ def get_slip(public_id: str, db: Session = Depends(get_db), _user=Depends(screen
     enrolment = db.scalar(select(Enrolment).where(Enrolment.public_id == public_id))
     if enrolment is None:
         raise DomainError(404, "not_found", "ID not found")
+    qr_value = enrolment.public_id
+    deep_link = None
+    if enrolment.channel == "telegram":
+        deep_link = telegram.slip_link(db, enrolment.public_id)
+        db.commit()
+        qr_value = deep_link
     return {
         "synthetic": True,
         "public_id": enrolment.public_id,
         "lines": slip_lines(enrolment.language),
-        "qr_svg": _qr(enrolment.public_id),
+        "qr_svg": _qr(qr_value),
+        "deep_link": deep_link,
     }
 
 
@@ -215,17 +237,51 @@ def post_checkins(db: Session = Depends(get_db), user=Depends(require_roles(ROLE
 
 @router.post("/telegram/webhook")
 def telegram_webhook(
-    data: TelegramIn,
+    data: dict,
     db: Session = Depends(get_db),
     x_telegram_bot_api_secret_token: str | None = Header(default=None),
 ):
     telegram.require_signature(x_telegram_bot_api_secret_token)
-    return telegram.ingest(db, chat_id=data.chat_id, text=data.text, update_id=data.update_id)
+    parsed = telegram.parse_update(data)
+    if parsed is None:
+        return {"ok": True}
+    result = telegram.ingest(db, parsed)
+    if not result.get("duplicate"):
+        telegram.deliver(db, parsed["chat_id"], result)
+    return result
+
+
+@router.get("/voice/cases")
+def get_voice_cases(db: Session = Depends(get_db), _user=Depends(staff)):
+    return voice.list_cases(db)
+
+
+@router.post("/voice/turn")
+def post_voice_turn(data: VoiceTurnIn, db: Session = Depends(get_db), _user=Depends(staff)):
+    return voice.turn(db, data.public_id, data.text)
+
+
+@router.post("/voice/hear")
+async def post_voice_hear(
+    public_id: str = Form(),
+    file: UploadFile = File(),
+    db: Session = Depends(get_db),
+    _user=Depends(staff),
+):
+    content = await file.read()
+    return voice.turn(
+        db,
+        public_id,
+        audio=(content, file.filename or "turn.wav", file.content_type or "audio/wav"),
+    )
 
 
 @router.post("/telegram/simulate")
-def telegram_sim(data: TelegramIn, db: Session = Depends(get_db)):
-    result = telegram.ingest(db, chat_id=data.chat_id, text=data.text, update_id=data.update_id)
+def telegram_sim(data: dict, db: Session = Depends(get_db)):
+    parsed = telegram.parse_update(data)
+    if parsed is None:
+        return {"ok": True, "simulated": True}
+    result = telegram.ingest(db, parsed)
     result["simulated"] = True
     return result
 

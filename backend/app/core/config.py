@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     ai_dir: str = str(REPO_ROOT / "ai")  # lexicons, templates, knowledge base
     demo_password: str = "careloop-demo"
     hospital_base_url: str = "http://127.0.0.1:8100"
+    msingi_api_key: str = ""
+    msingi_base_url: str = "https://api.msingiai.com"
+    msingi_voice: str = "female"
 
 
 settings = Settings()

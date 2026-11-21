@@ -88,6 +88,7 @@ export default async function ScreenPage({
                   <option value="sms">SMS</option>
                   <option value="ussd">USSD</option>
                   <option value="web">Web</option>
+                  <option value="voice">Voice</option>
                 </Select>
               </Field>
             </div>

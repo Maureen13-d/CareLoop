@@ -8,7 +8,7 @@ from app.core.errors import DomainError
 from app.modules.audit import service as audit
 from app.modules.auth.models import ROLE_CHW
 from app.modules.followup.models import Enrolment
-from app.modules.followup.texts import worklist_rules
+from app.modules.followup.texts import checkin_rules, worklist_rules
 from app.modules.pathways.models import CareCase
 from app.modules.pathways.service import transition
 from app.modules.tasks.service import create_task
@@ -20,6 +20,7 @@ BARRIER_WORDS = {
     "fear": "fear",
     "stigma": "stigma",
     "where": "not knowing where to go",
+    "interpreter": "interpreter needed",
 }
 STAFF = {"navigator", "clinician", "admin", "program_manager", "chw"}
 
@@ -28,13 +29,20 @@ def _days(opened, now) -> int:
     return max(0, (now - opened).days)
 
 
+def _missed_limit(enrolment: Enrolment) -> int:
+    rules = checkin_rules()
+    if enrolment.language == "ksl":
+        return int(rules["ksl_unreached_after"])
+    return int(rules["unreached_after"])
+
+
 def reason_for(enrolment: Enrolment, days: int) -> str:
     if enrolment.symptom_flag == "worse":
         return "reported worse symptoms"
     if enrolment.barrier_label:
         word = BARRIER_WORDS.get(enrolment.barrier_label, enrolment.barrier_label)
         return f"barrier: {word}"
-    if enrolment.missed_replies >= 3:
+    if enrolment.missed_replies >= _missed_limit(enrolment):
         return f"no reply to {enrolment.missed_replies} check-ins"
     return f"not arrived, {days} days"
 
@@ -47,7 +55,13 @@ def action_for(enrolment: Enrolment) -> str:
     if enrolment.barrier_label in {"fear", "stigma"}:
         return "counsellor"
     if enrolment.barrier_label == "where":
+        if enrolment.language == "ksl":
+            return "home visit with a KSL-aware CHW"
         return "home visit"
+    if enrolment.barrier_label == "interpreter":
+        return "book interpreter"
+    if enrolment.language == "ksl":
+        return "text or video"
     return "call"
 
 
@@ -58,7 +72,7 @@ def _score(enrolment: Enrolment, case: CareCase, days: int, now) -> int:
         score += int(rules["urgent_finding"])
     if case.deadline_at is not None and case.deadline_at < now:
         score += int(rules["overdue"])
-    if enrolment.missed_replies >= 3:
+    if enrolment.missed_replies >= _missed_limit(enrolment):
         score += int(rules["unreached"])
     if enrolment.barrier_label:
         score += int(rules["barrier"])

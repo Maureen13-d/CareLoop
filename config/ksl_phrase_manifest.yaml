@@ -1,0 +1,46 @@
+# Phrase list for recorded KSL clips.
+# IDs, dates, and clinic names are not slots in a sign. They stay as text or pictograms beside the clip.
+# clinical_review stays pending until a clinician signs the line. Pending clips are not enabled for a pilot.
+# No entry here is a translation of free text. If a line is missing, the clip is not served.
+
+phrases:
+  - {id: ask_language, meaning: choose English, Kiswahili, or KSL, clinical_review: pending}
+  - {id: ask_id, meaning: ask for the card ID, clinical_review: pending}
+  - {id: ask_code, meaning: ask for the one-time code, clinical_review: pending}
+  - {id: id_rejected, meaning: ID or code was not accepted, clinical_review: pending}
+  - {id: status, meaning: next step is the clinic, clinical_review: pending}
+  - {id: been, meaning: visit reported, clinic still confirms, clinical_review: pending}
+  - {id: not_yet, meaning: ask what is stopping the visit, clinical_review: pending}
+  - {id: same, meaning: symptoms unchanged, still go, clinical_review: pending}
+  - {id: better, meaning: symptoms better, still go, clinical_review: pending}
+  - {id: worse, meaning: go to the nearest clinic now, clinical_review: pending}
+  - {id: fear, meaning: counsellor can talk, still go, clinical_review: pending}
+  - {id: cost, meaning: help with cost, still go, clinical_review: pending}
+  - {id: transport, meaning: help with fare, still go, clinical_review: pending}
+  - {id: stigma, meaning: counsellor can talk, still go, clinical_review: pending}
+  - {id: where, meaning: help finding the clinic, clinical_review: pending}
+  - {id: danger, meaning: go to the nearest clinic now, clinical_review: pending}
+  - {id: refuse_diagnosis, meaning: guide cannot name an illness, clinical_review: pending}
+  - {id: refuse_skip, meaning: do not skip the clinic, clinical_review: pending}
+  - {id: unclear, meaning: a person will follow up, clinical_review: pending}
+  - {id: stop_ack, meaning: messages stopped, clinical_review: pending}
+  - {id: start_ack, meaning: messages on again, clinical_review: pending}
+  - {id: checkin, meaning: check-in menu, clinical_review: pending}
+  - {id: slip_1, meaning: keep the card, clinical_review: pending}
+  - {id: slip_2, meaning: a person may contact you, clinical_review: pending}
+  - {id: slip_3, meaning: if worse, go to the nearest clinic, clinical_review: pending}
+  - {id: guide_label, meaning: guide, not a doctor, clinical_review: pending}
+  - {id: interpreter, meaning: an interpreter can be booked, clinical_review: pending, en: "A sign language interpreter can be booked. Please still go to the clinic.", sw: "Mkalimani wa lugha ya alama anaweza kupangwa. Tafadhali nenda kliniki."}
+  - {id: need_help, meaning: a person will follow up, clinical_review: pending, en: "A person will follow up. If you feel worse, go to the nearest clinic.", sw: "Mtu atakufuata. Ukihisi mbaya zaidi, nenda kliniki iliyo karibu."}
+  - {id: cant_go, meaning: cannot get to the clinic, clinical_review: pending, en: "A person will follow up to help you get to the clinic. If you feel worse, go to the nearest clinic.", sw: "Mtu atakufuata ili kusaidia kufika kliniki. Ukihisi mbaya zaidi, nenda kliniki iliyo karibu."}
+  - {id: confirm_choice, meaning: please confirm that choice, clinical_review: pending, en: "Please confirm that choice.", sw: "Tafadhali thibitisha chaguo hilo."}
+  - {id: consent_taps, meaning: camera stays off, taps are enough, clinical_review: pending, en: "You can answer with taps. The camera stays off.", sw: "Unaweza kujibu kwa kugusa. Kamera imezimwa."}
+  - {id: hello, meaning: greeting, clinical_review: pending, en: "Hello. I am a guide, not a doctor.", sw: "Habari. Mimi ni mwongozo, si daktari."}
+  - {id: listening, meaning: waiting for a tap, clinical_review: pending, en: "I am listening. Tap an answer when you are ready.", sw: "Ninasikiliza. Gusa jibu ukiwa tayari."}
+  - {id: holding, meaning: hold the last sign, clinical_review: pending, en: "Holding.", sw: "Inasubiri."}
+  - {id: returning, meaning: return to a rest pose, clinical_review: pending, en: "Returning.", sw: "Inarudi."}
+  - {id: yes_answer, meaning: yes, clinical_review: pending, en: "Yes.", sw: "Ndiyo."}
+  - {id: no_answer, meaning: no, clinical_review: pending, en: "No.", sw: "Hapana."}
+  - {id: repeat_phrase, meaning: show the line again, clinical_review: pending, en: "Here it is again.", sw: "Tena."}
+  - {id: stop_signing, meaning: stop this guided call, clinical_review: pending, en: "Stopped. A person can still follow up if you need help.", sw: "Imesimama. Mtu bado anaweza kufuata ukihitaji msaada."}
+  - {id: book_interpreter, meaning: book an interpreter, clinical_review: pending, en: "A worker can book a sign language interpreter.", sw: "Mhudumu anaweza kupanga mkalimani wa lugha ya alama."}

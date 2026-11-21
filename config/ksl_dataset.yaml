@@ -1,0 +1,11 @@
+# The project owner confirmed this licence in chat on 21 Nov 2026.
+# The Zenodo API lists cc-by-4.0 on both versions of the record.
+ksl_dataset:
+  license_verified: true
+  paper_doi: "10.1016/j.dib.2025.111502"
+  zenodo_doi: "10.5281/zenodo.14974973"
+  open_record_doi: "10.5281/zenodo.14338329"
+  download_url: "https://zenodo.org/api/records/14338329/files/Pose%20Data.zip/content"
+  sha256: ""
+  md5: "3cf8e3b30583ea1be34a65d285099b65"
+  files: []

@@ -5,3 +5,4 @@ quiet_start_hour: 21
 quiet_end_hour: 7
 max_attempts: 6
 unreached_after: 3
+ksl_unreached_after: 1

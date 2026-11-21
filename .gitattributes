@@ -1,0 +1,6 @@
+# Approved derived KSL packs, after written consent. Not raw footage.
+# Git LFS must be installed before anyone adds a matching file.
+assets/ksl/approved/**/*.kmp filter=lfs diff=lfs merge=lfs -text
+assets/ksl/approved/**/*.glb filter=lfs diff=lfs merge=lfs -text
+assets/ksl/approved/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
+assets/ksl/approved/**/*.webm filter=lfs diff=lfs merge=lfs -text

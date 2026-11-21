@@ -75,6 +75,14 @@ COPY = {
         "No reply to check-ins",
         "Check-ins went unanswered. This is a problem to solve, not a fault.",
     ),
+    "followup_unreachable": (
+        "Telegram unreachable, try another channel.",
+        "The bot could not deliver. Try a phone call or a home visit.",
+    ),
+    "followup_ksl": (
+        "Signed clip missing",
+        "No approved signed clip for this line. A person should help.",
+    ),
 }
 
 

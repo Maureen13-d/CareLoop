@@ -1,0 +1,23 @@
+{
+  "asset": { "version": "2.0", "generator": "careloop-ksl-placeholder" },
+  "scene": 0,
+  "scenes": [{ "nodes": [0] }],
+  "nodes": [
+    { "name": "hips", "children": [1] },
+    { "name": "spine", "children": [2] },
+    { "name": "spine2", "children": [3] },
+    { "name": "chest", "children": [4, 6, 9] },
+    { "name": "neck", "children": [5] },
+    { "name": "head" },
+    { "name": "shoulder_l", "children": [7] },
+    { "name": "upper_arm_l", "children": [8] },
+    { "name": "lower_arm_l" },
+    { "name": "shoulder_r", "children": [10] },
+    { "name": "upper_arm_r", "children": [11] },
+    { "name": "lower_arm_r" }
+  ],
+  "extras": {
+    "honesty": "Joint names only. This is not a scanned person and it is not Kenyan Sign Language.",
+    "label": "TEST_MOTION_NOT_SIGN"
+  }
+}

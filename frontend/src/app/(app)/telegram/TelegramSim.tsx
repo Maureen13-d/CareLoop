@@ -6,10 +6,12 @@ import { Badge, BrandMark, controlClass, cx } from "@/components/ui";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+type Button = { id?: string; label?: string };
 type Turn = { who: "you" | "guide"; text: string };
 
 export function TelegramSim() {
   const [text, setText] = useState("");
+  const [buttons, setButtons] = useState<Button[]>([]);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLLIElement>(null);
@@ -18,19 +20,25 @@ export function TelegramSim() {
     if (turns.length) endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [turns.length]);
 
-  async function send(value: string) {
+  async function send(value: string, callback?: string) {
     const mine = value.trim();
-    if (!mine) return;
-    setTurns((current) => [...current, { who: "you", text: mine }]);
+    if (!mine && !callback) return;
+    setTurns((current) => [...current, { who: "you", text: mine || callback || "" }]);
     setText("");
     setBusy(true);
     try {
       const res = await fetch(`${API}/api/v1/followup/telegram/simulate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: "demo-chat", text: mine, update_id: `${Date.now()}` }),
+        body: JSON.stringify({
+          chat_id: "demo-chat",
+          text: callback ? "" : mine,
+          callback,
+          update_id: `${Date.now()}`,
+        }),
       });
-      const body = (await res.json()) as { reply_text?: string };
+      const body = (await res.json()) as { reply_text?: string; buttons?: Button[] };
+      setButtons(body.buttons ?? []);
       setTurns((current) => [...current, { who: "guide", text: body.reply_text ?? "" }]);
     } catch {
       setTurns((current) => [...current, { who: "guide", text: `Could not reach the API at ${API}.` }]);
@@ -79,6 +87,20 @@ export function TelegramSim() {
         ) : null}
         <li ref={endRef} aria-hidden="true" />
       </ol>
+      {buttons.length ? (
+        <div className="flex flex-wrap gap-2 border-t border-line px-4 py-3">
+          {buttons.map((button) => (
+            <button
+              key={`${button.id}-${button.label}`}
+              className="min-h-11 rounded-full border border-line bg-surface px-4 text-sm font-medium text-ink hover:border-teal hover:bg-mint"
+              type="button"
+              onClick={() => void send(button.label ?? "", button.id)}
+            >
+              {button.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <form
         className="flex gap-2 border-t border-line px-4 py-3"
         onSubmit={(event) => {
