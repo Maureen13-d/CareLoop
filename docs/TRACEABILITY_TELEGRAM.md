@@ -2,7 +2,7 @@
 
 Branch `feat/telegram-bot`, cut from `feat/ksl-avatar` at `aa89055`. Search with `git log --grep "Feature: T06"`.
 
-T03 through T14 share one engine, so they landed in `73cffd6`. The docs and the staff simulator landed in the Feature: T16 commit.
+T03 through T14 share one engine, so they landed in `73cffd6`. The docs and the staff simulator landed in `dbb41f5`.
 
 | Feature | Title | Status | Commits | Tests | Files |
 |---|---|---|---|---|---|
@@ -18,11 +18,11 @@ T03 through T14 share one engine, so they landed in `73cffd6`. The docs and the 
 | T09 | Visit questions | done | 73cffd6 | backend/tests/test_telegram_bot.py | telegram.en.yaml, telegram.sw.yaml |
 | T10 | Outbound, 429, blocked bot | done | 73cffd6 | backend/tests/test_telegram_bot.py | telegram.py |
 | T11 | Settings and removal | done | 73cffd6 | backend/tests/test_telegram_bot.py | telegram_flow.py |
-| T12 | Simulator shows the same menus | done | 73cffd6 and Feature: T16 | backend/tests/test_telegram_bot.py | telegram.py, frontend TelegramSim.tsx |
+| T12 | Simulator shows the same menus | done | 73cffd6, dbb41f5 | backend/tests/test_telegram_bot.py | telegram.py, frontend TelegramSim.tsx |
 | T13 | KSL send or a task | done | 73cffd6 | backend/tests/test_telegram_bot.py | telegram.py |
 | T14 | Optional tips | done | 73cffd6 | backend/tests/test_telegram_bot.py | telegram_flow.py |
-| T15 | Mini App specification only | done | see Feature: T16 | none | docs/TELEGRAM_MINI_APP.md |
-| T16 | Docs, demo, limitations | done | see Feature: T16 | none | docs/TELEGRAM_BOT.md, docs/TELEGRAM_COPY.md, docs/DEMO_SCRIPT_TELEGRAM.md, docs/LIMITATIONS.md |
+| T15 | Mini App specification only | done | dbb41f5 | none | docs/TELEGRAM_MINI_APP.md |
+| T16 | Docs, demo, limitations | done | dbb41f5 | none | docs/TELEGRAM_BOT.md, docs/TELEGRAM_COPY.md, docs/DEMO_SCRIPT_TELEGRAM.md, docs/LIMITATIONS.md |
 
 ## Decisions
 
