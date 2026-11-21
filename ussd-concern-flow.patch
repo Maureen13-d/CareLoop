@@ -1,0 +1,661 @@
+diff --git a/README.md b/README.md
+index 53f258a..aa63be3 100644
+--- a/README.md
++++ b/README.md
+@@ -157,9 +157,9 @@ This table is the single place that shows progress by component. Update it in th
+ | Knowledge base with cited sources | 2 | Working | 20 draft passages; pending clinical review |
+ | Safety rules and human handoff | 2 | Working | Crisis, distress, symptoms and diagnosis requests |
+ | Lite mode: menus, keywords, barrier flags | 2 | Working | English. Confirmed worries open a navigator task |
+-| Grounded retrieval assistant (web chat) | 2 | Working | Web only. SMS and USSD stay on short templates |
++| Grounded retrieval assistant | 2 | Working | Web chat cites the passage. USSD answers typed questions from the same approved passages and shows no source. SMS stays on short templates |
+ | Barrier detection and navigation tasks | 2 | Working | Keyword matches stay private until the person confirms |
+-| Channel layer and channel simulator (USSD and SMS) | 3 | Working | Simulated. `*XYZ#` is a placeholder |
++| Channel layer and channel simulator (USSD and SMS) | 3 | Working | Simulated. USSD has next steps after every answer, ends the session when a person is needed, and passes a call-back reference to the navigator task. `*XYZ#` is a placeholder |
+ | SMS outbox, reminders, missed-step detection | 3 | Working | Reply 1/2/3/STOP. Undelivered text opens a task |
+ | Mock hospital FHIR exchange | 4 | Working | Simulated clinic on port 8100. The desk can request a visit and read milestones |
+ | Navigator dashboard and pathway funnel | 5 | Working | Today, cases, chat, phone, follow-up, audit |
+diff --git a/backend/app/core/config.py b/backend/app/core/config.py
+index ce0dde0..1f5e42b 100644
+--- a/backend/app/core/config.py
++++ b/backend/app/core/config.py
+@@ -22,6 +22,8 @@ class Settings(BaseSettings):
+     ai_dir: str = str(REPO_ROOT / "ai")  # lexicons, templates, knowledge base
+     demo_password: str = "careloop-demo"
+     hospital_base_url: str = "http://127.0.0.1:8100"
++    # USSD answers typed questions from approved passages (no source shown on a shared phone).
++    ussd_answers_from_passages: bool = True
+ 
+ 
+ settings = Settings()
+diff --git a/backend/app/modules/assistant/retrieve.py b/backend/app/modules/assistant/retrieve.py
+index f0bb7a7..80974cd 100644
+--- a/backend/app/modules/assistant/retrieve.py
++++ b/backend/app/modules/assistant/retrieve.py
+@@ -1,8 +1,8 @@
+-"""Grounded retrieval for web chat.
++"""Grounded retrieval for web chat and USSD.
+ 
+ Picks one approved passage by phrase or word overlap. It never writes a new medical
+-claim: the reply is the passage text, and the caller shows the source. SMS and USSD
+-do not use this tier, so shared phones stay on the short approved templates.
++claim: the reply is the passage text. Web chat shows the source; USSD shows none, because
++source titles name the illness and a shared phone must not. SMS does not use this tier.
+ """
+ 
+ from functools import lru_cache
+diff --git a/backend/app/modules/channels/router.py b/backend/app/modules/channels/router.py
+index 3c0c557..9b9bcb8 100644
+--- a/backend/app/modules/channels/router.py
++++ b/backend/app/modules/channels/router.py
+@@ -21,8 +21,8 @@ def _sms(message) -> SmsOut:
+ 
+ @router.post("/channels/ussd", response_model=UssdOut)
+ def post_ussd(data: UssdIn, db: Session = Depends(get_db)):
+-    text = service.handle_ussd(db, data.session_id, data.phone_ref, data.text)
+-    return UssdOut(text=text, end_session=False)
++    screen = service.handle_ussd(db, data.session_id, data.phone_ref, data.text)
++    return UssdOut(text=screen.text, end_session=screen.end)
+ 
+ 
+ @router.post("/channels/sms/inbound", response_model=SmsOut | None)
+diff --git a/backend/app/modules/channels/service.py b/backend/app/modules/channels/service.py
+index ebb88d0..a3c42fa 100644
+--- a/backend/app/modules/channels/service.py
++++ b/backend/app/modules/channels/service.py
+@@ -2,40 +2,68 @@
+ 
+ Screens and texts stay short and discreet: no finding, no illness name. A real
+ short code is not connected. *XYZ# is a placeholder.
++
++USSD flow: home menu, then a worry menu or a typed question, then an approved answer with
++next steps (call me, another worry, menu). Safety rules run first. Anything that needs a
++person ends the session and opens a navigator task that carries a call-back reference.
+ """
+ 
++import re
++from dataclasses import dataclass
++
+ from sqlalchemy import select
+ from sqlalchemy.orm import Session
+ 
+ from app.core import clock
++from app.core.config import settings
++from app.modules.assistant.retrieve import search_passages
+ from app.modules.assistant.schemas import AssistantRequest
+ from app.modules.assistant.service import handle_message
+ from app.modules.assistant.text import normalise
++from app.modules.audit import service as audit
+ from app.modules.channels.models import SmsMessage, SmsOptOut, UssdSession
+ from app.modules.tasks.service import create_task, should_open_task
+ 
+ DEMO_HANDSET = "+254700000101"
+ SMS_LIMIT = 160
++USSD_LIMIT = 182
+ 
+ HOME = "CareLoop\n1 Next step\n2 A question\n3 A worry\n4 My visit\n5 Call me\n6 Talk now"
+-WORRY = (
+-    "What worries you most?\n1 Fear or pain\n2 Cost\n3 Getting there\n4 Privacy\n5 Not sure\n0 Back"
+-)
+-NEXT_STEP = (
+-    "Your next step is a visit with a health worker. "
+-    "A navigator can help you plan it. Choose 5 for a call."
++WORRY_OPTIONS = "1 Fear or pain\n2 Cost\n3 Getting there\n4 Privacy\n5 Not sure\n0 Back"
++WORRY = "Pick what worries you most. A navigator will see your choice.\n" + WORRY_OPTIONS
++UNCLEAR = (
++    "Sorry, I did not catch that. Pick what worries you; a navigator will see it.\n" + WORRY_OPTIONS
+ )
++NEXT_STEP = "Your next step is a visit with a health worker. A navigator can help you plan it."
+ VISIT = (
+-    "If a visit is booked you will get a short text with the time and place. "
+-    "Reply 1 to confirm, 2 to change, 3 for help."
++    "If a visit is booked you will get a text with the time and place. "
++    "Reply to that text: 1 confirm, 2 change, 3 help."
+ )
+-ASK = "Type a short question, then send."
++ASK = "Type a short question, then send. 0 for the menu."
+ CHOOSE = "Choose 1 to 6.\n" + HOME
++AFTER_FULL = "1 Call me\n2 Another worry\n0 Menu"
++AFTER_SHORT = "1 Call me\n0 Menu"
++CHOOSE_AFTER = "Choose 1, 2 or 0.\n" + AFTER_FULL
++OPTED_OUT = "You will not receive more messages from CareLoop. Dial again any time."
++WORRY_CHOICES = {"1", "2", "3", "4", "5"}
+ 
+ CONFIRM = "Thank you. You confirmed the visit. A short reminder will follow."
+ CHANGE = "Okay. A navigator will contact you to change the time."
+ HELP = "A navigator will contact you. Reply STOP at any time to stop messages."
+ 
++# Templates are written for SMS, so some end with "Reply HELP ..." or "Reply STOP ...".
++# Those words mean nothing in a USSD menu, so they are removed from USSD screens.
++_SMS_TAIL = re.compile(
++    r",?\s+or reply (?:HELP|STOP|START)\b[^.]*\."
++)  # "..., or reply HELP to talk."
++_SMS_ONLY = re.compile(r"(?:(?<=[.!?])\s+|^)Reply (?:HELP|STOP|START)\b[^.]*\.")
++
++
++@dataclass(frozen=True)
++class UssdScreen:
++    text: str
++    end: bool = False  # True closes the session (a gateway would send END instead of CON)
++
+ 
+ def _fit(text: str, limit: int = SMS_LIMIT) -> str:
+     text = " ".join(text.split()) if "\n" not in text else text
+@@ -44,6 +72,24 @@ def _fit(text: str, limit: int = SMS_LIMIT) -> str:
+     return text[: limit - 1].rstrip() + "."
+ 
+ 
++def _plain(text: str) -> str:
++    return _SMS_ONLY.sub("", _SMS_TAIL.sub(".", text)).strip()
++
++
++def _compose(body: str, limit: int = USSD_LIMIT, *, sms_template: bool = True) -> str:
++    """An answer followed by next steps. The options are never cut; a long answer is.
++
++    `sms_template` removes the "Reply HELP ..." sentences that templates carry for SMS.
++    Approved passages are written for this channel too, so they are left as written."""
++    body = _plain(body) if sms_template else body.strip()
++    for options in (AFTER_FULL, AFTER_SHORT):
++        screen = f"{body}\n{options}"
++        if len(screen) <= limit:
++            return screen
++    room = limit - len(AFTER_SHORT) - 1
++    return body[: room - 1].rstrip() + ".\n" + AFTER_SHORT
++
++
+ def _session(db: Session, session_id: str, phone_ref: str) -> UssdSession:
+     row = db.get(UssdSession, session_id)
+     if row is None:
+@@ -55,64 +101,131 @@ def _session(db: Session, session_id: str, phone_ref: str) -> UssdSession:
+     return row
+ 
+ 
+-def _maybe_task(db: Session, response) -> None:
+-    if should_open_task(response) and response.suggested_task:
+-        create_task(
+-            db,
+-            task_type=response.suggested_task.type,
+-            priority=response.suggested_task.priority,
+-            source="channel",
+-        )
++def _open_task(db: Session, response, phone_ref: str) -> bool:
++    if not (response.suggested_task and should_open_task(response)):
++        return False
++    create_task(
++        db,
++        task_type=response.suggested_task.type,
++        priority=response.suggested_task.priority,
++        source="channel",
++        contact_ref=phone_ref,
++    )
++    return True
+ 
+ 
+-def handle_ussd(db: Session, session_id: str, phone_ref: str, text: str) -> str:
+-    row = _session(db, session_id, phone_ref)
+-    choice = (text or "").strip()
+-    menu = row.menu
++def _log(db: Session, *, tier: str, response=None, passage_id: str | None = None) -> None:
++    """Labels only. Never the phone number and never what the person typed."""
++    audit.record(
++        db,
++        actor=None,
++        action="ussd.message",
++        entity_type="assistant",
++        detail={
++            "channel": "ussd",
++            "tier": tier,
++            "template_id": response.template_id if response else None,
++            "passage_id": passage_id,
++            "safety_level": response.safety.level if response else "none",
++            "flags": [f.flag for f in response.barrier_flags] if response else [],
++            "needs_human": response.needs_human if response else False,
++        },
++    )
++
++
++def _opt_out(db: Session, phone_ref: str) -> None:
++    if db.get(SmsOptOut, phone_ref) is None:
++        db.add(SmsOptOut(phone_ref=phone_ref, opted_out_at=clock.now()))
++
++
++def _worry(db: Session, row: UssdSession, phone_ref: str, choice: str) -> UssdScreen:
++    response = handle_message(
++        AssistantRequest(channel="ussd", menu_choice=choice, menu_context="worry_menu")
++    )
++    _open_task(db, response, phone_ref)
++    _log(db, tier=response.tier, response=response)
++    row.menu = "after"
++    return UssdScreen(_compose(response.reply_text))
++
++
++def _answer(db: Session, row: UssdSession, phone_ref: str, text: str) -> UssdScreen:
++    """Answer something the person typed: safety first, then Lite mode, then approved passages."""
++    response = handle_message(AssistantRequest(channel="ussd", text=text))
+ 
++    if response.needs_human:  # crisis, distress, symptoms, or a request for a person
++        _open_task(db, response, phone_ref)
++        _log(db, tier=response.tier, response=response)
++        return UssdScreen(_plain(response.reply_text), end=True)
++
++    if response.template_id == "lite.opt_out":
++        _opt_out(db, phone_ref)
++        _log(db, tier=response.tier, response=response)
++        return UssdScreen(OPTED_OUT, end=True)
++
++    if response.tier != "fallback":  # a safety boundary or a Lite-mode match
++        _log(db, tier=response.tier, response=response)
++        row.menu = "after"
++        return UssdScreen(_compose(response.reply_text))
++
++    passage = search_passages(text) if settings.ussd_answers_from_passages else None
++    if passage:
++        _log(db, tier="retrieval", passage_id=passage["id"])
++        row.menu = "after"
++        return UssdScreen(_compose(passage["text"], sms_template=False))
++
++    _log(db, tier="fallback", response=response)
++    row.menu = "worry"  # never a dead end: offer the worry menu instead
++    return UssdScreen(UNCLEAR)
++
++
++def _route(db: Session, row: UssdSession, phone_ref: str, choice: str) -> UssdScreen:
++    menu = row.menu
+     if choice in {"", "0", "*XYZ#", "*xyz#"}:
+         row.menu = "home"
+-        screen = HOME
+-    elif menu == "worry" and choice in {"1", "2", "3", "4", "5"}:
+-        response = handle_message(
+-            AssistantRequest(channel="ussd", menu_choice=choice, menu_context="worry_menu")
+-        )
+-        _maybe_task(db, response)
+-        row.menu = "home"
+-        screen = response.reply_text
+-    elif menu == "question" and choice not in {"0"}:
+-        response = handle_message(AssistantRequest(channel="ussd", text=choice))
+-        _maybe_task(db, response)
+-        row.menu = "home"
+-        screen = response.reply_text
+-    elif menu == "home" and choice == "1":
+-        row.menu = "home"
+-        screen = NEXT_STEP
+-    elif menu == "home" and choice == "2":
++        return UssdScreen(HOME)
++
++    if menu == "worry":
++        if choice in WORRY_CHOICES:
++            return _worry(db, row, phone_ref, choice)
++        return UssdScreen(UNCLEAR)
++
++    if menu == "question":
++        return _answer(db, row, phone_ref, choice)
++
++    if menu == "after":
++        if choice == "1":
++            return _answer(db, row, phone_ref, "call me")
++        if choice == "2":
++            row.menu = "worry"
++            return UssdScreen(WORRY)
++        return UssdScreen(CHOOSE_AFTER)
++
++    if choice == "1":
++        row.menu = "after"
++        return UssdScreen(_compose(NEXT_STEP))
++    if choice == "2":
+         row.menu = "question"
+-        screen = ASK
+-    elif menu == "home" and choice == "3":
++        return UssdScreen(ASK)
++    if choice == "3":
+         row.menu = "worry"
+-        screen = WORRY
+-    elif menu == "home" and choice == "4":
+-        row.menu = "home"
+-        screen = VISIT
+-    elif menu == "home" and choice == "5":
+-        response = handle_message(AssistantRequest(channel="ussd", text="call me"))
+-        _maybe_task(db, response)
+-        row.menu = "home"
+-        screen = response.reply_text
+-    elif menu == "home" and choice == "6":
+-        response = handle_message(AssistantRequest(channel="ussd", text="talk to someone"))
+-        _maybe_task(db, response)
+-        row.menu = "home"
+-        screen = response.reply_text
+-    else:
++        return UssdScreen(WORRY)
++    if choice == "4":
++        row.menu = "after"
++        return UssdScreen(_compose(VISIT))
++    if choice == "5":
++        return _answer(db, row, phone_ref, "call me")
++    if choice == "6":
++        return _answer(db, row, phone_ref, "talk to someone")
++    return UssdScreen(CHOOSE)
++
++
++def handle_ussd(db: Session, session_id: str, phone_ref: str, text: str) -> UssdScreen:
++    row = _session(db, session_id, phone_ref)
++    screen = _route(db, row, phone_ref, (text or "").strip())
++    if screen.end:
+         row.menu = "home"
+-        screen = CHOOSE
+-
+     db.commit()
+-    return _fit(screen, 182)
++    return UssdScreen(_fit(screen.text, USSD_LIMIT), screen.end)
+ 
+ 
+ def _save(db: Session, phone_ref: str, direction: str, body: str, status: str) -> SmsMessage:
+@@ -161,14 +274,26 @@ def inbound_sms(db: Session, phone_ref: str, text: str) -> SmsMessage | None:
+     if key == "1":
+         reply_text = CONFIRM
+     elif key == "2":
+-        create_task(db, task_type="appointment_change", priority="normal", source="channel")
++        create_task(
++            db,
++            task_type="appointment_change",
++            priority="normal",
++            source="channel",
++            contact_ref=phone_ref,
++        )
+         reply_text = CHANGE
+     elif key == "3":
+-        create_task(db, task_type="navigator_callback", priority="normal", source="channel")
++        create_task(
++            db,
++            task_type="navigator_callback",
++            priority="normal",
++            source="channel",
++            contact_ref=phone_ref,
++        )
+         reply_text = HELP
+     else:
+         response = handle_message(AssistantRequest(channel="sms", text=body))
+-        _maybe_task(db, response)
++        _open_task(db, response, phone_ref)
+         reply_text = response.reply_text
+ 
+     reply = _save(db, phone_ref, "out", reply_text, "delivered")
+@@ -183,7 +308,13 @@ def mark_undelivered(db: Session, message_id: int) -> SmsMessage:
+     if message is None or message.direction != "out":
+         raise DomainError(404, "not_found", "Outbound message not found")
+     message.status = "undelivered"
+-    create_task(db, task_type="sms_undelivered", priority="high", source="channel")
++    create_task(
++        db,
++        task_type="sms_undelivered",
++        priority="high",
++        source="channel",
++        contact_ref=message.phone_ref,
++    )
+     db.commit()
+     return message
+ 
+diff --git a/backend/app/modules/tasks/models.py b/backend/app/modules/tasks/models.py
+index 5b7ab65..0c560b7 100644
+--- a/backend/app/modules/tasks/models.py
++++ b/backend/app/modules/tasks/models.py
+@@ -24,3 +24,12 @@ class NavigatorTask(Base):
+     created_at: Mapped[datetime]
+     completed_at: Mapped[datetime | None] = mapped_column(nullable=True)
+     completed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
++
++
++class TaskContact(Base):
++    """Where to call back. Kept apart from the task so the task text stays a fixed sentence."""
++
++    __tablename__ = "task_contacts"
++
++    task_id: Mapped[int] = mapped_column(ForeignKey("navigator_tasks.id"), primary_key=True)
++    contact_ref: Mapped[str] = mapped_column(String(20))
+diff --git a/backend/app/modules/tasks/schemas.py b/backend/app/modules/tasks/schemas.py
+index 681d2ad..25ed874 100644
+--- a/backend/app/modules/tasks/schemas.py
++++ b/backend/app/modules/tasks/schemas.py
+@@ -10,6 +10,7 @@ class TaskOut(BaseModel):
+     case_id: int | None
+     patient_ref: str | None
+     patient_display_name: str | None
++    contact_ref: str | None = None
+     task_type: str
+     priority: str
+     title: str
+diff --git a/backend/app/modules/tasks/service.py b/backend/app/modules/tasks/service.py
+index d395b36..abd3ddb 100644
+--- a/backend/app/modules/tasks/service.py
++++ b/backend/app/modules/tasks/service.py
+@@ -12,7 +12,7 @@ from app.core.errors import DomainError
+ from app.modules.audit import service as audit
+ from app.modules.pathways.models import CareCase
+ from app.modules.patients.models import Patient
+-from app.modules.tasks.models import NavigatorTask
++from app.modules.tasks.models import NavigatorTask, TaskContact
+ 
+ COPY = {
+     "navigator_followup": (
+@@ -58,6 +58,7 @@ def create_task(
+     case_id: int | None = None,
+     source: str = "assistant",
+     actor=None,
++    contact_ref: str | None = None,
+ ) -> NavigatorTask:
+     """Open a task. An open task of the same type on the same case is reused."""
+     if case_id is not None:
+@@ -83,6 +84,8 @@ def create_task(
+     )
+     db.add(task)
+     db.flush()
++    if contact_ref:
++        db.add(TaskContact(task_id=task.id, contact_ref=contact_ref))
+     case = db.get(CareCase, case_id) if case_id else None
+     audit.record(
+         db,
+@@ -121,11 +124,13 @@ def complete_task(
+ def task_view(db: Session, task: NavigatorTask) -> dict:
+     case = db.get(CareCase, task.case_id) if task.case_id else None
+     patient = db.get(Patient, case.patient_id) if case else None
++    contact = db.get(TaskContact, task.id)
+     return {
+         "id": task.id,
+         "case_id": task.case_id,
+         "patient_ref": patient.patient_ref if patient else None,
+         "patient_display_name": patient.display_name if patient else None,
++        "contact_ref": contact.contact_ref if contact else None,
+         "task_type": task.task_type,
+         "priority": task.priority,
+         "title": task.title,
+diff --git a/backend/tests/test_ussd_flow.py b/backend/tests/test_ussd_flow.py
+new file mode 100644
+index 0000000..ffe6704
+--- /dev/null
++++ b/backend/tests/test_ussd_flow.py
+@@ -0,0 +1,171 @@
++"""USSD: answer what the person raised, never leave a dead end, keep the phone discreet."""
++
++import pytest
++from sqlalchemy import select
++
++from app.core.config import settings
++from app.modules.assistant.lexicon import load_templates
++from app.modules.assistant.retrieve import load_passages, search_passages
++from app.modules.audit.models import AuditLog
++from app.modules.channels import service
++from app.modules.channels.models import SmsOptOut
++
++FORBIDDEN = ("cancer", "result", "diagnosis", "positive", "hiv", "screening")
++PHONE = "+254700000777"
++
++
++def dial(client, session, text="", phone=PHONE):
++    resp = client.post(
++        "/api/v1/channels/ussd", json={"session_id": session, "phone_ref": phone, "text": text}
++    )
++    assert resp.status_code == 200, resp.text
++    return resp.json()
++
++
++def open_tasks(client, auth):
++    return client.get("/api/v1/navigator/tasks", headers=auth["nav"]).json()
++
++
++def test_worry_answer_offers_next_steps_and_drops_sms_wording(client, auth):
++    dial(client, "a")
++    assert "2 Cost" in dial(client, "a", "3")["text"]
++    answer = dial(client, "a", "2")
++    assert "navigator" in answer["text"].lower()
++    assert "1 Call me" in answer["text"] and "0 Menu" in answer["text"]
++    assert "reply help" not in answer["text"].lower()
++    assert answer["end_session"] is False
++    task = next(t for t in open_tasks(client, auth) if t["task_type"] == "navigator_followup")
++    assert task["contact_ref"] == PHONE
++
++
++def test_call_me_after_an_answer_ends_the_session_and_keeps_the_number(client, auth):
++    dial(client, "b", "3")
++    dial(client, "b", "2")
++    done = dial(client, "b", "1")
++    assert done["end_session"] is True
++    assert "navigator" in done["text"].lower()
++    assert "reply stop" not in done["text"].lower()
++    callbacks = [t for t in open_tasks(client, auth) if t["task_type"] == "navigator_callback"]
++    assert callbacks and callbacks[0]["contact_ref"] == PHONE
++
++
++def test_menu_navigation_after_an_answer(client):
++    dial(client, "c", "3")
++    dial(client, "c", "1")
++    assert dial(client, "c", "2")["text"].startswith("Pick what worries you most")
++    dial(client, "c", "1")
++    assert "1 Next step" in dial(client, "c", "0")["text"]
++    dial(client, "c", "3")
++    dial(client, "c", "1")
++    assert dial(client, "c", "9")["text"].startswith("Choose 1, 2 or 0")
++
++
++def test_crisis_ends_the_session_and_opens_an_urgent_task(client, auth):
++    dial(client, "d", "2")
++    ended = dial(client, "d", "i want to die")
++    assert ended["end_session"] is True
++    task = next(t for t in open_tasks(client, auth) if t["task_type"] == "counsellor_urgent")
++    assert task["priority"] == "urgent"
++    assert task["contact_ref"] == PHONE
++    assert "die" not in task["summary"].lower()
++
++
++def test_typed_question_is_answered_from_an_approved_passage(client, db_session):
++    passage = search_passages("what should i bring")
++    assert passage is not None
++    dial(client, "e", "2")
++    answer = dial(client, "e", "what should i bring")
++    assert passage["text"] in answer["text"]
++    assert "1 Call me" in answer["text"]
++    assert answer["end_session"] is False
++    entry = db_session.scalars(
++        select(AuditLog).where(AuditLog.action == "ussd.message").order_by(AuditLog.id.desc())
++    ).first()
++    assert entry.detail["tier"] == "retrieval"
++    assert entry.detail["passage_id"] == passage["id"]
++
++
++def test_passages_can_be_switched_off(client, monkeypatch):
++    monkeypatch.setattr(settings, "ussd_answers_from_passages", False)
++    dial(client, "f", "2")
++    screen = dial(client, "f", "what should i bring")["text"]
++    assert screen.startswith("Sorry, I did not catch that")
++
++
++def test_unclear_text_gets_the_worry_menu_then_an_answer(client):
++    dial(client, "g", "2")
++    guided = dial(client, "g", "qwerty zxcvb")["text"]
++    assert guided.startswith("Sorry, I did not catch that")
++    assert "2 Cost" in guided
++    assert "navigator" in dial(client, "g", "2")["text"].lower()
++
++
++def test_typing_stop_opts_out_and_texts_go_quiet(client, db_session):
++    dial(client, "h", "2")
++    done = dial(client, "h", "stop")
++    assert done["end_session"] is True
++    assert "will not receive" in done["text"]
++    assert db_session.get(SmsOptOut, PHONE) is not None
++    quiet = client.post("/api/v1/channels/sms/inbound", json={"phone_ref": PHONE, "text": "hello"})
++    assert quiet.json() is None
++
++
++def test_crisis_wins_over_an_opt_out_in_the_same_message(client, auth, db_session):
++    dial(client, "i", "2")
++    ended = dial(client, "i", "i want to die stop")
++    assert ended["end_session"] is True
++    assert any(t["task_type"] == "counsellor_urgent" for t in open_tasks(client, auth))
++
++
++def test_visit_screen_explains_the_text_reply_codes(client):
++    screen = dial(client, "j", "4")["text"]
++    assert "Reply to that text" in screen and "0 Menu" in screen
++
++
++def test_audit_keeps_labels_only(client, db_session):
++    unique = "xylophone"
++    dial(client, "k", "2")
++    dial(client, "k", f"{unique} bring")
++    dial(client, "k", "0")
++    dial(client, "k", "6")
++    rows = db_session.scalars(select(AuditLog).where(AuditLog.action == "ussd.message")).all()
++    assert rows
++    blob = " ".join(str(r.detail) for r in rows)
++    assert PHONE not in blob and unique not in blob
++
++
++@pytest.mark.parametrize("text", [t["text"] for t in load_templates().values()])
++def test_every_template_fits_a_screen_with_its_next_steps(text):
++    screen = service._compose(text)
++    assert len(screen) <= service.USSD_LIMIT
++    assert screen.endswith("0 Menu")
++    assert "reply help" not in screen.lower()
++    assert not any(word in screen.lower() for word in FORBIDDEN)
++
++
++@pytest.mark.parametrize("passage", load_passages(), ids=lambda p: p["id"])
++def test_every_approved_passage_fits_a_screen(passage):
++    screen = service._compose(passage["text"], sms_template=False)
++    assert len(screen) <= service.USSD_LIMIT
++    assert passage["text"] in screen
++    assert not any(word in screen.lower() for word in FORBIDDEN)
++
++
++def test_fixed_screens_fit_and_stay_discreet():
++    for screen in (
++        service.HOME,
++        service.WORRY,
++        service.UNCLEAR,
++        service.ASK,
++        service.CHOOSE,
++        service.CHOOSE_AFTER,
++        service.OPTED_OUT,
++    ):
++        assert len(screen) <= service.USSD_LIMIT
++        assert not any(word in screen.lower() for word in FORBIDDEN)
++
++
++def test_a_long_answer_is_cut_but_the_options_never_are():
++    screen = service._compose("word " * 80)
++    assert len(screen) <= service.USSD_LIMIT
++    assert screen.endswith("1 Call me\n0 Menu")
+diff --git a/docs/TECHNICAL_DECISIONS.md b/docs/TECHNICAL_DECISIONS.md
+index 3b48cd0..30dec3a 100644
+--- a/docs/TECHNICAL_DECISIONS.md
++++ b/docs/TECHNICAL_DECISIONS.md
+@@ -21,6 +21,7 @@ Lightweight decision log. Add a row when a decision changes how others work. Sta
+ | TD-15 | Mock hospital runs as a separate process and exchanges FHIR R4 resources over HTTP; everything is simulated | Accepted | 2026-11-16 |
+ | TD-16 | Pre-hospital pathway states: FLAGGED to CLOSED, plus OPTED_OUT and LOST_TO_FOLLOW_UP | Accepted | 2026-11-16 |
+ | TD-17 | Adapt the existing backend case engine on `feature/backend-case-engine` to the new pathway instead of rebuilding it | Proposed | 2026-11-16 |
++| TD-18 | USSD answers typed questions from the approved passages (no source shown); SMS stays on short templates | Proposed | 2026-11-20 |
+ 
+ ## Reasons, in plain language
+ 
+@@ -55,3 +56,5 @@ Lightweight decision log. Add a row when a decision changes how others work. Sta
+ **TD-16 Pathway states.** The states follow the README's ten steps and replace the hospital-side stages. OPTED_OUT records a person's decision not to continue. LOST_TO_FOLLOW_UP can only be set by a human decision. All stage deadlines are assumptions until sourced.
+ 
+ **TD-17 Adapt, do not rebuild.** The branch `feature/backend-case-engine` already has authentication and roles, an append-only audit log, patients and consents, screenings, a YAML-driven state machine with deadlines, escalation, closure with evidence and a human lost-to-follow-up decision, a seed script and tests. It was built for the earlier hospital-side pathway. Because stages, owners, roles and closure rules are read from `pathways/*.yaml`, most of the work is a new pathway file, renamed roles and updated tests. Status stays Proposed until the team agrees.
++
++**TD-18 USSD answers from approved passages.** The first USSD version used only the short templates, so many ordinary questions ended in "I did not understand". All approved passages are 159 characters or fewer and contain none of the words that must not appear on a shared phone, so each fits one USSD screen. USSD now tries safety rules, then Lite mode, then the passages, and offers the worry menu when nothing matches. No source is shown on the screen, because source titles name the illness. The passages are still pending clinical review. Setting `USSD_ANSWERS_FROM_PASSAGES=false` returns USSD to templates only. SMS is unchanged.

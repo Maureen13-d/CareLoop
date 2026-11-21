@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CareLoop web app
 
-## Getting Started
+Next.js 16 (App Router, cache components), React 19, TypeScript and Tailwind CSS 4. All data comes from the FastAPI backend in `../backend`. Every person in it is synthetic.
 
-First, run the development server:
+## Run it
+
+Start the backend first (see `../backend/README.md`), then:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd frontend
+npm install
+npm run dev          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+If the API is not on `http://localhost:8000`, set `NEXT_PUBLIC_API_URL`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Sign in by picking a demo account on the sign-in page. Every account uses the password `careloop-demo`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Check it
 
-## Learn More
+```bash
+npm run lint
+npm run build        # works offline: the font is self-hosted
+npm start            # serve the production build
+```
 
-To learn more about Next.js, take a look at the following resources:
+## What to try
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Account | Try this |
+|---|---|
+| David Kamau (clinician) | **Issue an ID card**, then print the card. **Open a case**, then claim it and move it on. **Arrivals**: record an arrival. |
+| Amina Otieno (navigator) | **Today**, **Cases** (search and filters), **Who to chase** (escalate, save an outcome), **Support chat**, **Basic phone** (dial, key 3, reply 1), **Follow-up ladder** (run a sweep). |
+| Grace Achieng (community health promoter) | **Today** lists her women. Open one to record a home check. |
+| Peter Omondi (program manager) | Counts, recent activity and the **Audit trail**. No names or chats. |
+| Aisha Demo (patient) | Only **Support chat** and **Basic phone**. |
+| I have a card (on the sign-in page) | Enter an ID issued above. In this demo the code is shown on screen. |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Where things live
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Path | What |
+|---|---|
+| `src/app/(app)/` | Signed-in pages. Each page checks the role on the server |
+| `src/app/login`, `src/app/enter` | Sign-in and the patient's card entry |
+| `src/components/ui/` | The design system. See `../docs/FRONTEND_DESIGN_SYSTEM.md` |
+| `src/components/` | App-level pieces: shell, navigation, task item, pathway chart |
+| `src/lib/` | API clients, session, display formatting, shared response types |

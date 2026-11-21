@@ -1,9 +1,10 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { moveBand, saveCheckin, saveReading } from "./actions";
-import { Notice } from "@/components/ui";
+import { Badge, Card, Field, Input, Notice, Page, PageHeader, SectionHeader, Select } from "@/components/ui";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { ApiError, api } from "@/lib/api";
 import { stageShort } from "@/lib/format";
+import { riskTone } from "@/lib/status";
 import { getSession } from "@/lib/session";
 
 export const instant = false;
@@ -20,7 +21,12 @@ type Woman = {
   risk_level: string | null;
 };
 
-const field = "min-h-12 w-full rounded-xl border border-line bg-white px-3";
+const SIGNS = [
+  ["heavy_bleeding", "Heavy bleeding"],
+  ["headache_severe", "Severe head pain"],
+  ["vision_blurred", "Blurred vision"],
+  ["swelling_face_hands", "Face or hand swelling"],
+];
 
 export default async function ChwWomanPage({
   params,
@@ -46,99 +52,147 @@ export default async function ChwWomanPage({
   if (!woman) notFound();
 
   return (
-    <main className="space-y-8 px-4 py-6 md:px-0 md:py-0">
-      <Link href="/" className="text-sm text-lagoon underline underline-offset-2">Today</Link>
+    <Page>
+      <PageHeader
+        back={{ href: "/", label: "Today" }}
+        title={woman.display_name}
+        description="You can record a check. You cannot move a clinical step. A colour is a label, not a diagnosis. Pending clinical review."
+        meta={
+          <>
+            <Badge tone="outline">{woman.patient_ref}</Badge>
+            <Badge tone="outline">{woman.area_label}</Badge>
+            <Badge tone="outline">{woman.gestation_band}</Badge>
+            <Badge tone="teal">{woman.case_state ? stageShort(woman.case_state) : "No journey"}</Badge>
+            {woman.urgency === "urgent" ? <Badge tone="danger">Urgent</Badge> : null}
+            <Badge tone={riskTone(woman.risk_level)}>{woman.risk_level ? `Label ${woman.risk_level}` : "No reading"}</Badge>
+          </>
+        }
+      />
       {notice ? <Notice tone="ok">{notice}</Notice> : null}
       {error ? <Notice tone="bad">{error}</Notice> : null}
-      <header>
-        <p className="text-sm text-lagoon">{woman.patient_ref}</p>
-        <h1 className="text-4xl">{woman.display_name}</h1>
-        <p className="mt-2 text-ink-soft">
-          {woman.area_label} · {woman.gestation_band} · {woman.case_state ? stageShort(woman.case_state) : "No journey"}
-          {woman.urgency === "urgent" ? " · Urgent" : ""} · {woman.risk_level ? `label ${woman.risk_level}` : "no reading"}
-        </p>
-        <p className="mt-2 max-w-2xl text-sm text-ink-soft">
-          You can record a check. You cannot move a clinical step. A colour is a label, not a diagnosis. PENDING CLINICAL REVIEW.
-        </p>
-      </header>
 
-      <form action={saveReading} className="space-y-3 rounded-2xl border border-line bg-paper-2 p-4">
-        <h2 className="text-2xl">Cuff reading</h2>
-        <input type="hidden" name="pregnancyId" value={woman.id} />
-        <div className="grid gap-3 sm:grid-cols-3">
-          <label className="text-sm">Systolic<input className={field} name="systolic" type="number" defaultValue={118} /></label>
-          <label className="text-sm">Diastolic<input className={field} name="diastolic" type="number" defaultValue={76} /></label>
-          <label className="text-sm">Pulse<input className={field} name="pulse" type="number" defaultValue={72} /></label>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="text-sm">Urine<select className={field} name="urine_protein" defaultValue="neg">{["neg", "trace", "1+", "2+", "3+", "unknown"].map((item) => <option key={item}>{item}</option>)}</select></label>
-          <label className="text-sm">Haemoglobin<select className={field} name="hb_band" defaultValue="normal">{["normal", "mild", "moderate", "severe", "unknown"].map((item) => <option key={item}>{item}</option>)}</select></label>
-        </div>
-        <fieldset className="grid gap-2 sm:grid-cols-2">
-          <legend className="text-sm">Signs</legend>
-          {[
-            ["heavy_bleeding", "Heavy bleeding"],
-            ["headache_severe", "Severe head pain"],
-            ["vision_blurred", "Blurred vision"],
-            ["swelling_face_hands", "Face or hand swelling"],
-          ].map(([value, label]) => (
-            <label key={value} className="flex min-h-12 items-center gap-2 text-sm">
-              <input type="checkbox" name="sign" value={value} /> {label}
-            </label>
-          ))}
-        </fieldset>
-        <button className="min-h-12 rounded-full bg-lagoon px-4 text-white">Save reading</button>
-      </form>
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        <div className="space-y-6">
+          <Card as="section" aria-labelledby="reading-heading">
+            <SectionHeader id="reading-heading" title="Cuff reading" description="The server sets the label from the numbers and signs." />
+            <form action={saveReading} className="mt-5 space-y-5">
+              <input type="hidden" name="pregnancyId" value={woman.id} />
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="Systolic" htmlFor="systolic">
+                  <Input id="systolic" name="systolic" type="number" inputMode="numeric" defaultValue={118} />
+                </Field>
+                <Field label="Diastolic" htmlFor="diastolic">
+                  <Input id="diastolic" name="diastolic" type="number" inputMode="numeric" defaultValue={76} />
+                </Field>
+                <Field label="Pulse" htmlFor="pulse">
+                  <Input id="pulse" name="pulse" type="number" inputMode="numeric" defaultValue={72} />
+                </Field>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Urine" htmlFor="urine_protein">
+                  <Select id="urine_protein" name="urine_protein" defaultValue="neg">
+                    {["neg", "trace", "1+", "2+", "3+", "unknown"].map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Haemoglobin" htmlFor="hb_band">
+                  <Select id="hb_band" name="hb_band" defaultValue="normal">
+                    {["normal", "mild", "moderate", "severe", "unknown"].map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
+                  </Select>
+                </Field>
+              </div>
+              <fieldset>
+                <legend className="text-sm font-medium text-ink">Signs</legend>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  {SIGNS.map(([value, label]) => (
+                    <label
+                      key={value}
+                      className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-line px-3 text-sm has-[:checked]:border-danger/40 has-[:checked]:bg-danger-bg"
+                    >
+                      <input type="checkbox" name="sign" value={value} className="size-4 accent-deep" /> {label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <SubmitButton pendingLabel="Saving">Save reading</SubmitButton>
+            </form>
+          </Card>
 
-      <form action={saveCheckin} className="space-y-3 rounded-2xl border border-line bg-paper-2 p-4">
-        <h2 className="text-2xl">Scripted check-in</h2>
-        <input type="hidden" name="pregnancyId" value={woman.id} />
-        <label className="block text-sm">Language
-          <select className={field} name="language" defaultValue="en">
-            <option value="en">English</option>
-            <option value="sw">Swahili</option>
-          </select>
-        </label>
-        <Select name="bleeding" label="Bleeding" options={[["", "No"], ["yes", "Yes"]]} />
-        <Select name="headache" label="Head pain" options={[["", "No"], ["mild", "Mild"], ["severe", "Severe"]]} />
-        <Select name="vision" label="Vision" options={[["", "Clear"], ["blurred", "Blurred"]]} />
-        <Select name="swelling" label="Swelling" options={[["", "No"], ["yes", "Face or hands"]]} />
-        <Select name="pain" label="Belly pain" options={[["", "No"], ["upper", "High in the belly"]]} />
-        <Select name="movement" label="Movement" options={[["", "Same"], ["less", "Less"], ["none", "None"]]} />
-        <Select name="fever" label="Fever" options={[["", "No"], ["yes", "Yes"], ["severe", "With weakness"]]} />
-        <Select name="fluid" label="Fluid" options={[["", "No"], ["yes", "Leaking"], ["fever", "Leaking and fever"]]} />
-        <Select name="breathing" label="Breathing" options={[["", "Easy"], ["yes", "Hard"]]} />
-        <Select name="mood" label="How she feels" options={[["", "Okay"], ["low", "Low"], ["unsafe", "Unsafe"]]} />
-        <button className="min-h-12 rounded-full bg-lagoon px-4 text-white">Save check-in</button>
-      </form>
-
-      <form action={moveBand} className="space-y-3 rounded-2xl border border-line bg-paper-2 p-4">
-        <h2 className="text-2xl">Band</h2>
-        <input type="hidden" name="pregnancyId" value={woman.id} />
-        <label className="block text-sm">Device id
-          <input className={field} name="device_id" defaultValue="BAND-0012" />
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {["lend", "return", "lost"].map((action) => (
-            <button key={action} name="action" value={action} className="min-h-12 rounded-full border border-line bg-white px-4 text-sm">
-              {action}
-            </button>
-          ))}
+          <Card as="section" aria-labelledby="band-heading">
+            <SectionHeader id="band-heading" title="Band" description="Lend, return or report a lost wrist band." />
+            <form action={moveBand} className="mt-5 space-y-4">
+              <input type="hidden" name="pregnancyId" value={woman.id} />
+              <Field label="Device ID" htmlFor="device_id">
+                <Input id="device_id" name="device_id" defaultValue="BAND-0012" />
+              </Field>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ["lend", "Lend"],
+                  ["return", "Return"],
+                  ["lost", "Report lost"],
+                ].map(([action, label]) => (
+                  <button
+                    key={action}
+                    type="submit"
+                    name="action"
+                    value={action}
+                    className="inline-flex min-h-9 items-center rounded-full border border-line bg-surface px-4 text-sm font-medium text-ink hover:border-teal hover:bg-mint"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </form>
+          </Card>
         </div>
-      </form>
-    </main>
+
+        <Card as="section" aria-labelledby="checkin-heading">
+          <SectionHeader
+            id="checkin-heading"
+            title="Scripted check-in"
+            description="Ask each question as written. Leave the first answer if nothing has changed."
+          />
+          <form action={saveCheckin} className="mt-5 space-y-5">
+            <input type="hidden" name="pregnancyId" value={woman.id} />
+            <Field label="Language" htmlFor="checkin-language">
+              <Select id="checkin-language" name="language" defaultValue="en">
+                <option value="en">English</option>
+                <option value="sw">Swahili</option>
+              </Select>
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Question name="bleeding" label="Bleeding" options={[["", "No"], ["yes", "Yes"]]} />
+              <Question name="headache" label="Head pain" options={[["", "No"], ["mild", "Mild"], ["severe", "Severe"]]} />
+              <Question name="vision" label="Vision" options={[["", "Clear"], ["blurred", "Blurred"]]} />
+              <Question name="swelling" label="Swelling" options={[["", "No"], ["yes", "Face or hands"]]} />
+              <Question name="pain" label="Belly pain" options={[["", "No"], ["upper", "High in the belly"]]} />
+              <Question name="movement" label="Movement" options={[["", "Same"], ["less", "Less"], ["none", "None"]]} />
+              <Question name="fever" label="Fever" options={[["", "No"], ["yes", "Yes"], ["severe", "With weakness"]]} />
+              <Question name="fluid" label="Fluid" options={[["", "No"], ["yes", "Leaking"], ["fever", "Leaking and fever"]]} />
+              <Question name="breathing" label="Breathing" options={[["", "Easy"], ["yes", "Hard"]]} />
+              <Question name="mood" label="How she feels" options={[["", "Okay"], ["low", "Low"], ["unsafe", "Unsafe"]]} />
+            </div>
+            <SubmitButton pendingLabel="Saving">Save check-in</SubmitButton>
+          </form>
+        </Card>
+      </div>
+    </Page>
   );
 }
 
-function Select({ name, label, options }: { name: string; label: string; options: string[][] }) {
+function Question({ name, label, options }: { name: string; label: string; options: string[][] }) {
   return (
-    <label className="block text-sm">
-      {label}
-      <select className={field} name={name} defaultValue="">
+    <Field label={label} htmlFor={`checkin-${name}`}>
+      <Select id={`checkin-${name}`} name={name} defaultValue="">
         {options.map(([value, text]) => (
-          <option key={value || "none"} value={value}>{text}</option>
+          <option key={value || "none"} value={value}>
+            {text}
+          </option>
         ))}
-      </select>
-    </label>
+      </Select>
+    </Field>
   );
 }

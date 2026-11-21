@@ -1,186 +1,178 @@
 export const instant = false;
+import { CircleCheck, MessageSquareText } from "lucide-react";
 import Link from "next/link";
-import { getEvents, getQueue, type OutreachEvent } from "@/lib/outreach-api";
+import { CHANNEL_LABEL, KindBadge, fmtStage, fmtTime } from "@/components/OutreachKind";
+import {
+  Badge,
+  Banner,
+  EmptyState,
+  Page,
+  PageHeader,
+  SectionHeader,
+  StatBar,
+  Table,
+  Td,
+  Th,
+  THead,
+  Tr,
+} from "@/components/ui";
+import { getEvents, getQueue } from "@/lib/outreach-api";
 import { runSweep } from "./actions";
 import { EscalatedSection } from "./EscalatedSection";
 import { MetricsStrip } from "./MetricsStrip";
 import { SweepButton } from "./SweepButton";
-
-const CHANNEL_LABEL: Record<string, string> = {
-  sms: "SMS reminder",
-  call: "Phone call",
-  home_visit: "Home visit (CHW)",
-  coordinator: "Care coordinator",
-  clinic: "Clinic visit",
-};
-
-const fmtStage = (s: string) => s.replace(/_/g, " ");
-const fmtTime = (iso: string) =>
-  new Date(iso).toLocaleString("en-GB", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "UTC",
-  });
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg border border-black/10 p-4 dark:border-white/15">
-      <dt className="text-sm text-neutral-600 dark:text-neutral-300">{label}</dt>
-      <dd className="text-2xl font-semibold">{value}</dd>
-    </div>
-  );
-}
-
-function KindBadge({ kind }: { kind: OutreachEvent["kind"] }) {
-  if (kind === "response") {
-    return (
-      <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-900 dark:bg-green-900/40 dark:text-green-100">
-        Attended
-      </span>
-    );
-  }
-  return kind === "escalation" ? (
-    <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-900 dark:bg-red-900/40 dark:text-red-100">
-      Escalation
-    </span>
-  ) : (
-    <span className="rounded bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-900 dark:bg-sky-900/40 dark:text-sky-100">
-      Reminder
-    </span>
-  );
-}
 
 export default async function OutreachPage() {
   const [queue, events] = await Promise.all([getQueue(), getEvents(20)]);
   const escalations = queue.filter((p) => p.kind === "escalation").length;
 
   return (
-    <main className="mx-auto max-w-5xl space-y-8 p-6 sm:p-8">
-      <header className="space-y-3">
-        <h1 className="text-2xl font-semibold">Follow-up ladder</h1>
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
-          Simulated reminders for journeys that have gone quiet. Nothing is actually sent.
-        </p>
-        <p
-          role="note"
-          className="rounded-md bg-amber-100 p-2 text-sm text-amber-900 dark:bg-amber-900/40 dark:text-amber-100"
-        >
-          Synthetic data only. Contacts are simulated; nothing is actually sent. Pathway timings are unreviewed placeholders pending clinical review.
-        </p>
-      </header>
+    <Page>
+      <PageHeader
+        title="Follow-up ladder"
+        description="Simulated reminders for journeys that have gone quiet: a text first, then a call, a home visit, and finally a care coordinator."
+        meta={<Badge tone="outline">Simulated, nothing is sent</Badge>}
+      />
+      <Banner>
+        Synthetic data only. Contacts are simulated; nothing is actually sent. Pathway timings are unreviewed placeholders
+        pending clinical review.
+      </Banner>
 
-      <MetricsStrip />
-
-      <section aria-labelledby="summary-heading">
-        <h2 id="summary-heading" className="sr-only">
-          Summary
-        </h2>
-        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Stat label="Cases due for outreach" value={queue.length} />
-          <Stat label="Due for coordinator escalation" value={escalations} />
-          <Stat label="Recent contacts logged" value={events.length} />
-        </dl>
-      </section>
+      <StatBar
+        label="Outreach summary"
+        items={[
+          { label: "Cases due for outreach", value: queue.length, tone: queue.length ? "warn" : "default" },
+          { label: "Due for coordinator escalation", value: escalations, tone: escalations ? "danger" : "default" },
+          { label: "Recent contacts logged", value: events.length },
+        ]}
+      />
 
       <section aria-labelledby="queue-heading" className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 id="queue-heading" className="text-lg font-medium">
-            Next actions
-          </h2>
-          <form action={runSweep}>
-            <SweepButton disabled={queue.length === 0} />
-          </form>
-        </div>
+        <SectionHeader
+          id="queue-heading"
+          title="Next actions"
+          description="Most overdue first. A sweep logs the next contact for every case below."
+          action={
+            <form action={runSweep}>
+              <SweepButton disabled={queue.length === 0} />
+            </form>
+          }
+        />
 
         {queue.length === 0 ? (
-          <p>No outreach is due. Cases within their SLA, or contacted recently, are skipped.</p>
+          <EmptyState icon={<CircleCheck aria-hidden="true" />} title="No outreach is due">
+            Cases within their target time, or contacted recently, are skipped.
+          </EmptyState>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <caption className="sr-only">Cases due for outreach, most overdue first</caption>
-              <thead>
-                <tr className="border-b border-black/10 dark:border-white/15">
-                  <th scope="col" className="py-2 pr-4">Case</th>
-                  <th scope="col" className="pr-4">Patient</th>
-                  <th scope="col" className="pr-4">Stage</th>
-                  <th scope="col" className="pr-4">Days overdue</th>
-                  <th scope="col" className="pr-4">Next action</th>
-                  <th scope="col">Message</th>
-                </tr>
-              </thead>
+          <>
+            <Table caption="Cases due for outreach, most overdue first" className="hidden md:block">
+              <THead>
+                <Th>Case</Th>
+                <Th>Stage</Th>
+                <Th>Overdue</Th>
+                <Th>Next action</Th>
+                <Th>Message</Th>
+              </THead>
               <tbody>
                 {queue.map((p) => (
-                  <tr key={p.case_id} className="border-b border-black/10 align-top dark:border-white/15">
-                    <td className="py-2 pr-4">
-                      <Link href={`/cases/${p.case_id}`} className="underline underline-offset-2">
+                  <Tr key={p.case_id}>
+                    <Td>
+                      <Link href={`/cases/${p.case_id}`} className="font-medium text-teal-text hover:underline">
                         {p.case_id}
                       </Link>
-                    </td>
-                    <td className="pr-4">{p.patient_ref}</td>
-                    <td className="pr-4 capitalize">{fmtStage(p.stage)}</td>
-                    <td className="pr-4">{p.days_overdue}</td>
-                    <td className="space-x-2 pr-4">
-                      <KindBadge kind={p.kind} />
-                      <span>
-                        {CHANNEL_LABEL[p.channel]} (attempt {p.attempt})
+                      <span className="mt-0.5 block text-ink-2">{p.patient_ref}</span>
+                    </Td>
+                    <Td className="whitespace-nowrap">{fmtStage(p.stage)}</Td>
+                    <Td className="whitespace-nowrap">
+                      <span className="font-medium tabular-nums text-warn">{p.days_overdue}</span>{" "}
+                      <span className="text-ink-2">days</span>
+                    </Td>
+                    <Td>
+                      <span className="flex flex-col items-start gap-1">
+                        <KindBadge kind={p.kind} />
+                        <span className="whitespace-nowrap text-ink">
+                          {CHANNEL_LABEL[p.channel]}, attempt {p.attempt}
+                        </span>
                       </span>
-                    </td>
-                    <td>{p.message}</td>
-                  </tr>
+                    </Td>
+                    <Td className="max-w-sm text-ink-2">{p.message}</Td>
+                  </Tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </Table>
+
+            <ul className="space-y-3 md:hidden">
+              {queue.map((p) => (
+                <li key={p.case_id} className="rounded-2xl border border-line bg-surface p-4 shadow-raised">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <Link href={`/cases/${p.case_id}`} className="font-medium text-teal-text hover:underline">
+                        {p.case_id}
+                      </Link>
+                      <p className="text-sm text-ink-2">
+                        {p.patient_ref}, {fmtStage(p.stage).toLowerCase()}
+                      </p>
+                    </div>
+                    <Badge tone="warn">{p.days_overdue} days over</Badge>
+                  </div>
+                  <p className="mt-3 flex flex-wrap items-center gap-2 text-sm text-ink">
+                    <KindBadge kind={p.kind} />
+                    {CHANNEL_LABEL[p.channel]}, attempt {p.attempt}
+                  </p>
+                  <p className="mt-2 flex gap-2 rounded-xl bg-canvas px-3 py-2 text-sm text-ink-2">
+                    <MessageSquareText aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+                    {p.message}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </section>
+
+      <MetricsStrip />
 
       <EscalatedSection />
 
       <section aria-labelledby="log-heading" className="space-y-3">
-        <h2 id="log-heading" className="text-lg font-medium">
-          Contact log
-        </h2>
+        <SectionHeader id="log-heading" title="Contact log" description="The 20 most recent contacts, newest first." />
         {events.length === 0 ? (
-          <p>No contacts yet. Run a sweep to generate the first batch.</p>
+          <EmptyState title="No contacts yet">Run a sweep to generate the first batch.</EmptyState>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <caption className="sr-only">Most recent outreach contacts, newest first</caption>
-              <thead>
-                <tr className="border-b border-black/10 dark:border-white/15">
-                  <th scope="col" className="py-2 pr-4">Time (UTC)</th>
-                  <th scope="col" className="pr-4">Case</th>
-                  <th scope="col" className="pr-4">Patient</th>
-                  <th scope="col" className="pr-4">Action</th>
-                  <th scope="col">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {events.map((e) => (
-                  <tr key={e.id} className="border-b border-black/10 dark:border-white/15">
-                    <td className="py-2 pr-4">
-                      <time dateTime={e.created_at}>{fmtTime(e.created_at)}</time>
-                    </td>
-                    <td className="pr-4">
-                      <Link href={`/cases/${e.case_id}`} className="underline underline-offset-2">
-                        {e.case_id}
-                      </Link>
-                    </td>
-                    <td className="pr-4">{e.patient_ref}</td>
-                    <td className="space-x-2 pr-4">
+          <Table caption="Most recent outreach contacts, newest first">
+            <THead>
+              <Th>Time (UTC)</Th>
+              <Th>Case</Th>
+              <Th>Action</Th>
+              <Th>Status</Th>
+            </THead>
+            <tbody>
+              {events.map((e) => (
+                <Tr key={e.id}>
+                  <Td className="whitespace-nowrap text-ink-2">
+                    <time dateTime={e.created_at}>{fmtTime(e.created_at)}</time>
+                  </Td>
+                  <Td>
+                    <Link href={`/cases/${e.case_id}`} className="font-medium text-teal-text hover:underline">
+                      {e.case_id}
+                    </Link>
+                    <span className="mt-0.5 block text-ink-2">{e.patient_ref}</span>
+                  </Td>
+                  <Td>
+                    <span className="flex flex-wrap items-center gap-2">
                       <KindBadge kind={e.kind} />
-                      <span>
-                        {CHANNEL_LABEL[e.channel]} (attempt {e.attempt})
+                      <span className="whitespace-nowrap">
+                        {CHANNEL_LABEL[e.channel]}, attempt {e.attempt}
                       </span>
-                    </td>
-                    <td>{e.status.replace(/_/g, " ")}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </span>
+                  </Td>
+                  <Td className="whitespace-nowrap">{fmtStage(e.status)}</Td>
+                </Tr>
+              ))}
+            </tbody>
+          </Table>
         )}
       </section>
-    </main>
+    </Page>
   );
 }
