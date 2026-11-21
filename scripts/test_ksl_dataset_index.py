@@ -42,6 +42,21 @@ def test_channel_counts_do_not_need_numpy():
     ]
 
 
+def test_landmark_frames_keep_the_coordinates():
+    frame = {
+        "pose": [(0.1, 0.2, 0.3), (0.4, 0.5, 0.6)],
+        "left_hand": [],
+        "right_hand": [(1.1, 1.2, 1.3)],
+        "face": [(2.1, 2.2, 2.3)],
+    }
+    got = index.landmark_frames(pickle.dumps([frame], protocol=4))
+    assert got[0]["pose"][0] == [0.1, 0.2, 0.3]
+    assert got[0]["pose"][1] == [0.4, 0.5, 0.6]
+    assert got[0]["left_hand"] == []
+    assert got[0]["right_hand"] == [[1.1, 1.2, 1.3]]
+    assert got[0]["face"] == [[2.1, 2.2, 2.3]]
+
+
 def test_menu_summary_counts_exact_labels_only():
     rows = [
         {"name": "Pose Data/Batch 1/7/Extract/Landmarks/HELP.npy"},

@@ -150,6 +150,65 @@ def channel_counts(payload: bytes) -> list[dict[str, int]]:
     return frames
 
 
+def landmark_frames(payload: bytes) -> list[dict[str, list[list[float]]]]:
+    """Coordinates per frame. Opcodes only: numpy reconstruct calls are not run."""
+    frames: list[dict[str, list[list[float]]]] = []
+    current: dict[str, list[list[float]]] | None = None
+    key: str | None = None
+    points: list[list[float]] = []
+    floats: list[float] = []
+    memo: dict[int, str] = {}
+    next_memo = 0
+    pending: str | None = None
+
+    def save_key() -> None:
+        nonlocal key, points
+        if current is not None and key is not None:
+            current[key] = points
+        key = None
+        points = []
+
+    def use_key(name: str) -> None:
+        nonlocal key, points
+        save_key()
+        key = name
+        points = []
+        floats.clear()
+
+    for op, arg, _pos in pickletools.genops(payload):
+        if op.name == "BINFLOAT":
+            floats.append(float(arg))
+            pending = None
+            continue
+        if op.name in _TEXT and isinstance(arg, str):
+            pending = arg if arg in CHANNELS else None
+            if pending and current is not None:
+                use_key(pending)
+            continue
+        if op.name == "MEMOIZE":
+            if pending:
+                memo[next_memo] = pending
+            pending = None
+            next_memo += 1
+            continue
+        pending = None
+        if op.name == "BINGET" and memo.get(arg) in CHANNELS and current is not None:
+            use_key(memo[arg])
+        elif op.name == "TUPLE3" and key and len(floats) >= 3:
+            points.append([floats[-3], floats[-2], floats[-1]])
+            del floats[-3:]
+        elif op.name == "EMPTY_DICT":
+            current = {name: [] for name in CHANNELS}
+            key = None
+            points = []
+            floats.clear()
+        elif op.name == "SETITEMS" and current is not None:
+            save_key()
+            frames.append(current)
+            current = None
+    return [frame for frame in frames if any(frame[name] for name in CHANNELS)]
+
+
 def gloss(name: str) -> str:
     return Path(name.split("/")[-1]).stem.upper()
 
