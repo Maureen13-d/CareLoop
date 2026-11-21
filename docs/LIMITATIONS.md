@@ -13,3 +13,9 @@
 - The 200-person report is synthetic. People are contacted because they are already late. That is not a causal comparison.
 - Maternal and hardware code from the earlier branch is still in the tree. It is not part of this demo.
 - Tests do not touch `backend/careloop.db`. A local demo database must be deleted before the new seed appears.
+- The KSL path plays approved recordings only. This build has none. The wave on the card is labelled `PLACEHOLDER MOTION: NOT KSL`.
+- There is no sign recogniser. The guided call says recognition is not enabled. Answers are taps, and the camera stays off.
+- USSD and SMS cannot show a signer. They stay text.
+- Phrase lines, including the KSL list, are still pending clinical review. Approved software clips stay off for a pilot until that review exists.
+- No phone frame rate was measured for the avatar. None is claimed.
+- Public KSL dataset sizes and licences were not verified. American Sign Language material is not KSL.
