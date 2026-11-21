@@ -6,6 +6,13 @@
 **/.ruff_cache
 **/*.db
 frontend
-data
+# The How2Sign packet JSON is what the patient card plays. The rest of data stays out.
+data/*
+!data/external
+data/external/*
+!data/external/asl
+data/external/asl/*
+!data/external/asl/packets
+!data/external/asl/packets/**
 node_modules
 .next

@@ -7,6 +7,7 @@ COPY backend/app /srv/backend/app
 COPY config /srv/config
 COPY ai /srv/ai
 COPY pathways /srv/pathways
+COPY data/external/asl/packets /srv/data/external/asl/packets
 
 WORKDIR /srv/backend
 RUN pip install --no-cache-dir .

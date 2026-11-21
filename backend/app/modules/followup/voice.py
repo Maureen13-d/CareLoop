@@ -223,11 +223,12 @@ def _call_phrases(db: Session, session) -> list[dict]:
     if session.step == "id":
         phrases = [
             {"id": "Hello", "label": "Hello"},
+            {"id": "English", "label": "English"},
             {"id": "Kiswahili", "label": "Kiswahili"},
         ]
         example = _example_id(db)
         if example:
-            phrases.append({"id": example, "label": "Say my ID"})
+            phrases.append({"id": example, "label": example})
         return phrases
     return [
         {"id": "not yet", "label": "Not yet"},
