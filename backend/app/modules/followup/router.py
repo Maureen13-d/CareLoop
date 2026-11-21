@@ -30,6 +30,7 @@ from app.modules.followup.conversation import (
 from app.modules.followup.ids import parse_public_id
 from app.modules.followup.models import Enrolment
 from app.modules.followup.schemas import (
+    CallSimIn,
     CheckIn,
     OutcomeIn,
     RegisterIn,
@@ -290,6 +291,12 @@ def get_voice_cases(db: Session = Depends(get_db), _user=Depends(voice_user)):
 @router.post("/voice/turn")
 def post_voice_turn(data: VoiceTurnIn, db: Session = Depends(get_db), _user=Depends(voice_user)):
     return voice.turn(db, data.public_id, data.text)
+
+
+@router.post("/call/simulate")
+def post_call(data: CallSimIn, db: Session = Depends(get_db), _user=Depends(voice_user)):
+    """Simulated handset call. No phone network. Words and a spoken line come back together."""
+    return voice.call_turn(db, data.session_id, data.text)
 
 
 @router.post("/voice/hear")

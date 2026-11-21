@@ -4,6 +4,7 @@ import {
   Badge,
   Card,
   EmptyState,
+  Notice,
   Meter,
   MetricCard,
   Page,
@@ -37,11 +38,18 @@ type Summary = {
   note: string;
 };
 
-export default async function FacilityPage() {
+export default async function FacilityPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const user = await getSession();
   if (!user) redirect("/login");
   if (!["clinician", "navigator", "program_manager", "admin"].includes(user.role)) redirect("/");
+  const { error } = await searchParams;
   const data = await api<Summary>("/followup/facility");
+  const canArrive = user.role === "clinician" || user.role === "admin";
+  const canLose = user.role === "navigator" || user.role === "clinician";
   const percent = Math.round(data.percent_arrived * 100);
   const funnel = Object.entries(data.funnel);
   const funnelMax = Math.max(1, ...funnel.map(([, count]) => count));
@@ -119,6 +127,7 @@ export default async function FacilityPage() {
           title="Needs a person to decide"
           description="Record the arrival if they came, or close as lost. Lost to follow-up is always a human decision."
         />
+        {error ? <Notice tone="bad">{error}</Notice> : null}
         {data.lost_queue.length === 0 ? (
           <EmptyState icon={<CircleCheck aria-hidden="true" />} title="No decisions waiting">
             Nobody is waiting for an arrival or lost-to-follow-up decision.
@@ -132,20 +141,24 @@ export default async function FacilityPage() {
                   <p className="text-sm text-ink-2">Now: {stageShort(row.state).toLowerCase()}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <form action={markArrived}>
-                    <input type="hidden" name="case_id" value={row.case_id} />
-                    <SubmitButton size="sm" pendingLabel="Recording">
-                      <DoorOpen aria-hidden="true" />
-                      Record arrival
-                    </SubmitButton>
-                  </form>
-                  <form action={markLost}>
-                    <input type="hidden" name="case_id" value={row.case_id} />
-                    <SubmitButton variant="danger" size="sm" pendingLabel="Closing">
-                      <UserX aria-hidden="true" />
-                      Close as lost
-                    </SubmitButton>
-                  </form>
+                  {canArrive ? (
+                    <form action={markArrived}>
+                      <input type="hidden" name="case_id" value={row.case_id} />
+                      <SubmitButton size="sm" pendingLabel="Recording">
+                        <DoorOpen aria-hidden="true" />
+                        Record arrival
+                      </SubmitButton>
+                    </form>
+                  ) : null}
+                  {canLose ? (
+                    <form action={markLost}>
+                      <input type="hidden" name="case_id" value={row.case_id} />
+                      <SubmitButton variant="danger" size="sm" pendingLabel="Closing">
+                        <UserX aria-hidden="true" />
+                        Close as lost
+                      </SubmitButton>
+                    </form>
+                  ) : null}
                 </div>
               </li>
             ))}

@@ -31,6 +31,7 @@ LOCKED = {
     "refuse_diagnosis",
     "refuse_skip",
     "group_once",
+    "call_open",
 }
 ROUTE_KEYS = (
     "next_step",
@@ -72,6 +73,16 @@ def set_complete(fn) -> None:
     """Tests pass a fake completer. Production uses the HTTP client."""
     global _complete
     _complete = fn
+
+
+def phrase_line(text: str, template_id: str, language: str) -> str:
+    """Soften one approved spoken line. Locked lines, including the call greeting, stay as written."""
+    if not text or template_id in LOCKED or not configured():
+        return text
+    rewritten = _rewrite(text, language)
+    if rewritten and _keeps_facts(rewritten, text, []):
+        return rewritten
+    return text
 
 
 def phrase_messages(messages: list[dict], language: str) -> list[dict]:

@@ -1,10 +1,15 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { api } from "@/lib/api";
+import { ApiError, api } from "@/lib/api";
 
 async function post(caseId: string, action: string, body?: string) {
-  await api(`/followup/worklist/${caseId}/${action}`, { method: "POST", body });
+  try {
+    await api(`/followup/worklist/${caseId}/${action}`, { method: "POST", body });
+  } catch (error) {
+    const message = error instanceof ApiError ? error.message : "That action did not go through.";
+    redirect(`/worklist?error=${encodeURIComponent(message)}`);
+  }
   redirect("/worklist");
 }
 

@@ -46,3 +46,8 @@ class TelegramIn(BaseModel):
 class VoiceTurnIn(BaseModel):
     public_id: str
     text: str = ""
+
+
+class CallSimIn(BaseModel):
+    session_id: str = Field(min_length=1, max_length=80)
+    text: str = ""

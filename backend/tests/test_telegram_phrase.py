@@ -106,6 +106,25 @@ def test_dropping_the_person_is_rejected(monkeypatch):
     assert phrase.phrase_messages(messages, "en")[0]["text"] == approved
 
 
+def test_the_call_greeting_is_never_reworded(monkeypatch):
+    calls = []
+
+    def completer(system, user):
+        calls.append(user)
+        return "Hello friend, you are fine."
+
+    _use(monkeypatch, completer)
+    approved = "Hello. This is CareLoop, a clinic check. Please say the ID on your card."
+    assert phrase.phrase_line(approved, "call_open", "en") == approved
+    assert calls == []
+
+
+def test_an_open_spoken_line_can_be_softened(monkeypatch):
+    approved = "Have you been to the clinic yet?"
+    _use(monkeypatch, lambda system, user: "Have you reached the clinic yet?")
+    assert phrase.phrase_line(approved, "status", "en") == "Have you reached the clinic yet?"
+
+
 def test_a_new_hospital_name_is_rejected(monkeypatch):
     approved = "If you have any issue with it, ask Grace."
     _use(monkeypatch, lambda system, user: "If you have any issue with it, ask Grace at Kenyatta.")

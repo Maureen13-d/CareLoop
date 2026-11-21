@@ -1,5 +1,6 @@
 "use server";
 
+import { ApiError, api } from "@/lib/api";
 import { API_URL } from "@/lib/session";
 import { HANDSET, type Sms } from "./types";
 
@@ -14,6 +15,33 @@ async function readMessages(): Promise<Sms[]> {
 
 export async function loadInbox(): Promise<Sms[]> {
   return readMessages();
+}
+
+export type CallPhrase = { id: string; label: string };
+
+export type CallTurn = {
+  spoken_text: string;
+  phrases: CallPhrase[];
+  audio_base64: string | null;
+  audio_type: string;
+  audio_error: string | null;
+  template_id: string;
+  simulated: boolean;
+};
+
+export type CallResult = { ok: true; turn: CallTurn } | { ok: false; message: string };
+
+export async function placeCall(sessionId: string, text: string): Promise<CallResult> {
+  try {
+    const turn = await api<CallTurn>("/followup/call/simulate", {
+      method: "POST",
+      body: JSON.stringify({ session_id: sessionId, text }),
+    });
+    return { ok: true, turn };
+  } catch (error) {
+    const message = error instanceof ApiError ? error.message : "The call could not start.";
+    return { ok: false, message };
+  }
 }
 
 export async function dial(sessionId: string, text: string): Promise<string> {

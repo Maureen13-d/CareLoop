@@ -17,7 +17,7 @@ export default async function PhonePage() {
     <Page>
       <PageHeader
         title="The same help, without a smartphone"
-        description="Dial the placeholder code, pick a worry, and answer the reminder. Reply 1 to confirm, 2 to change, 3 for help, STOP to opt out. An undelivered text becomes a navigator task."
+        description="Dial the placeholder code, or press Call for a simulated voice check. You hear the words and see them on the screen. Nothing is dialled. Reply 1 to confirm, 2 to change, 3 for help, STOP to opt out."
       />
       <PhoneLab sessionId={randomUUID()} initialMessages={messages} />
     </Page>

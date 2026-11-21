@@ -11,12 +11,13 @@ from app.core.config import REPO_ROOT
 from app.core.errors import DomainError
 from app.modules.auth.models import User
 from app.modules.followup import msingi
-from app.modules.followup.conversation import log_outbound, respond
+from app.modules.followup.conversation import get_session, handle, log_outbound, respond
 from app.modules.followup.ids import parse_public_id
 from app.modules.followup.models import ContactVault, Enrolment
 from app.modules.followup.register import register_followup
 from app.modules.followup.schemas import RegisterIn
-from app.modules.followup.texts import spoken
+from app.modules.followup.telegram_phrase import phrase_line
+from app.modules.followup.texts import line, spoken
 from app.modules.patients.models import Patient
 
 CASES = REPO_ROOT / "config" / "voice_cases.yaml"
@@ -204,3 +205,79 @@ def turn(
         "audio_type": "audio/wav",
         "audio_error": audio_error,
     }
+
+
+_HELLOS = {"hello", "hi", "hey", "habari", "mambo"}
+_SWAHILI = {"kiswahili", "swahili"}
+_ENGLISH = {"english"}
+
+
+def _example_id(db: Session) -> str | None:
+    ensure_voice_cases(db)
+    row = db.scalar(select(Enrolment.public_id).where(Enrolment.channel == "voice"))
+    return row
+
+
+def _call_phrases(db: Session, session) -> list[dict]:
+    """Words the caller can say. The handset shows them; nothing is dialled."""
+    if session.step == "id":
+        phrases = [
+            {"id": "Hello", "label": "Hello"},
+            {"id": "Kiswahili", "label": "Kiswahili"},
+        ]
+        example = _example_id(db)
+        if example:
+            phrases.append({"id": example, "label": "Say my ID"})
+        return phrases
+    return [
+        {"id": "not yet", "label": "Not yet"},
+        {"id": "I have been", "label": "I have been"},
+        {"id": "worse", "label": "I feel worse"},
+    ]
+
+
+def call_turn(db: Session, session_id: str, text: str = "") -> dict:
+    """A simulated call. The core chooses the line, the model may soften it, Sauti speaks it."""
+    session = get_session(db, "call", (session_id or "handset")[:80])
+    if session.step == "language":
+        session.language = "en"
+        session.step = "id"
+    heard = (text or "").strip()
+    low = heard.lower()
+    if session.step == "id" and low in _SWAHILI:
+        session.language = "sw"
+        heard = ""
+    elif session.step == "id" and low in _ENGLISH:
+        session.language = "en"
+        heard = ""
+    if not heard or (low in _HELLOS and session.step == "id"):
+        template_id = "call_open"
+        reply_text = line("call_open", session.language)
+        spoken_text = spoken("call_open", session.language)
+        escalation = None
+    else:
+        result = handle(db, session, heard)
+        if result.get("template_id") == "ask_code" and session.public_id:
+            found = db.scalar(select(Enrolment).where(Enrolment.public_id == session.public_id))
+            if found is not None:
+                session.step = "ready"
+                result = respond(db, found, "call", session.language, "")
+        template_id = result["template_id"]
+        reply_text = result["reply_text"]
+        spoken_text = spoken(template_id, session.language)
+        escalation = result.get("escalation_label")
+    spoken_text = phrase_line(spoken_text, template_id, session.language)
+    log_outbound(db, session.public_id, "call", template_id, "spoken", spoken_text)
+    payload = {
+        "synthetic": True,
+        "simulated": True,
+        "heard_text": heard,
+        "reply_text": reply_text,
+        "spoken_text": spoken_text,
+        "template_id": template_id,
+        "escalation_label": escalation,
+        "phrases": _call_phrases(db, session),
+    }
+    speak_reply(payload)
+    db.commit()
+    return payload

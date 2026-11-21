@@ -1,14 +1,22 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { api } from "@/lib/api";
+import { ApiError, api } from "@/lib/api";
 
-export async function markArrived(formData: FormData) {
-  await api(`/followup/facility/${formData.get("case_id")}/arrive`, { method: "POST" });
+async function post(caseId: FormDataEntryValue | null, action: "arrive" | "lost") {
+  try {
+    await api(`/followup/facility/${caseId}/${action}`, { method: "POST" });
+  } catch (error) {
+    const message = error instanceof ApiError ? error.message : "That decision was not recorded.";
+    redirect(`/facility?error=${encodeURIComponent(message)}`);
+  }
   redirect("/facility");
 }
 
+export async function markArrived(formData: FormData) {
+  await post(formData.get("case_id"), "arrive");
+}
+
 export async function markLost(formData: FormData) {
-  await api(`/followup/facility/${formData.get("case_id")}/lost`, { method: "POST" });
-  redirect("/facility");
+  await post(formData.get("case_id"), "lost");
 }

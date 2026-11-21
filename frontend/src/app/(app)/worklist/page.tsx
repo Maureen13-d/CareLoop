@@ -1,6 +1,6 @@
 import { ArrowRight, CircleCheck, Flag, Hand, PhoneCall } from "lucide-react";
 import { redirect } from "next/navigation";
-import { Badge, Banner, EmptyState, Page, PageHeader, StatBar, controlClass, cx } from "@/components/ui";
+import { Badge, Banner, EmptyState, Notice, Page, PageHeader, StatBar, controlClass, cx } from "@/components/ui";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { api } from "@/lib/api";
 import { stageShort } from "@/lib/format";
@@ -11,13 +11,19 @@ import { claimCase, escalateCase, logAttempt, recordOutcome } from "./actions";
 
 export const instant = false;
 
-export default async function WorklistPage() {
+export default async function WorklistPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const user = await getSession();
   if (!user) redirect("/login");
   if (!["chw", "navigator", "clinician", "admin", "program_manager"].includes(user.role)) {
     redirect("/");
   }
+  const { error } = await searchParams;
   const data = await api<Worklist>("/followup/worklist");
+  const canClaim = user.role === "chw";
 
   return (
     <Page>
@@ -41,6 +47,8 @@ export default async function WorklistPage() {
           { label: "Not reached", value: data.counts.unreached, tone: data.counts.unreached ? "warn" : "default" },
         ]}
       />
+
+      {error ? <Notice tone="bad">{error}</Notice> : null}
 
       {data.rows.length === 0 ? (
         <EmptyState icon={<CircleCheck aria-hidden="true" />} title="No one to chase">
@@ -85,13 +93,15 @@ export default async function WorklistPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 lg:max-w-md lg:justify-end">
-                    <form action={claimCase}>
-                      <input type="hidden" name="case_id" value={row.case_id} />
-                      <SubmitButton variant="secondary" size="sm">
-                        <Hand aria-hidden="true" />
-                        Claim
-                      </SubmitButton>
-                    </form>
+                    {canClaim ? (
+                      <form action={claimCase}>
+                        <input type="hidden" name="case_id" value={row.case_id} />
+                        <SubmitButton variant="secondary" size="sm">
+                          <Hand aria-hidden="true" />
+                          Claim
+                        </SubmitButton>
+                      </form>
+                    ) : null}
                     <form action={logAttempt}>
                       <input type="hidden" name="case_id" value={row.case_id} />
                       <SubmitButton variant="secondary" size="sm">
