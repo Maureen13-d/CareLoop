@@ -4,7 +4,6 @@ import json
 import shutil
 import subprocess
 from datetime import datetime
-from pathlib import Path
 
 import pytest
 
@@ -18,7 +17,7 @@ RUNNER = REPO_ROOT / "frontend" / "src" / "lib" / "parity-run.mjs"
 
 def _aware(value):
     if isinstance(value, str) and value.endswith("Z"):
-        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return datetime.fromisoformat(value)
     return value
 
 

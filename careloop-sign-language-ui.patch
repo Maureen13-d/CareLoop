@@ -1,0 +1,1027 @@
+From 3027e420482b75f3b48e6c100fee4494fc9bbf31 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 21 Nov 2026 23:13:33 +0300
+Subject: [PATCH] feat(ui): sign language patient view, clip review page and
+ research view
+
+- Patient card in sign language: signing figure with captions, pause, replay
+  and slower controls, the guide's reply after every answer (urgent replies
+  as an alert), and a fallback to English when clips are not available.
+- Label the How2Sign ASL clips on screen as research, not Kenyan Sign
+  Language and not reviewed, and credit the dataset.
+- Restyle /ksl with the design system and the real approval rules; add it
+  to the navigation and a label for the ksl_reviewer role.
+- Restyle /dev/ksl-research.
+- Fix type errors in EnterFlow and a lint error in TelegramSim that failed
+  the frontend checks on main.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_017y9ojZA4KCduXjRUQqPekC
+---
+ frontend/src/app/(app)/ksl/page.tsx           | 206 ++++++++++++++--
+ .../src/app/(app)/telegram/TelegramSim.tsx    |   7 +-
+ frontend/src/app/dev/ksl-research/page.tsx    |  74 ++++--
+ frontend/src/app/enter/EnterFlow.tsx          | 128 ++++++----
+ frontend/src/app/enter/SignSession.tsx        | 231 ++++++++++++++++++
+ frontend/src/components/Nav.tsx               |   2 +
+ frontend/src/ksl/AslSample.tsx                |  77 ++++--
+ frontend/src/ksl/ResearchAttribution.tsx      |   4 +-
+ frontend/src/lib/format.ts                    |   1 +
+ 9 files changed, 617 insertions(+), 113 deletions(-)
+ create mode 100644 frontend/src/app/enter/SignSession.tsx
+
+diff --git a/frontend/src/app/(app)/ksl/page.tsx b/frontend/src/app/(app)/ksl/page.tsx
+index e858b72..f85b901 100644
+--- a/frontend/src/app/(app)/ksl/page.tsx
++++ b/frontend/src/app/(app)/ksl/page.tsx
+@@ -1,4 +1,22 @@
++import { ArrowUpRight, Camera, CircleCheck, FlaskConical, Hand } from "lucide-react";
++import Link from "next/link";
+ import { redirect } from "next/navigation";
++import {
++  Badge,
++  Card,
++  EmptyState,
++  Notice,
++  Page,
++  PageHeader,
++  SectionHeader,
++  StatBar,
++  Table,
++  Td,
++  Th,
++  THead,
++  Tr,
++  type Tone,
++} from "@/components/ui";
+ import { ApiError, api } from "@/lib/api";
+ import { getSession } from "@/lib/session";
+ 
+@@ -10,8 +28,28 @@ type ClipRow = {
+   label: string;
+   status: string;
+   pilot_enabled: boolean;
++  video_uri?: string | null;
+ };
+ 
++const STATUS: Record<string, { label: string; tone: Tone }> = {
++  uploaded: { label: "Waiting for review", tone: "warn" },
++  approved: { label: "Approved", tone: "teal" },
++  stale: { label: "Stale: phrase changed", tone: "danger" },
++  retired: { label: "Retired", tone: "neutral" },
++};
++
++// The order the backend enforces before a clip can be approved (see backend/app/modules/ksl/review.py).
++const STEPS = [
++  ["Uploaded", "An editor uploads a recorded clip for one approved phrase."],
++  ["Deaf review", "A Deaf reviewer watches it and passes or fails it."],
++  ["Back-translation", "A second person, not the Deaf reviewer, passes a back-translation."],
++  ["Approval", "Someone who is neither the uploader nor a reviewer approves it."],
++];
++
++function labelTone(label: string): Tone {
++  return label.toUpperCase().includes("NOT") ? "warn" : "outline";
++}
++
+ export default async function KslReviewPage() {
+   const user = await getSession();
+   if (!user) redirect("/login");
+@@ -26,29 +64,151 @@ export default async function KslReviewPage() {
+     problem = error instanceof ApiError ? error.message : "The clip list could not be loaded.";
+   }
+ 
++  const count = (status: string) => rows.filter((row) => row.status === status).length;
++  const approved = count("approved");
++
+   return (
+-    <main className="space-y-6 px-4 py-6 md:px-0 md:py-0">
+-      <header>
+-        <p className="text-sm text-lagoon">KSL clips</p>
+-        <h1 className="mt-1 text-4xl">Clip review</h1>
+-        <p className="mt-2 max-w-xl text-ink-soft">
+-          A clip can be approved only after two Deaf passes and a different confirmer. Pending
+-          clinical lines stay off for a pilot. This list stores labels, not a person’s footage.
+-        </p>
+-      </header>
+-      {problem ? <p className="text-lg">{problem}</p> : null}
+-      {rows.length === 0 && !problem ? <p className="text-lg">No clips have been uploaded.</p> : null}
+-      <ul className="space-y-3">
+-        {rows.map((row) => (
+-          <li key={row.id} className="rounded-2xl border border-line bg-white p-4">
+-            <p className="text-lg">{row.template_id}</p>
+-            <p className="text-sm">
+-              {row.status} · {row.label}
+-              {row.pilot_enabled ? " · pilot" : " · not for a pilot"}
+-            </p>
+-          </li>
+-        ))}
+-      </ul>
+-    </main>
++    <Page>
++      <PageHeader
++        title="Sign language clips"
++        description="Recorded sign language lines for the patient card and Telegram. A clip plays only after review, and lines still pending clinical review stay off for a pilot. This list stores labels, not anyone’s footage."
++        meta={
++          <>
++            <Badge tone="outline" icon={<Camera aria-hidden="true" />}>
++              Camera off, no sign recognition
++            </Badge>
++            <Badge tone="warn">Phrases pending clinical review</Badge>
++          </>
++        }
++      />
++
++      {problem ? <Notice tone="bad">{problem}</Notice> : null}
++
++      {!problem && approved === 0 ? (
++        <Notice tone="info" title="No approved clip in this build">
++          Until one is approved, the patient card plays research samples instead, labelled on screen as research and
++          not Kenyan Sign Language.
++        </Notice>
++      ) : null}
++
++      {!problem ? (
++        <StatBar
++          label="Clips by status"
++          items={[
++            { label: "Waiting for review", value: count("uploaded"), tone: count("uploaded") ? "warn" : "default" },
++            { label: "Approved", value: approved },
++            { label: "Stale", value: count("stale"), tone: count("stale") ? "danger" : "default", hint: "Phrase changed after approval" },
++            { label: "Retired", value: count("retired") },
++          ]}
++        />
++      ) : null}
++
++      <section aria-labelledby="clips-heading" className="space-y-3">
++        <SectionHeader id="clips-heading" title="Clips" description="Every uploaded clip and where it stands." />
++        {!problem && rows.length === 0 ? (
++          <EmptyState icon={<Hand aria-hidden="true" />} title="No clips have been uploaded">
++            That is the honest state of this build. A clip appears here once an editor uploads a recording of an
++            approved phrase.
++          </EmptyState>
++        ) : null}
++        {rows.length > 0 ? (
++          <Table caption="Uploaded sign language clips">
++            <THead>
++              <Th>Phrase</Th>
++              <Th>Label</Th>
++              <Th>Status</Th>
++              <Th>Pilot</Th>
++            </THead>
++            <tbody>
++              {rows.map((row) => {
++                const status = STATUS[row.status] ?? { label: row.status, tone: "neutral" as Tone };
++                return (
++                  <Tr key={row.id}>
++                    <Td className="font-medium text-ink">{row.template_id}</Td>
++                    <Td>
++                      <Badge tone={labelTone(row.label)}>{row.label}</Badge>
++                    </Td>
++                    <Td>
++                      <Badge tone={status.tone}>{status.label}</Badge>
++                    </Td>
++                    <Td>
++                      {row.pilot_enabled ? (
++                        <Badge tone="teal" icon={<CircleCheck aria-hidden="true" />}>
++                          On for a pilot
++                        </Badge>
++                      ) : (
++                        <span className="text-ink-2">Not for a pilot</span>
++                      )}
++                    </Td>
++                  </Tr>
++                );
++              })}
++            </tbody>
++          </Table>
++        ) : null}
++      </section>
++
++      <div className="grid items-start gap-6 lg:grid-cols-2">
++        <Card as="section" aria-labelledby="steps-heading">
++          <SectionHeader
++            id="steps-heading"
++            title="How a clip gets approved"
++            description="The server enforces these checks in this order. If the phrase text changes later, the clip turns stale."
++          />
++          <ol className="mt-5 space-y-4">
++            {STEPS.map(([title, line], index) => (
++              <li key={title} className="flex gap-3">
++                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-deep text-[0.8125rem] font-semibold text-white">
++                  {index + 1}
++                </span>
++                <span>
++                  <span className="block font-medium text-ink">{title}</span>
++                  <span className="text-sm text-ink-2">{line}</span>
++                </span>
++              </li>
++            ))}
++          </ol>
++        </Card>
++
++        <Card as="section" aria-labelledby="research-heading">
++          <SectionHeader
++            id="research-heading"
++            title="Research samples"
++            description="Public datasets used to test the player. None of them is a reviewed patient message."
++          />
++          <ul className="mt-5 space-y-3">
++            <li className="rounded-xl border border-line p-4">
++              <div className="flex flex-wrap items-center gap-2">
++                <p className="font-medium text-ink">American Sign Language sentences</p>
++                <Badge tone="warn" icon={<FlaskConical aria-hidden="true" />}>
++                  Research
++                </Badge>
++              </div>
++              <p className="mt-1 text-sm text-ink-2">
++                How2Sign sentences on the patient card, development servers only. CC BY-NC 4.0, credited on screen.
++              </p>
++            </li>
++            <li className="rounded-xl border border-line p-4">
++              <div className="flex flex-wrap items-center gap-2">
++                <p className="font-medium text-ink">Kenyan Sign Language word</p>
++                <Badge tone="warn" icon={<FlaskConical aria-hidden="true" />}>
++                  Research
++                </Badge>
++              </div>
++              <p className="mt-1 text-sm text-ink-2">
++                One word from the Maseno pose dataset. It loads only after someone verifies the licence.
++              </p>
++              <Link
++                href="/dev/ksl-research"
++                className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-teal-text hover:underline"
++              >
++                Open the research view
++                <ArrowUpRight aria-hidden="true" className="size-4" />
++              </Link>
++            </li>
++          </ul>
++        </Card>
++      </div>
++    </Page>
+   );
+ }
+diff --git a/frontend/src/app/(app)/telegram/TelegramSim.tsx b/frontend/src/app/(app)/telegram/TelegramSim.tsx
+index a7b9efa..ece81ca 100644
+--- a/frontend/src/app/(app)/telegram/TelegramSim.tsx
++++ b/frontend/src/app/(app)/telegram/TelegramSim.tsx
+@@ -9,6 +9,11 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+ type Button = { id?: string; label?: string };
+ type Turn = { who: "you" | "guide"; text: string };
+ 
++/** A fresh id for each simulated Telegram update; kept outside the component so render stays pure. */
++function nextUpdateId() {
++  return `${Date.now()}`;
++}
++
+ export function TelegramSim() {
+   const [text, setText] = useState("");
+   const [buttons, setButtons] = useState<Button[]>([]);
+@@ -34,7 +39,7 @@ export function TelegramSim() {
+           chat_id: "demo-chat",
+           text: callback ? "" : mine,
+           callback,
+-          update_id: `${Date.now()}`,
++          update_id: nextUpdateId(),
+         }),
+       });
+       const body = (await res.json()) as { reply_text?: string; buttons?: Button[] };
+diff --git a/frontend/src/app/dev/ksl-research/page.tsx b/frontend/src/app/dev/ksl-research/page.tsx
+index 591dd3e..dbaec8c 100644
+--- a/frontend/src/app/dev/ksl-research/page.tsx
++++ b/frontend/src/app/dev/ksl-research/page.tsx
+@@ -1,6 +1,9 @@
+ "use client";
+ 
++import { ArrowLeft, FlaskConical } from "lucide-react";
++import Link from "next/link";
+ import { useEffect, useRef, useState } from "react";
++import { Wordmark } from "@/components/ui/brand";
+ import { ResearchAttribution } from "@/ksl/ResearchAttribution";
+ import { RESEARCH_LABEL } from "@/ksl/researchLabel.js";
+ import {
+@@ -46,7 +49,7 @@ function paint(
+   const width = canvas.width;
+   const height = canvas.height;
+   context.clearRect(0, 0, width, height);
+-  context.fillStyle = "#f7f1e6";
++  context.fillStyle = "#e7f5f1";
+   context.fillRect(0, 0, width, height);
+   context.fillStyle = BANNER_COLOR;
+   context.fillRect(0, 0, width, 48);
+@@ -55,7 +58,7 @@ function paint(
+   context.fillText(RESEARCH_LABEL, 12, 30);
+   if (!frame) return;
+   const lines = kind === "stick" ? stickSegments(frame) : avatarSegments(frame);
+-  context.strokeStyle = "#102027";
++  context.strokeStyle = "#183b38";
+   context.lineWidth = 4;
+   context.lineCap = "round";
+   context.beginPath();
+@@ -72,7 +75,7 @@ function paint(
+     context.beginPath();
+     context.arc(width / 2, 150, 22, 0, Math.PI * 2);
+     context.stroke();
+-    context.fillStyle = "#102027";
++    context.fillStyle = "#183b38";
+     context.fillRect(width / 2 - 10, 146, 4, Math.max(2, 6 * (1 - blink)));
+     context.fillRect(width / 2 + 6, 146, 4, Math.max(2, 6 * (1 - blink)));
+     context.fillRect(width / 2 - 6, 158, 12, 2 + jaw * 8);
+@@ -124,28 +127,49 @@ export default function ResearchSamplePage() {
+   }, [clip]);
+ 
+   return (
+-    <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+-      <header>
+-        <p className="text-sm text-clay">Kenyan Sign Language research sample. Not American Sign Language.</p>
+-        <h1 className="mt-1 font-serif text-4xl">One dataset word</h1>
+-        <p className="mt-2 max-w-2xl text-ink-soft">
+-          {clip
+-            ? `${clip.word_label} from ${clip.source_id}. The archive has no frame rate, so this plays at ${clip.playback_fps} frames per second for display.`
+-            : "A single gloss from the public pose archive. It is not a sentence and it is not a patient message."}
+-        </p>
++    <div className="min-h-dvh bg-canvas text-ink">
++      <header className="bg-emerald">
++        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4">
++          <Wordmark tone="light" />
++          <Link
++            href="/ksl"
++            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/30 px-4 text-sm font-medium text-white hover:bg-white/10"
++          >
++            <ArrowLeft aria-hidden="true" className="size-4" />
++            Sign language clips
++          </Link>
++        </div>
+       </header>
+-      {problem ? <p className="text-lg">{problem}</p> : null}
+-      <div className="grid gap-4 md:grid-cols-2">
+-        <figure className="space-y-2">
+-          <figcaption className="text-sm">Landmark stickman</figcaption>
+-          <canvas ref={stick} width={640} height={360} className="w-full rounded-2xl border border-line" />
+-        </figure>
+-        <figure className="space-y-2">
+-          <figcaption className="text-sm">Fixed-bone avatar</figcaption>
+-          <canvas ref={avatar} width={640} height={360} className="w-full rounded-2xl border border-line" />
+-        </figure>
+-      </div>
+-      <ResearchAttribution />
+-    </main>
++      <main id="content" className="mx-auto max-w-5xl space-y-6 px-4 py-8">
++        <div>
++          <p className="inline-flex items-center gap-2 rounded-full bg-warn-bg px-3 py-1 text-[0.8125rem] font-medium text-warn">
++            <FlaskConical aria-hidden="true" className="size-4" />
++            Kenyan Sign Language research sample. Not American Sign Language.
++          </p>
++          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">One dataset word</h1>
++          <p className="mt-2 max-w-2xl text-ink-2">
++            {clip
++              ? `${clip.word_label} from ${clip.source_id}. The archive has no frame rate, so this plays at ${clip.playback_fps} frames per second for display.`
++              : "A single gloss from the public pose archive. It is not a sentence and it is not a patient message. Development servers only."}
++          </p>
++        </div>
++        {problem ? (
++          <p role="status" className="rounded-xl border border-line bg-surface px-4 py-3 text-[0.9375rem] text-ink-2">
++            {problem} The archive loads only after someone has verified its licence and fetched it locally.
++          </p>
++        ) : null}
++        <div className="grid gap-4 md:grid-cols-2">
++          <figure className="overflow-hidden rounded-2xl border border-line bg-surface shadow-raised">
++            <canvas ref={stick} width={640} height={360} className="block w-full" aria-label="Landmark stickman signing the research word" role="img" />
++            <figcaption className="border-t border-line px-4 py-2.5 text-sm font-medium">Landmark stickman</figcaption>
++          </figure>
++          <figure className="overflow-hidden rounded-2xl border border-line bg-surface shadow-raised">
++            <canvas ref={avatar} width={640} height={360} className="block w-full" aria-label="Fixed-bone avatar signing the research word" role="img" />
++            <figcaption className="border-t border-line px-4 py-2.5 text-sm font-medium">Fixed-bone avatar</figcaption>
++          </figure>
++        </div>
++        <ResearchAttribution />
++      </main>
++    </div>
+   );
+ }
+diff --git a/frontend/src/app/enter/EnterFlow.tsx b/frontend/src/app/enter/EnterFlow.tsx
+index cdf4c07..bb2188a 100644
+--- a/frontend/src/app/enter/EnterFlow.tsx
++++ b/frontend/src/app/enter/EnterFlow.tsx
+@@ -5,8 +5,8 @@ import Link from "next/link";
+ import { useCallback, useEffect, useState } from "react";
+ import { Wordmark } from "@/components/ui/brand";
+ import { controlClass, cx } from "@/components/ui";
+-import { AslSample } from "@/ksl/AslSample";
+ import { SIGN_ORDER, SIGN_REPLIES } from "@/ksl/signReplies.js";
++import { SignSession, type SignAnswer } from "./SignSession";
+ import { simulatedCode } from "./actions";
+ 
+ const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+@@ -14,7 +14,19 @@ const button =
+   "min-h-14 w-full rounded-full bg-deep px-5 text-lg font-medium text-white transition-colors hover:bg-emerald disabled:opacity-55";
+ const choice =
+   "min-h-14 w-full rounded-2xl border border-line bg-surface px-5 text-left text-lg font-medium text-ink transition-colors hover:border-teal hover:bg-mint";
+-const answerButton = "min-h-12 rounded-2xl bg-deep px-3 text-base font-medium text-white";
++// The signed-reply table is a plain JS module; give its rows a type here.
++const SIGNED_ANSWERS = SIGN_REPLIES as Record<string, SignAnswer[]>;
++
++type Language = "en" | "ksl";
++
++const LANGUAGES: { id: Language; title: string; line: string }[] = [
++  { id: "en", title: "English", line: "A spoken guide with captions." },
++  {
++    id: "ksl",
++    title: "American Sign Language",
++    line: "A signing figure with captions. A research sample, not Kenyan Sign Language.",
++  },
++];
+ 
+ type Reply = {
+   reply_text: string;
+@@ -80,7 +92,8 @@ export function EnterFlow() {
+   const [hint, setHint] = useState("");
+   const [reply, setReply] = useState<Reply | null>(null);
+   const [error, setError] = useState("");
+-  const [language, setLanguage] = useState<"en" | "ksl">("en");
++  const [language, setLanguage] = useState<Language>("en");
++  const [busy, setBusy] = useState(false);
+   const [signStep, setSignStep] = useState(0);
+   const [lineIds, setLineIds] = useState(SIGN_ORDER);
+   const linesReady = useCallback((ids: string[]) => {
+@@ -127,29 +140,42 @@ export function EnterFlow() {
+     await say(body.access_token, "");
+   }
+ 
+-  async function say(bearer: string, message: string) {
+-    const path = language === "ksl" ? "/api/v1/ksl/talk" : "/api/v1/followup/talk";
+-    const body =
+-      language === "ksl" ? { message, channel: "web" } : { message, channel: "web", language: "en" };
+-    const res = await fetch(`${API}${path}`, {
+-      method: "POST",
+-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${bearer}` },
+-      body: JSON.stringify(body),
+-    });
+-    if (!res.ok) {
+-      setError("That answer was not accepted.");
++  async function say(bearer: string, message: string, lang: Language = language) {
++    const path = lang === "ksl" ? "/api/v1/ksl/talk" : "/api/v1/followup/talk";
++    const body = lang === "ksl" ? { message, channel: "web" } : { message, channel: "web", language: "en" };
++    setBusy(true);
++    try {
++      const res = await fetch(`${API}${path}`, {
++        method: "POST",
++        headers: { "Content-Type": "application/json", Authorization: `Bearer ${bearer}` },
++        body: JSON.stringify(body),
++      });
++      if (!res.ok) {
++        setError("That answer was not accepted. Try again, or go to the nearest clinic if you feel worse.");
++        return false;
++      }
++      const payload = (await res.json()) as Reply;
++      setReply(payload);
++      setError("");
++      return true;
++    } catch {
++      setError("The card could not reach the server. If you feel worse, go to the nearest clinic.");
+       return false;
++    } finally {
++      setBusy(false);
+     }
+-    const payload = (await res.json()) as Reply;
+-    setReply(payload);
+-    setError("");
+-    return true;
++  }
++
++  /** Leave sign language for the English guide without signing out. */
++  async function switchToEnglish() {
++    setLanguage("en");
++    await say(token, "", "en");
+   }
+ 
+   const danger = reply?.escalation_label === "danger_sign" || reply?.escalation_label === "worse";
+   const signing = Boolean(token) && language === "ksl";
+   const lineId = lineIds[Math.min(signStep, Math.max(lineIds.length - 1, 0))] ?? SIGN_ORDER[0];
+-  const answers = SIGN_REPLIES[lineId] ?? SIGN_REPLIES[SIGN_ORDER[0]];
++  const answers = SIGNED_ANSWERS[lineId] ?? SIGNED_ANSWERS[SIGN_ORDER[0]];
+ 
+   async function answer(id: string) {
+     const accepted = await say(token, id);
+@@ -158,22 +184,18 @@ export function EnterFlow() {
+ 
+   if (signing) {
+     return (
+-      <main className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-canvas text-ink">
+-        <AslSample step={signStep} onLines={linesReady} />
+-        <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-line bg-surface px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+-          {answers.map((item, index) => (
+-            <button
+-              key={item.id}
+-              className={cx(answerButton, index === answers.length - 1 && answers.length % 2 === 1 ? "col-span-2" : "")}
+-              type="button"
+-              onClick={() => void answer(item.id)}
+-            >
+-              {item.label}
+-            </button>
+-          ))}
+-          {error ? <p className="col-span-2 text-sm text-danger">{error}</p> : null}
+-        </div>
+-      </main>
++      <SignSession
++        step={signStep}
++        total={lineIds.length}
++        answers={answers}
++        reply={reply?.reply_text ?? null}
++        danger={Boolean(danger)}
++        busy={busy}
++        error={error}
++        onLines={linesReady}
++        onAnswer={(id) => void answer(id)}
++        onLeave={() => void switchToEnglish()}
++      />
+     );
+   }
+ 
+@@ -189,17 +211,33 @@ export function EnterFlow() {
+         <h1 className="text-[1.75rem]">Your card</h1>
+         {!token ? (
+           <div className="space-y-6">
+-            <div className="grid grid-cols-1 gap-2">
+-              <button className={choice} type="button" onClick={() => setLanguage("en")}>
+-                {language === "en" ? "English selected" : "English"}
+-              </button>
+-              <button className={choice} type="button" onClick={() => setLanguage("ksl")}>
+-                {language === "ksl" ? "American Sign Language selected" : "American Sign Language"}
+-              </button>
+-            </div>
++            <fieldset>
++              <legend className="text-lg font-medium">How should the guide talk to you?</legend>
++              <div className="mt-3 grid grid-cols-1 gap-2">
++                {LANGUAGES.map((option) => (
++                  <label
++                    key={option.id}
++                    className="flex cursor-pointer items-start gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 transition-colors hover:border-teal has-[:checked]:border-teal has-[:checked]:bg-mint has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-teal"
++                  >
++                    <input
++                      type="radio"
++                      name="language"
++                      value={option.id}
++                      checked={language === option.id}
++                      onChange={() => setLanguage(option.id)}
++                      className="mt-1 size-5 shrink-0 accent-deep"
++                    />
++                    <span>
++                      <span className="block text-lg font-medium text-ink">{option.title}</span>
++                      <span className="mt-0.5 block text-[0.9375rem] text-ink-2">{option.line}</span>
++                    </span>
++                  </label>
++                ))}
++              </div>
++            </fieldset>
+             <p className="text-lg leading-relaxed text-ink-2">
+-              Type the ID printed on your card, then ask for a code. In sign language, the avatar signs one line and
+-              you answer underneath.
++              Type the ID printed on your card, then ask for a code. In sign language, a figure signs one line at a
++              time and you answer underneath with a tap.
+             </p>
+             <div className="space-y-3">
+               <label htmlFor="card-id" className="block text-lg font-medium">
+diff --git a/frontend/src/app/enter/SignSession.tsx b/frontend/src/app/enter/SignSession.tsx
+new file mode 100644
+index 0000000..b3456d3
+--- /dev/null
++++ b/frontend/src/app/enter/SignSession.tsx
+@@ -0,0 +1,231 @@
++"use client";
++
++import {
++  CircleExclamationPoint,
++  FlaskConical,
++  HeartHandshake,
++  Languages,
++  LoaderCircle,
++  Pause,
++  Play,
++  RotateCcw,
++  Snail,
++} from "lucide-react";
++import { useCallback, useState } from "react";
++import { Wordmark } from "@/components/ui/brand";
++import { cx } from "@/components/ui/cx";
++import { AslSample, type SignedLine } from "@/ksl/AslSample";
++
++export type SignAnswer = { id: string; label: string };
++
++function prefersReducedMotion() {
++  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
++}
++
++const control =
++  "inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-sm font-medium text-ink " +
++  "transition-colors hover:border-teal hover:bg-mint aria-pressed:border-teal aria-pressed:bg-mint aria-pressed:text-teal-text " +
++  "[&_svg]:size-4";
++
++/**
++ * The patient card in sign language: a signing figure, the line it signs as text,
++ * the guide's reply after every answer, and taps to answer.
++ *
++ * The clips are research samples, not reviewed patient messages, so the screen
++ * always says so and credits the source.
++ */
++export function SignSession({
++  step,
++  total,
++  answers,
++  reply,
++  danger,
++  busy,
++  error,
++  onLines,
++  onAnswer,
++  onLeave,
++}: {
++  step: number;
++  total: number;
++  answers: SignAnswer[];
++  /** the guide's last reply, as text; always shown so no answer goes unacknowledged */
++  reply: string | null;
++  danger: boolean;
++  busy: boolean;
++  error: string;
++  onLines: (ids: string[]) => void;
++  onAnswer: (id: string) => void;
++  onLeave: () => void;
++}) {
++  const [line, setLine] = useState<SignedLine | null>(null);
++  const [problem, setProblem] = useState("");
++  // Anyone who asked their device for less motion starts on a still figure and presses play.
++  // This screen only appears after a tap, so it never renders on the server.
++  const [paused, setPaused] = useState(prefersReducedMotion);
++  const [slow, setSlow] = useState(false);
++  const [replay, setReplay] = useState(0);
++
++  const showLine = useCallback((next: SignedLine | null) => setLine(next), []);
++  const showProblem = useCallback((message: string) => setProblem(message), []);
++
++  return (
++    <div className="flex min-h-dvh flex-col bg-canvas text-ink">
++      <header className="no-print bg-emerald">
++        <div className="mx-auto flex h-16 max-w-3xl items-center justify-between gap-3 px-4">
++          <Wordmark tone="light" />
++          <button
++            type="button"
++            onClick={onLeave}
++            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/30 px-4 text-sm font-medium text-white hover:bg-white/10"
++          >
++            <Languages aria-hidden="true" className="size-4" />
++            Use English instead
++          </button>
++        </div>
++      </header>
++
++      <main id="content" className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-4 sm:py-6">
++        <p className="flex items-start gap-2.5 rounded-xl border border-warn/25 bg-warn-bg px-4 py-2.5 text-sm text-warn">
++          <FlaskConical aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
++          <span>
++            <span className="font-semibold">Research sample in American Sign Language.</span> Not Kenyan Sign Language,
++            not reviewed, and not a message written for you. The words under the figure say what it signs.
++          </span>
++        </p>
++
++        {problem ? (
++          <section className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-line bg-surface p-8 text-center shadow-raised">
++            <p className="text-lg font-semibold">Signed lines are not available here</p>
++            <p className="mt-2 max-w-sm text-[0.9375rem] text-ink-2">
++              This server does not have the sign language clips. You can carry on in English with captions; nothing
++              you have answered is lost.
++            </p>
++            <button
++              type="button"
++              onClick={onLeave}
++              className="mt-5 inline-flex min-h-12 items-center rounded-full bg-deep px-6 font-medium text-white hover:bg-emerald"
++            >
++              Continue in English
++            </button>
++          </section>
++        ) : (
++          <section aria-label="Signing figure" className="overflow-hidden rounded-2xl border border-line bg-surface shadow-raised">
++            <div className="relative h-[46dvh] min-h-64 sm:h-[52dvh]">
++              <AslSample
++                step={step}
++                onLines={onLines}
++                onLine={showLine}
++                onProblem={showProblem}
++                paused={paused}
++                speed={slow ? 0.75 : 1}
++                replay={replay}
++              />
++              <span className="absolute top-3 left-3 rounded-full bg-surface/90 px-2.5 py-0.5 text-[0.8125rem] font-medium text-ink-2 shadow-raised">
++                Line {Math.min(step + 1, total)} of {total}
++              </span>
++            </div>
++            <div className="border-t border-line px-4 py-3 sm:px-5">
++              <p aria-live="polite" className="text-center text-xl font-semibold leading-snug sm:text-2xl">
++                {line ? line.sentence : <span className="text-ink-3">Loading the line…</span>}
++              </p>
++              <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
++                <button
++                  type="button"
++                  className={control}
++                  aria-pressed={paused}
++                  onClick={() => setPaused((value) => !value)}
++                >
++                  {paused ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}
++                  {paused ? "Play" : "Pause"}
++                </button>
++                <button
++                  type="button"
++                  className={control}
++                  onClick={() => {
++                    setReplay((value) => value + 1);
++                    setPaused(false);
++                  }}
++                >
++                  <RotateCcw aria-hidden="true" />
++                  Again
++                </button>
++                <button type="button" className={control} aria-pressed={slow} onClick={() => setSlow((value) => !value)}>
++                  <Snail aria-hidden="true" />
++                  Slower
++                </button>
++              </div>
++            </div>
++          </section>
++        )}
++
++        {reply ? (
++          danger ? (
++            <section
++              role="alert"
++              className="flex gap-3 rounded-2xl border-2 border-danger bg-danger-bg px-4 py-4 text-danger sm:px-5"
++            >
++              <CircleExclamationPoint aria-hidden="true" className="mt-0.5 size-6 shrink-0" />
++              <div>
++                <p className="text-sm font-medium">The guide says</p>
++                <p className="mt-1 text-xl font-semibold leading-snug">{reply}</p>
++              </div>
++            </section>
++          ) : (
++            <section aria-live="polite" className="flex gap-3 rounded-2xl border border-mint-strong bg-mint px-4 py-3 sm:px-5">
++              <HeartHandshake aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-teal-text" />
++              <div>
++                <p className="text-sm font-medium text-teal-text">The guide says</p>
++                <p className="mt-0.5 text-[1.0625rem] leading-snug text-ink">{reply}</p>
++              </div>
++            </section>
++          )
++        ) : null}
++
++        {!problem ? (
++          <section aria-labelledby="answer-heading" className="mt-auto">
++            <h2 id="answer-heading" className="mb-2 text-base">
++              Your answer
++            </h2>
++            <div className="grid grid-cols-2 gap-2 pb-[env(safe-area-inset-bottom)]">
++              {answers.map((item, index) => (
++                <button
++                  key={item.id}
++                  type="button"
++                  disabled={busy}
++                  onClick={() => onAnswer(item.id)}
++                  className={cx(
++                    "min-h-14 rounded-2xl bg-deep px-3 text-[1.0625rem] font-medium text-white transition-colors hover:bg-emerald disabled:opacity-60",
++                    index === answers.length - 1 && answers.length % 2 === 1 && "col-span-2",
++                  )}
++                >
++                  {item.label}
++                </button>
++              ))}
++            </div>
++            {busy ? (
++              <p className="mt-2 inline-flex items-center gap-2 text-sm text-ink-2">
++                <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
++                Sending your answer
++              </p>
++            ) : null}
++            {error ? (
++              <p role="alert" className="mt-2 text-sm text-danger">
++                {error}
++              </p>
++            ) : null}
++            <p className="mt-3 text-[0.8125rem] text-ink-2">
++              Answers are taps. The camera stays off. If you feel worse, go to the nearest clinic.
++            </p>
++          </section>
++        ) : null}
++
++        <details className="rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink-2">
++          <summary className="cursor-pointer font-medium text-ink">About these clips</summary>
++          <p className="mt-2">{line?.label || "ASL research: How2Sign sentence. Not a patient message. Not reviewed."}</p>
++          {line?.citation ? <p className="mt-2">{line.citation}</p> : null}
++        </details>
++      </main>
++    </div>
++  );
++}
+diff --git a/frontend/src/components/Nav.tsx b/frontend/src/components/Nav.tsx
+index 66e5108..d802e46 100644
+--- a/frontend/src/components/Nav.tsx
++++ b/frontend/src/components/Nav.tsx
+@@ -1,6 +1,7 @@
+ "use client";
+ 
+ import {
++  Hand,
+   Activity,
+   BellRing,
+   DoorOpen,
+@@ -46,6 +47,7 @@ const GROUPS: { title: string; links: NavLink[] }[] = [
+       { href: "/telegram", label: "Telegram", icon: Send, roles: ["clinician", "navigator", "admin", "chw"] },
+       { href: "/voice", label: "Voice", icon: Mic, roles: ["clinician", "navigator", "admin", "chw"] },
+       { href: "/hub", label: "Cuff hub", icon: Activity, roles: ["chw", "navigator", "clinician", "program_manager", "admin"] },
++      { href: "/ksl", label: "Sign language", icon: Hand, roles: ["admin", "program_manager", "ksl_reviewer", "navigator", "clinician"] },
+     ],
+   },
+   {
+diff --git a/frontend/src/ksl/AslSample.tsx b/frontend/src/ksl/AslSample.tsx
+index 34d3939..7533912 100644
+--- a/frontend/src/ksl/AslSample.tsx
++++ b/frontend/src/ksl/AslSample.tsx
+@@ -9,7 +9,8 @@ const HAIR = "#3a2a22";
+ const SHIRT = "#1a6b63";
+ const PANTS = "#2c3338";
+ const SHOE = "#1b2428";
+-const INK = "#102027";
++const INK = "#183b38";
++const STAGE = "#e7f5f1";
+ 
+ const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+ 
+@@ -26,6 +27,16 @@ type Clip = {
+   sentence: string;
+   fps: number;
+   frames: Frame[];
++  label?: string;
++  citation?: string;
++};
++
++/** What the screen around the player needs to know about the line on show. */
++export type SignedLine = {
++  id: string;
++  sentence: string;
++  label: string;
++  citation: string;
+ };
+ 
+ function paint(canvas: HTMLCanvasElement | null, clip: Clip | null, index: number) {
+@@ -35,7 +46,7 @@ function paint(canvas: HTMLCanvasElement | null, clip: Clip | null, index: numbe
+   const width = canvas.width;
+   const height = canvas.height;
+   context.clearRect(0, 0, width, height);
+-  context.fillStyle = "#f7f1e6";
++  context.fillStyle = STAGE;
+   context.fillRect(0, 0, width, height);
+   const frame = clip?.frames[index];
+   if (!frame) return;
+@@ -50,7 +61,8 @@ function paint(canvas: HTMLCanvasElement | null, clip: Clip | null, index: numbe
+     maxX = Math.max(maxX, point[0]);
+     maxY = Math.max(maxY, point[1]);
+   }
+-  const caption = Math.round(height * 0.08);
++  // the sentence is shown as page text under the canvas, not painted into it
++  const caption = 0;
+   const scale = Math.min(
+     (width * 0.78) / Math.max(maxX - minX, 1),
+     ((height - caption) * 0.86) / Math.max(maxY - minY, 1),
+@@ -173,18 +185,28 @@ function paint(canvas: HTMLCanvasElement | null, clip: Clip | null, index: numbe
+   };
+   hand(20, 25, frame.left_hand);
+   hand(21, 40, frame.right_hand);
+-  context.fillStyle = INK;
+-  context.font = `${Math.max(32, Math.round(width / 18))}px sans-serif`;
+-  context.textAlign = "center";
+-  context.fillText(clip?.sentence ?? "", width / 2, height - caption / 3);
+ }
+ 
+ export function AslSample({
+   step,
+   onLines,
++  onLine,
++  onProblem,
++  paused = false,
++  speed = 1,
++  replay = 0,
+ }: {
+   step: number;
+   onLines?: (ids: string[]) => void;
++  /** called whenever the line on show changes */
++  onLine?: (line: SignedLine | null) => void;
++  /** called when no line could be loaded, so the screen can offer captions instead */
++  onProblem?: (message: string) => void;
++  paused?: boolean;
++  /** 1 is the recorded speed; 0.75 is slower */
++  speed?: number;
++  /** change this number to start the line again from its first frame */
++  replay?: number;
+ }) {
+   const canvas = useRef<HTMLCanvasElement>(null);
+   const [clips, setClips] = useState<Clip[]>([]);
+@@ -205,22 +227,36 @@ export function AslSample({
+         const ready = body.filter((item): item is Clip => item !== null);
+         setClips(ready);
+         onLines?.(ready.map((item) => item.id));
+-        if (!ready.length) setProblem("The ASL sentences could not load.");
++        if (!ready.length) {
++          setProblem("The signed lines could not load.");
++          onProblem?.("The signed lines could not load.");
++        }
+       })
+       .catch((error: unknown) => {
+-        if (!cancelled) setProblem(error instanceof Error ? error.message : "The ASL sentence could not load.");
++        if (cancelled) return;
++        const message = error instanceof Error ? error.message : "The signed lines could not load.";
++        setProblem(message);
++        onProblem?.(message);
+       });
+     return () => {
+       cancelled = true;
+     };
+-  }, [onLines]);
++  }, [onLines, onProblem]);
++
++  useEffect(() => {
++    onLine?.(
++      clip
++        ? { id: clip.id, sentence: clip.sentence, label: clip.label ?? "", citation: clip.citation ?? "" }
++        : null,
++    );
++  }, [clip, onLine]);
+ 
+   useEffect(() => {
+     const frames = clip?.frames ?? [];
+     let index = 0;
+     let last = 0;
+     let handle = 0;
+-    const rate = clip?.fps || 24;
++    const rate = (clip?.fps || 24) * speed;
+     const draw = (now: number) => {
+       const node = canvas.current;
+       if (node) {
+@@ -236,18 +272,25 @@ export function AslSample({
+       if (!last || now - last >= 1000 / rate) {
+         last = now;
+         paint(canvas.current, clip, frames.length ? index % frames.length : 0);
+-        if (frames.length) index = (index + 1) % frames.length;
++        if (frames.length && !paused) index = (index + 1) % frames.length;
+       }
+       handle = requestAnimationFrame(draw);
+     };
+     handle = requestAnimationFrame(draw);
+     return () => cancelAnimationFrame(handle);
+-  }, [clip]);
++  }, [clip, paused, speed, replay]);
+ 
+   return (
+-    <section className="relative min-h-0 flex-1">
+-      <canvas ref={canvas} className="block h-full w-full" />
+-      {problem ? <p className="absolute inset-x-4 bottom-4 text-center text-sm">{problem}</p> : null}
+-    </section>
++    <div className="relative h-full w-full">
++      <canvas
++        ref={canvas}
++        role="img"
++        aria-label={clip ? `Signing figure: ${clip.sentence}` : "Signing figure"}
++        className="block h-full w-full"
++      />
++      {problem ? (
++        <p className="absolute inset-x-4 top-1/2 -translate-y-1/2 text-center text-[0.9375rem] text-ink-2">{problem}</p>
++      ) : null}
++    </div>
+   );
+ }
+diff --git a/frontend/src/ksl/ResearchAttribution.tsx b/frontend/src/ksl/ResearchAttribution.tsx
+index 5583725..324f54e 100644
+--- a/frontend/src/ksl/ResearchAttribution.tsx
++++ b/frontend/src/ksl/ResearchAttribution.tsx
+@@ -2,8 +2,8 @@ import { RESEARCH_CITATION, RESEARCH_LABEL } from "./researchLabel.js";
+ 
+ export function ResearchAttribution() {
+   return (
+-    <footer className="space-y-2 border-t border-line pt-3 text-sm">
+-      <p className="font-semibold">{RESEARCH_LABEL}</p>
++    <footer className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink-2">
++      <p className="font-semibold text-ink">{RESEARCH_LABEL}</p>
+       <p>{RESEARCH_CITATION}</p>
+     </footer>
+   );
+diff --git a/frontend/src/lib/format.ts b/frontend/src/lib/format.ts
+index 43f9789..08f57c9 100644
+--- a/frontend/src/lib/format.ts
++++ b/frontend/src/lib/format.ts
+@@ -45,6 +45,7 @@ export const ROLE_LABEL: Record<string, string> = {
+   admin: "Admin",
+   patient: "Patient",
+   chw: "Community health promoter",
++  ksl_reviewer: "Sign language reviewer",
+ };
+ 
+ export function stageShort(state: string): string {
+-- 
+2.43.0
+

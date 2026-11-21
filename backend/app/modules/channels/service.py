@@ -12,6 +12,7 @@ from app.modules.assistant.schemas import AssistantRequest
 from app.modules.assistant.service import handle_message
 from app.modules.assistant.text import normalise
 from app.modules.channels.models import SmsMessage, SmsOptOut, UssdSession
+from app.modules.followup.links import case_for_phone
 from app.modules.tasks.service import create_task, should_open_task
 
 DEMO_HANDSET = "+254700000101"
@@ -97,18 +98,19 @@ def _maternal_step(db: Session, row: UssdSession, choice: str) -> str:
     response = handle_message(
         AssistantRequest(channel="ussd", pathway="maternal", checkin=parsed, language="en")
     )
-    _maybe_task(db, response)
+    _maybe_task(db, response, row.phone_ref)
     row.menu = "home"
     row.scratch = ""
     return response.reply_text
 
 
-def _maybe_task(db: Session, response) -> None:
+def _maybe_task(db: Session, response, phone_ref: str | None = None) -> None:
     if should_open_task(response) and response.suggested_task:
         create_task(
             db,
             task_type=response.suggested_task.type,
             priority=response.suggested_task.priority,
+            case_id=case_for_phone(db, phone_ref),
             source="channel",
         )
 
@@ -125,12 +127,12 @@ def handle_ussd(db: Session, session_id: str, phone_ref: str, text: str) -> str:
         response = handle_message(
             AssistantRequest(channel="ussd", menu_choice=choice, menu_context="worry_menu")
         )
-        _maybe_task(db, response)
+        _maybe_task(db, response, row.phone_ref)
         row.menu = "home"
         screen = response.reply_text
     elif menu == "question" and choice not in {"0"}:
         response = handle_message(AssistantRequest(channel="ussd", text=choice))
-        _maybe_task(db, response)
+        _maybe_task(db, response, row.phone_ref)
         row.menu = "home"
         screen = response.reply_text
     elif menu == "home" and choice == "1":
@@ -147,12 +149,12 @@ def handle_ussd(db: Session, session_id: str, phone_ref: str, text: str) -> str:
         screen = VISIT
     elif menu == "home" and choice == "5":
         response = handle_message(AssistantRequest(channel="ussd", text="call me"))
-        _maybe_task(db, response)
+        _maybe_task(db, response, row.phone_ref)
         row.menu = "home"
         screen = response.reply_text
     elif menu == "home" and choice == "6":
         response = handle_message(AssistantRequest(channel="ussd", text="talk to someone"))
-        _maybe_task(db, response)
+        _maybe_task(db, response, row.phone_ref)
         row.menu = "home"
         screen = response.reply_text
     elif menu == "home" and choice.upper() == "M":
@@ -217,19 +219,31 @@ def inbound_sms(db: Session, phone_ref: str, text: str) -> SmsMessage | None:
         response = handle_message(
             AssistantRequest(channel="sms", text=body, pathway="maternal", language=language)
         )
-        _maybe_task(db, response)
+        _maybe_task(db, response, phone_ref)
         reply_text = response.reply_text
     elif key == "1":
         reply_text = CONFIRM
     elif key == "2":
-        create_task(db, task_type="appointment_change", priority="normal", source="channel")
+        create_task(
+            db,
+            task_type="appointment_change",
+            priority="normal",
+            case_id=case_for_phone(db, phone_ref),
+            source="channel",
+        )
         reply_text = CHANGE
     elif key == "3":
-        create_task(db, task_type="navigator_callback", priority="normal", source="channel")
+        create_task(
+            db,
+            task_type="navigator_callback",
+            priority="normal",
+            case_id=case_for_phone(db, phone_ref),
+            source="channel",
+        )
         reply_text = HELP
     else:
         response = handle_message(AssistantRequest(channel="sms", text=body))
-        _maybe_task(db, response)
+        _maybe_task(db, response, phone_ref)
         reply_text = response.reply_text
 
     reply = _save(db, phone_ref, "out", reply_text, "delivered")
@@ -244,7 +258,13 @@ def mark_undelivered(db: Session, message_id: int) -> SmsMessage:
     if message is None or message.direction != "out":
         raise DomainError(404, "not_found", "Outbound message not found")
     message.status = "undelivered"
-    create_task(db, task_type="sms_undelivered", priority="high", source="channel")
+    create_task(
+        db,
+        task_type="sms_undelivered",
+        priority="high",
+        case_id=case_for_phone(db, message.phone_ref),
+        source="channel",
+    )
     db.commit()
     return message
 
