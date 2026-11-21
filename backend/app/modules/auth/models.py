@@ -10,6 +10,7 @@ ROLE_PATIENT = "patient"  # a patient using the web app (patient login comes lat
 ROLE_PROGRAM_MANAGER = "program_manager"
 ROLE_ADMIN = "admin"
 ROLE_CHW = "chw"  # community health promoter; own women only, not clinical state changes
+ROLE_KSL_REVIEWER = "ksl_reviewer"  # Deaf reviewer; can pass or fail a clip, cannot approve alone
 ROLES = (
     ROLE_NAVIGATOR,
     ROLE_CLINICIAN,
@@ -18,6 +19,7 @@ ROLES = (
     ROLE_PROGRAM_MANAGER,
     ROLE_ADMIN,
     ROLE_CHW,
+    ROLE_KSL_REVIEWER,
 )
 
 
