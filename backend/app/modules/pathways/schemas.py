@@ -98,6 +98,7 @@ class PathwayStateOut(BaseModel):
     label: str
     owner_department: str
     deadline_hours: int
+    urgent_deadline_hours: int | None = None
     next: list[str]
     roles: list[str]
 

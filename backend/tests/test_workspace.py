@@ -7,6 +7,7 @@ from sqlalchemy.pool import StaticPool
 from app.core.db import Base, import_models, make_engine
 from app.modules.assistant.schemas import AssistantRequest
 from app.modules.assistant.service import handle_message
+from app.modules.auth.models import User
 from app.modules.pathways.models import CareCase
 from app.workspace_seed import seed_workspace_if_empty
 
@@ -114,7 +115,12 @@ def test_seed_spreads_cases_across_the_pathway():
     with Session() as db:
         seed_workspace_if_empty(db, force=True)
         funnel_states = set(db.scalars(select(CareCase.state)).all())
+        grace = db.scalar(select(User).where(User.username == "grace"))
     engine.dispose()
     assert "SCREENING_FLAGGED" in funnel_states
     assert "HANDED_OFF" in funnel_states
     assert "APPOINTMENT_BOOKED" in funnel_states
+    assert {"enrolled", "home_screened", "risk_flagged", "visit_booked", "postnatal_watch"} <= (
+        funnel_states
+    )
+    assert grace is not None and grace.role == "chw" and grace.display_name == "Grace Achieng"

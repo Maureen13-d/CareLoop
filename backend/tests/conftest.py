@@ -30,6 +30,7 @@ DEPARTMENTS = [
     ("navigation_team", "Navigation team"),
     ("facility", "Facility"),
     ("hospital", "Hospital"),
+    ("community", "Community"),
 ]
 USERS = [
     ("nav", "navigator", "navigation_team"),
@@ -37,6 +38,7 @@ USERS = [
     ("counsellor", "counsellor", None),
     ("manager", "program_manager", None),
     ("admin", "admin", None),
+    ("chw", "chw", "community"),
 ]
 
 
@@ -77,6 +79,9 @@ def db():
 
 @pytest.fixture()
 def client(db_session, db):
+    from app.modules.followup.access import reset_limits
+
+    reset_limits()
     clock.reset()
     with Session(outreach_engine) as s:
         seed_if_empty(s)

@@ -88,6 +88,27 @@ Real deadlines span days. The deadline checker uses a configurable clock so the 
 - **Optional:** Docker Compose for one-command start.
 - **Later:** PostgreSQL by changing `DATABASE_URL`.
 
+## Screening follow-up (this branch)
+
+Telegram, the web card, and the USSD contract all call one conversation core. The core does not generate text. The pathway file is `pathways/follow_up.yaml`. Cervical and maternal pathways stay beside it.
+
+```text
+Telegram simulator / web card / USSD contract
+        |
+        v
+conversation core (safety, then fixed lines)
+        |
+        v
+follow-up pathway  ->  CHW worklist and facility arrivals
+        |
+        v
+simulated code and simulated clinic (not a live network or a live hospital)
+```
+
+The contact vault is read only by `contact_for_send`. Dashboards show IDs.
+
+No Docker in this prototype.
+
 ## Out of scope for the MVP
 
 Real patient data, live integration with any hospital system or national exchange, a live short code or real messaging, hospital-internal tracking, predictive machine learning, clinical validation, diagnosis or treatment advice.

@@ -1,0 +1,19 @@
+# Ranking for the CHW worklist.
+# A worsening-symptom flag always sorts first, ahead of score.
+# Tie-breakers after that, in order:
+# 1. higher score
+# 2. more days since screening
+# 3. public_id ascending, so the order is stable
+worse_always_first: true
+score:
+  urgent_finding: 400
+  overdue: 300
+  unreached: 200
+  barrier: 100
+  per_day: 10
+actions:
+  - call
+  - home visit
+  - transport support
+  - counsellor
+  - escalate to clinician

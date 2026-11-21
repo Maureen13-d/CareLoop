@@ -93,6 +93,13 @@ def find_open_case(db: Session, patient_id: int, pathway_id: str) -> CareCase | 
     )
 
 
+def _hours_in_state(target, case: CareCase) -> int:
+    """Routine journeys use deadline_hours. Urgent journeys use the shorter wait when set."""
+    if case.urgency == "urgent" and target.urgent_deadline_hours is not None:
+        return target.urgent_deadline_hours
+    return target.deadline_hours
+
+
 def _apply_state(
     db: Session, pw: Pathway, case: CareCase, to_state: str, actor, note: str | None, now: datetime
 ) -> None:
@@ -109,7 +116,7 @@ def _apply_state(
     )
     case.state = to_state
     case.state_entered_at = now
-    case.deadline_at = now + timedelta(hours=target.deadline_hours)
+    case.deadline_at = now + timedelta(hours=_hours_in_state(target, case))
     case.owner_department_id = _department_id(db, target.owner_department)
     case.owner_user_id = None  # unowned until someone claims it
 
@@ -121,16 +128,20 @@ def open_case(
     pw = load_pathway()
     now = at or clock.now()
     initial = pw.states[pw.initial_state]
+    urgency = "urgent" if screening.result == "suspected_cancer" else "routine"
+    hours = initial.deadline_hours
+    if urgency == "urgent" and initial.urgent_deadline_hours is not None:
+        hours = initial.urgent_deadline_hours
     case = CareCase(
         patient_id=patient.id,
         source_screening_id=screening.id,
         pathway_id=pw.id,
         pathway_version=pw.version,
         state=pw.initial_state,
-        urgency="urgent" if screening.result == "suspected_cancer" else "routine",
+        urgency=urgency,
         owner_department_id=_department_id(db, initial.owner_department),
         state_entered_at=now,
-        deadline_at=now + timedelta(hours=initial.deadline_hours),
+        deadline_at=now + timedelta(hours=hours),
         opened_at=now,
     )
     db.add(case)
@@ -170,6 +181,12 @@ def transition(
     pw = load_pathway(case.pathway_id)
     now = at or clock.now()
     action = "case.transition"
+    # Maternal CHW moves stay scoped to assigned pregnancies. Other pathways do not
+    # have a pregnancy row, so this check does not apply to them.
+    if actor is not None and actor.role == "chw" and case.pathway_id == "maternal":
+        from app.modules.maternal.service import assert_chw_assignment
+
+        assert_chw_assignment(db, actor, case, action)
     if pw.is_terminal(case.state):
         _reject(db, actor, case, action, 409, "case_closed", f"Case is already {case.state}")
     if to_state in pw.terminal_states:
@@ -351,13 +368,13 @@ def close_case(
         CaseEvent(
             case_id=case.id,
             from_state=case.state,
-            to_state="CLOSED",
+            to_state=pw.closed_state,
             occurred_at=now,
             note=note or f"Closed with evidence: {reason}",
             **_actor_fields(actor),
         )
     )
-    case.state = "CLOSED"
+    case.state = pw.closed_state
     case.state_entered_at = now
     case.closed_at = now
     case.closure_reason = reason
@@ -402,13 +419,13 @@ def decline_case(
         CaseEvent(
             case_id=case.id,
             from_state=case.state,
-            to_state="PATIENT_DECLINED",
+            to_state=pw.declined_state,
             occurred_at=now,
             note=note,
             **_actor_fields(actor),
         )
     )
-    case.state = "PATIENT_DECLINED"
+    case.state = pw.declined_state
     case.state_entered_at = now
     case.closed_at = now
     case.closure_reason = "patient_declined"
@@ -421,7 +438,7 @@ def decline_case(
         entity_type="care_case",
         entity_id=case.id,
         patient_id=case.patient_id,
-        detail={"note": note},
+        detail={},
         at=at,
     )
     db.commit()
@@ -454,13 +471,13 @@ def mark_lost(
         CaseEvent(
             case_id=case.id,
             from_state=case.state,
-            to_state="LOST_TO_FOLLOW_UP",
+            to_state=pw.lost_state,
             occurred_at=now,
             note=note,
             **_actor_fields(actor),
         )
     )
-    case.state = "LOST_TO_FOLLOW_UP"
+    case.state = pw.lost_state
     case.state_entered_at = now
     case.closed_at = now
     case.closure_reason = "lost_to_follow_up"
@@ -473,7 +490,7 @@ def mark_lost(
         entity_type="care_case",
         entity_id=case.id,
         patient_id=case.patient_id,
-        detail={"note": note},
+        detail={},
         at=at,
     )
     db.commit()
@@ -620,7 +637,7 @@ def list_cases(
     pw = load_pathway()
     now = clock.now()
     terminal = list(pw.terminal_states)
-    stmt = select(CareCase)
+    stmt = select(CareCase).where(CareCase.pathway_id == pw.id)
     if status == "open":
         stmt = stmt.where(CareCase.state.not_in(terminal))
     elif status == "closed":

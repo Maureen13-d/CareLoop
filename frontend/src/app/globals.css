@@ -1,63 +1,138 @@
 @import "tailwindcss";
 
+/*
+  CareLoop design tokens.
+  Brand: deep teal and emerald on a cool mint canvas, white working surfaces.
+  Text colours are checked against WCAG AA (4.5:1) on white and on the canvas.
+  The brief's primary teal (#0F8B80) and grey (#718581) are kept for fills, icons
+  and focus rings; their text versions are darkened to pass AA.
+*/
 :root {
-  --paper: #f4efe6;
-  --paper-2: #fffdf8;
-  --ink: #1c1915;
-  --ink-soft: #5e584e;
-  --line: #e4d9c8;
-  --lagoon: #0e6b66;
-  --lagoon-deep: #0a4e4b;
-  --clay: #b85c38;
-  --moss: #3d6b4a;
-  --gold: #a6843d;
-  --danger: #8d3434;
-  --lcd: #102117;
-  --lcd-ink: #d7f5c8;
+  color-scheme: light;
+
+  --canvas: #f5f8f7;
+  --surface: #ffffff;
+  --mint: #e7f5f1;
+  --mint-strong: #cfeae2;
+
+  --ink: #183b38;
+  --ink-2: #5b6f6b; /* secondary text, 5.3:1 on white */
+  --ink-3: #718581; /* icons and decoration only */
+  --line: #dfeae6;
+  --control: #7d9893; /* form control borders, 3.1:1 on white */
+
+  --deep: #075b55; /* primary actions, 8:1 with white */
+  --emerald: #064b45; /* sidebar and hero */
+  --emerald-2: #053e39;
+  --teal: #0f8b80; /* accents, bars, focus */
+  --teal-text: #0b7469; /* teal for text, 5.6:1 on white */
+  --on-dark: #e7f5f1;
+  --on-dark-2: #8ec2ba;
+
+  --danger: #b42318;
+  --danger-bg: #fdecea;
+  --warn: #9a3f07;
+  --warn-bg: #fef0dc;
+  --neutral-bg: #eef3f2;
+
+  --lcd: #0f2a1f;
+  --lcd-ink: #d4f5c6;
 }
 
 @theme inline {
-  --color-paper: var(--paper);
-  --color-paper-2: var(--paper-2);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-mint: var(--mint);
+  --color-mint-strong: var(--mint-strong);
   --color-ink: var(--ink);
-  --color-ink-soft: var(--ink-soft);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
   --color-line: var(--line);
-  --color-lagoon: var(--lagoon);
-  --color-lagoon-deep: var(--lagoon-deep);
-  --color-clay: var(--clay);
-  --color-moss: var(--moss);
-  --color-gold: var(--gold);
+  --color-control: var(--control);
+  --color-deep: var(--deep);
+  --color-emerald: var(--emerald);
+  --color-emerald-2: var(--emerald-2);
+  --color-teal: var(--teal);
+  --color-teal-text: var(--teal-text);
+  --color-on-dark: var(--on-dark);
+  --color-on-dark-2: var(--on-dark-2);
   --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-neutral-bg: var(--neutral-bg);
   --color-lcd: var(--lcd);
   --color-lcd-ink: var(--lcd-ink);
-  --font-sans: var(--font-outfit), "Segoe UI", sans-serif;
-  --font-serif: var(--font-fraunces), Georgia, serif;
+
+  --font-sans: var(--font-outfit), "Segoe UI", system-ui, sans-serif;
+
+  --shadow-raised: 0 1px 2px rgb(6 75 69 / 0.05), 0 12px 32px -16px rgb(6 75 69 / 0.22);
+  --shadow-float: 0 2px 4px rgb(6 75 69 / 0.06), 0 24px 48px -20px rgb(6 75 69 / 0.32);
 }
 
-body {
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-outfit), "Segoe UI", sans-serif;
+/* Base styles live in the base layer so Tailwind utilities can override them. */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.55;
+    font-feature-settings: "ss01";
+  }
+
+  h1,
+  h2,
+  h3 {
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+
+  .on-dark :focus-visible {
+    outline-color: var(--on-dark);
+  }
 }
 
-h1,
-h2,
-h3 {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 520;
-  letter-spacing: -0.02em;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
-:focus-visible {
-  outline: 2px solid var(--lagoon);
-  outline-offset: 2px;
-}
-
+/* The feature-phone screen in the basic-phone simulator. */
 .lcd {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 30%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.05), transparent 35%),
     var(--lcd);
   color: var(--lcd-ink);
-  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-family: ui-monospace, "Cascadia Mono", "SFMono-Regular", monospace;
   white-space: pre-wrap;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
 }

@@ -41,7 +41,9 @@ def import_models() -> None:
     from app.modules.audit import models as _a  # noqa: F401
     from app.modules.auth import models as _b  # noqa: F401
     from app.modules.channels import models as _f  # noqa: F401
+    from app.modules.followup import models as _j  # noqa: F401
     from app.modules.interop import models as _h  # noqa: F401
+    from app.modules.maternal import models as _i  # noqa: F401
     from app.modules.pathways import models as _d  # noqa: F401
     from app.modules.patients import models as _c  # noqa: F401
     from app.modules.screenings import models as _e  # noqa: F401

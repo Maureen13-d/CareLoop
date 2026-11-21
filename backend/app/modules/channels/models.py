@@ -12,6 +12,7 @@ class UssdSession(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     phone_ref: Mapped[str] = mapped_column(String(20))
     menu: Mapped[str] = mapped_column(String(20), default="home")
+    scratch: Mapped[str | None] = mapped_column(String(200), nullable=True)
     updated_at: Mapped[datetime]
 
 

@@ -71,7 +71,7 @@ CareLoop speaks FHIR R4. For the prototype, a **mock hospital system** exchanges
 
 We build in phases so everyone can see how far we are. **Phases overlap, because several people work in parallel. A phase is done when its exit criteria are met, not when its date passes.** Dates are targets for the 20 November prototype deadline. Phases can be merged, split, added or dropped by team agreement; note the change and the reason in the technical decisions record.
 
-**Current focus: the pathway, desk, chat, phone simulator and simulated clinic handoff run on synthetic data. The demo video has not been recorded, and the knowledge base is still awaiting clinical review.**
+**Current focus: the cervical pathway and a second, synthetic maternal pathway. The demo video has not been recorded, and the knowledge base and maternal rules are still awaiting clinical review.**
 
 | Phase | Goal | Target | Status |
 |---|---|---|---|
@@ -245,9 +245,21 @@ npm run dev
 
 On macOS or Linux, the Python path is `.venv/bin/python` instead of `.venv/Scripts/python.exe`.
 
-Open http://localhost:3000 and sign in as **amina** (navigator), **david** (clinician) or **aisha** (patient). Every demo account uses the password `careloop-demo`. The first backend start seeds synthetic people across the pathway. Restarting keeps that data. Delete `backend/careloop.db` to seed again.
+Run both test suites from the repository root:
 
-The phone at `/phone` is a simulator. `*XYZ#` is not a real short code.
+```powershell
+powershell -File scripts/test.ps1
+```
+
+That command runs the backend pytest suite and the frontend type check. The backend tests force an in-memory database and do not touch `backend/careloop.db`.
+
+Open http://localhost:3000 and sign in as **amina** (navigator), **david** (clinician), **aisha** (patient) or **grace** (community health promoter). Every demo account uses the password `careloop-demo`. The first backend start seeds synthetic people across the cervical pathway and the maternal pathway. Restarting keeps that data. Delete `backend/careloop.db` to seed again.
+
+The phone at `/phone` is a simulator. `*XYZ#` is not a real short code. The maternal check-in is opt-in: send `M` from that menu. The hub simulator is at `/hub`.
+
+CareLoop Maternal is an earlier pathway and stays in the tree. It is not the current demo. Read [CareLoop Maternal](docs/MATERNAL.md) if you need it. Do not use Docker.
+
+The current demo follows a person from a screening until they arrive. Sign in as **david** (clinician, the screener), **grace** (community health worker), or **amina** (navigator). Password `careloop-demo`. David records a screening at `/screen` and prints an ID slip. The person opens `/enter`. Grace's chase list is `/worklist`. Arrivals are `/facility`. Telegram is a simulator at `/telegram`. The four-minute path is [the screening demo](docs/DEMO_SCRIPT_SCREENING.md). Delete `backend/careloop.db` before the first run so the new IDs are seeded.
 
 The simulated clinic is a separate process. Start it from the repository root, so Python can import `integrations`:
 
@@ -267,6 +279,10 @@ On macOS or Linux that interpreter is `backend/.venv/bin/python`. The desk's "Si
 - [Data policy](docs/DATA_POLICY.md)
 - [Technical decisions](docs/TECHNICAL_DECISIONS.md)
 - [Clinical review brief](docs/CLINICAL_REVIEW.md) (parameters are still unreviewed)
+- [CareLoop Maternal](docs/MATERNAL.md)
+- [Device API](docs/DEVICE_API.md)
+- [Hardware outline](docs/HARDWARE.md)
+- [Demo script](docs/DEMO_SCRIPT.md)
 - [Evaluation results](docs/EVALUATION.md)
 - [Pathway](docs/pathways/cervical-cancer.md)
 - [Evidence](docs/evidence/problem-and-gap.md)

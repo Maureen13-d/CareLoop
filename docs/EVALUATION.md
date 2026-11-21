@@ -59,6 +59,40 @@ Precision is 100% on the labels the assistant did predict, apart from `none`. Mo
 
 `m008` is labelled crisis in the set because it describes someone not safe at home. The assistant did not treat it as crisis. A human should still be the one to respond to that kind of message. The safety rules are draft and have not had clinical review.
 
+## Maternal companion (synthetic, not clinical validation)
+
+A second held-out file, `ai/eval/maternal_test.jsonl`, scores the maternal companion only. The dev file `ai/eval/maternal_dev.jsonl` is separate and was not used to add phrases after this run. The classifier is `app.modules.maternal.evaluate.classify`. It does not search the web passages, because the SMS channel is used.
+
+These numbers describe 66 hand-written synthetic messages. They are not a measure of safety for real women, and the rules are PENDING CLINICAL REVIEW.
+
+| Measure | Result |
+|---|---|
+| Messages | 66 (26 labelled red, 16 labelled crisis or distress) |
+| Accuracy | 86.36% (57/66) |
+| Red-flag recall | 88.46% (23/26). This is the primary number. |
+| False-alarm rate | 0% (no non-red message was labelled red) |
+
+Nine messages were missed. All nine were predicted `unclear`, which does not send a reassuring green reply. The misses are phrases the lexicon does not contain: "gushing down there", "kifua inabana", "hedake na macho", "miguu imevimba", "kichwa kidogo tu", "my heart feels heavy and i cannot sleep", "i do not want to be here anymore", "tumbo linanona", and "see you on the usual day". They stay listed here on purpose.
+
+Reproduce from `backend/`:
+
+```bash
+.venv/Scripts/python -m app.modules.maternal.evaluate
+```
+
+## Follow-up danger signs (held-out, synthetic)
+
+File: `ai/eval/followup_test.jsonl`. Classifier: `app.modules.followup.conversation.classify`. The lexicon was not edited after these messages were written.
+
+| | |
+|---|---|
+| Labelled danger | 11 |
+| Hits | 7 |
+| Recall | 0.6364 |
+| Misses | f09, f10, f11, f12 |
+
+The misses are "my chest feels heavy when I lie down", "kifua kinauma sana", "I feel very dizzy and hot", and "naskia uchungu mwingi". They stay missed on purpose. A match does not reassure. It tells the person to go to the nearest clinic and opens one urgent task.
+
 ## Message length
 
 Approved replies are checked in `backend/tests/test_assistant_templates.py` (160 characters, plain ASCII, and none of the words cancer, result, diagnosis, positive, hiv, or screening) and in `backend/tests/test_workspace.py` (USSD screens at most 182 characters, SMS replies at most 160). There is no separate length file in `ai/eval/`.

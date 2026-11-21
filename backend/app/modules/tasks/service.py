@@ -39,6 +39,42 @@ COPY = {
         "Change a visit",
         "The person asked to change the time of a visit.",
     ),
+    "maternal_warning": (
+        "A check needs a person",
+        "A home check needs a navigator. Decision support only. PENDING CLINICAL REVIEW.",
+    ),
+    "chw_cuff": (
+        "Please take a cuff reading today",
+        "The band asked for a cuff reading. The band does not measure that itself.",
+    ),
+    "chw_battery": (
+        "Charge or swap a device",
+        "A device battery is low.",
+    ),
+    "device_offline": (
+        "Device offline",
+        "A device has not been seen within the assumed window.",
+    ),
+    "followup_urgent": (
+        "Go to the clinic now",
+        "A check-in needs a person. PENDING CLINICAL REVIEW.",
+    ),
+    "followup_review": (
+        "A person should follow up",
+        "The message was unclear or asked for something the guide cannot answer.",
+    ),
+    "followup_barrier": (
+        "A barrier was confirmed",
+        "The person confirmed what is stopping them.",
+    ),
+    "followup_escalate": (
+        "CHW escalation",
+        "A community health worker asked a clinician to take this.",
+    ),
+    "followup_unreached": (
+        "No reply to check-ins",
+        "Check-ins went unanswered. This is a problem to solve, not a fault.",
+    ),
 }
 
 

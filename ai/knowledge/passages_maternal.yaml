@@ -1,0 +1,179 @@
+# Draft answers for the maternal companion. Not clinical guidance.
+# source: DRAFT_PENDING_CLINICAL_REVIEW
+version: "0.1-draft"
+passages:
+  - id: m_bring
+    title: What to take
+    text: "Take your booklet, any earlier check slip, and a charged phone if you have one. A companion may come with you."
+    prompts: ["what should i take to the visit", "what do i bring"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_companion
+    title: A companion
+    text: "You can ask someone you trust to come with you. Tell the navigator if you need help finding a companion."
+    prompts: ["can someone come with me", "who can come with me"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_fare
+    title: The fare
+    text: "If the fare is the problem, a navigator can record that and request simulated transport help. It is not a real payment."
+    prompts: ["i cannot afford the fare", "help with transport money"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_shared
+    title: A shared phone
+    text: "Messages stay short and do not name a condition. You can ask for a call instead of a text."
+    prompts: ["this phone is shared", "someone else reads my texts"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_stop
+    title: Stopping messages
+    text: "Reply STOP to stop messages. Reply START if you want them again. A person can still help you at the clinic."
+    prompts: ["how do i stop messages", "opt out of texts"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_colour
+    title: A colour is a label
+    text: "A green, yellow or red label is decision support for a person. It does not name an illness and it does not say you are unwell."
+    prompts: ["what does the colour mean", "is red a name for an illness"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_cuff
+    title: The cuff and the band
+    text: "The band can ask for a cuff reading. It does not replace the cuff. Only the cuff reading is used for the level."
+    prompts: ["what is the band for", "does the wrist band measure the check"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_go_now
+    title: When to go now
+    text: "If you are told to go now, go to the nearest clinic. Do not wait for a call. A person will follow up."
+    prompts: ["when should i go now", "should i wait for the call"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_head_vision
+    title: Head and vision together
+    text: "A bad head pain together with blurred vision needs a clinic now. This message does not name an illness."
+    prompts: ["head pain and vision", "headache with blurred vision what now"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_bleeding_info
+    title: Bleeding
+    text: "Bleeding that soaks through needs a clinic now. A navigator cannot decide this for you."
+    prompts: ["what if there is bleeding", "bleeding what should i do"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_swelling_info
+    title: Swelling
+    text: "Swelling of the face or hands should be told to a navigator. They may ask for a cuff reading the same day."
+    prompts: ["my face is swollen what now", "swelling what should i do"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_movement_info
+    title: Movement
+    text: "If movement is less than usual, tell a navigator today. If it has stopped, go to a clinic now."
+    prompts: ["movement is less than usual", "what if movement changes"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_fever_info
+    title: Fever
+    text: "A fever should be told to a navigator. If you are also very weak, go to a clinic now."
+    prompts: ["i have a fever what now", "fever what should i do"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_fluid_info
+    title: Fluid
+    text: "If fluid is leaking, tell a navigator. If you also have a fever, go to a clinic now."
+    prompts: ["fluid is leaking what now", "water leaking what should i do"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_breath_info
+    title: Breathing
+    text: "If breathing is hard, go to the nearest clinic now. Do not wait for the next check-in."
+    prompts: ["hard to breathe what now", "breathing trouble what should i do"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_low
+    title: Feeling low
+    text: "If you feel low or unsafe, a person will reach out. You can also go to a clinic. You are not alone in this."
+    prompts: ["i feel low what now", "who can talk if i feel unsafe"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_cover
+    title: Cover check
+    text: "A cover check in this demo is simulated. It is not a live lookup and it does not promise payment."
+    prompts: ["is the cover check real", "will the cover pay for the visit"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_voucher
+    title: Transport help
+    text: "A transport voucher in this demo is simulated. The amount label is assumed. It is not mobile money."
+    prompts: ["is the voucher real money", "how does transport help work"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_consent
+    title: Consent
+    text: "Texts and a band message are sent only if you agreed. You can withdraw that agreement with a person."
+    prompts: ["did i agree to messages", "how does consent work here"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_after
+    title: After the visit
+    text: "After a clinic visit, a person keeps a short watch. The timing is assumed and pending clinical review."
+    prompts: ["what happens after the visit", "who watches after i leave"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_plan
+    title: A plan for the birth
+    text: "A plan is a conversation with a health worker about where you will go. The software does not make the plan."
+    prompts: ["who makes the birth plan", "can the app plan the delivery"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_lights
+    title: The hub lights
+    text: "The hub shows a word with the light. Green means the usual day. Yellow means a navigator. Red means go now."
+    prompts: ["what do the hub lights mean", "how do i read the cuff box"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_offline
+    title: Offline then sync
+    text: "If the hub is offline it keeps the reading and sends it when data or a text is available. A duplicate send is ignored."
+    prompts: ["what if the hub is offline", "does a second send create two checks"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_human
+    title: A person decides
+    text: "Software can open a task. A person decides distress handling, lost follow-up, and closure. The software never closes a journey alone."
+    prompts: ["can the software close my journey", "who decides if i am lost"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review
+  - id: m_booklet
+    title: The booklet
+    text: "The hub uses the booklet reference, not your name. Keep the booklet dry and bring it to the clinic."
+    prompts: ["why does the hub ask for a booklet", "what is the booklet reference"]
+    source_title: "CareLoop draft"
+    source_url: "pending-clinical-review"
+    review_status: draft_pending_clinical_review

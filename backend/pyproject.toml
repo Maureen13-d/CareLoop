@@ -17,6 +17,7 @@ dependencies = [
   "pyjwt>=2.8",
   "pyyaml>=6.0",
   "python-multipart>=0.0.9",
+  "segno>=1.6",
 ]
 
 [project.optional-dependencies]

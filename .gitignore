@@ -17,6 +17,7 @@ venv/
 *.db
 *.sqlite
 *.sqlite3
+backend/careloop.db
 
 # Node / Next.js
 node_modules/
