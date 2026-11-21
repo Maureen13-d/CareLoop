@@ -18,7 +18,7 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: ruff check .
-      - run: pytest -q tests/test_api.py tests/test_pathway.py tests/test_interop.py tests/test_ksl_kmp.py tests/test_ksl_manifest.py tests/test_ksl_registry.py tests/test_ksl_followup.py tests/test_ksl_research_policy.py tests/test_ksl_research_motion.py tests/test_asl_sample.py
+      - run: pytest -q tests/test_api.py tests/test_pathway.py tests/test_interop.py tests/test_ksl_kmp.py tests/test_ksl_manifest.py tests/test_ksl_registry.py tests/test_ksl_followup.py tests/test_ksl_research_policy.py tests/test_ksl_research_motion.py tests/test_asl_sample.py tests/test_help_routing.py
       - name: Mock hospital tests
         working-directory: .
         run: python -m pytest -q integrations

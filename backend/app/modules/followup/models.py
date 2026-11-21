@@ -79,3 +79,20 @@ class Outbound(Base):
     mode_label: Mapped[str] = mapped_column(String(20))
     body: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime]
+
+
+class PatientLink(Base):
+    """Which card a signed-in patient account or a known handset belongs to.
+
+    A help request from the support chat, USSD or SMS carries no card ID. This link
+    lets the task it opens name the case, so the navigator knows who to contact.
+    The phone reference stays here, never on a dashboard.
+    """
+
+    __tablename__ = "patient_links"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    public_id: Mapped[str] = mapped_column(String(20), index=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, unique=True)
+    phone_ref: Mapped[str | None] = mapped_column(String(20), nullable=True, unique=True)
+    created_at: Mapped[datetime]

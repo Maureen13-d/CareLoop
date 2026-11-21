@@ -17,7 +17,10 @@ from app.modules.patients.models import CONSENT_PURPOSE_COORDINATION, Consent, P
 OPENS = {"concerning", "urgent"}
 
 
-def register_followup(db: Session, actor, data: RegisterIn) -> dict:
+def register_followup(
+    db: Session, actor, data: RegisterIn, *, public_id: str | None = None
+) -> dict:
+    """public_id is for the fixed demo card only; normal cards get a fresh random ID."""
     if data.finding not in OPENS:
         audit.record(
             db,
@@ -46,7 +49,7 @@ def register_followup(db: Session, actor, data: RegisterIn) -> dict:
             422, "contact_required", "A contact is required when follow-up is accepted"
         )
 
-    public_id = new_public_id()
+    public_id = public_id or new_public_id()
     now = clock.now()
     patient = Patient(
         patient_ref=public_id,

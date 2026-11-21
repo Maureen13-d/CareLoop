@@ -21,6 +21,7 @@ from app.modules.assistant.router import router as assistant_router
 from app.modules.audit.router import router as audit_router
 from app.modules.auth.router import router as auth_router
 from app.modules.channels.router import router as channels_router
+from app.modules.followup.links import ensure_demo_patient
 from app.modules.followup.router import router as followup_router
 from app.modules.interop.router import router as hospital_router
 from app.modules.ksl.research.router import router as ksl_research_router
@@ -37,7 +38,7 @@ from app.outreach_api import router as outreach_router
 from app.pathway import Stage, is_overdue
 from app.repository import Repository
 from app.seed import seed_if_empty
-from app.workspace_seed import seed_workspace_if_empty
+from app.workspace_seed import seed_workspace_if_empty, workspace_seed_enabled
 
 
 @asynccontextmanager
@@ -48,6 +49,8 @@ async def lifespan(_app: FastAPI):
         seed_if_empty(session)  # first run only
     with SessionLocal() as session:
         seed_workspace_if_empty(session)
+        if workspace_seed_enabled():
+            ensure_demo_patient(session)
     task = None
     if settings.enable_scheduler:
         task = asyncio.create_task(scheduler_loop(settings.scheduler_interval_seconds))
