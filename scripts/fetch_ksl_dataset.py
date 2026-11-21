@@ -18,10 +18,21 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
 from app.modules.ksl.research.fetch import DatasetRefused, run  # noqa: E402
-from app.modules.ksl.research.policy import ResearchDisabled  # noqa: E402
+from app.modules.ksl.research.policy import ResearchDisabled, license_verified  # noqa: E402
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    args = sys.argv[1:] if argv is None else argv
+    if "--download" not in args:
+        if not license_verified(ROOT / "config" / "ksl_dataset.yaml"):
+            print(
+                "Research mode is off. A person must read the Zenodo licence "
+                "and set ksl_dataset.license_verified to true.",
+                file=sys.stderr,
+            )
+            return 2
+        print("Licence flag is on. Re-run with --download to fetch the archive.")
+        return 0
     try:
         written = run(ROOT)
     except (ResearchDisabled, DatasetRefused) as exc:

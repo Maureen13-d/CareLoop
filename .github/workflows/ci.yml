@@ -49,4 +49,4 @@ jobs:
           python-version: "3.12"
       - run: python scripts/check_ksl_assets.py
       - run: pip install pytest
-      - run: pytest -q scripts/test_ksl_asset_policy.py
+      - run: pytest -q scripts/test_ksl_asset_policy.py scripts/test_ksl_dataset_index.py

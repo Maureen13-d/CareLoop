@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
+import shutil
 import tarfile
 import zipfile
 from collections.abc import Mapping
@@ -30,19 +31,21 @@ def planned_files(config: dict, env: Mapping[str, str]) -> list[dict]:
     files = [dict(item) for item in (block.get("files") or [])]
     url = env.get("KSL_DATASET_URL", "").strip() or str(block.get("download_url") or "").strip()
     digest = env.get("KSL_DATASET_SHA256", "").strip() or str(block.get("sha256") or "").strip()
+    md5 = env.get("KSL_DATASET_MD5", "").strip() or str(block.get("md5") or "").strip()
     name = env.get("KSL_DATASET_FILENAME", "").strip() or "ksl_pose.zip"
-    if url or digest:
-        files.append({"name": name, "url": url, "sha256": digest})
+    if url or digest or md5:
+        files.append({"name": name, "url": url, "sha256": digest, "md5": md5})
     ready: list[dict] = []
     for item in files:
         item_url = str(item.get("url") or "").strip()
         item_sha = str(item.get("sha256") or "").strip().lower()
+        item_md5 = str(item.get("md5") or "").strip().lower()
         item_name = Path(str(item.get("name") or "ksl_pose.zip")).name
-        if not item_url or len(item_sha) != 64:
+        if not item_url or (len(item_sha) != 64 and len(item_md5) != 32):
             raise DatasetRefused(
-                "Each file needs a URL and a 64-character sha256 copied from the Zenodo record."
+                "Each file needs a URL and a checksum copied from the Zenodo record."
             )
-        ready.append({"name": item_name, "url": item_url, "sha256": item_sha})
+        ready.append({"name": item_name, "url": item_url, "sha256": item_sha, "md5": item_md5})
     if not ready:
         raise DatasetRefused(
             "No dataset URL or checksum. Copy both from the Zenodo record after the licence check."
@@ -58,20 +61,40 @@ def safe_relative(name: str) -> Path:
     return path
 
 
-def download(url: str, dest: Path, expected_sha256: str, opener=urlopen) -> None:
+def download(
+    url: str,
+    dest: Path,
+    expected_sha256: str = "",
+    opener=urlopen,
+    expected_md5: str = "",
+    free_bytes: int | None = None,
+) -> None:
+    if not expected_sha256 and not expected_md5:
+        raise DatasetRefused("A checksum from the Zenodo record is required.")
     dest.parent.mkdir(parents=True, exist_ok=True)
     partial = dest.with_name(dest.name + ".partial")
     digest = hashlib.sha256()
+    md5 = hashlib.md5()
     try:
-        with opener(url) as response, partial.open("wb") as handle:
-            while True:
-                block = response.read(1024 * 1024)
-                if not block:
-                    break
-                digest.update(block)
-                handle.write(block)
-        got = digest.hexdigest()
-        if not hmac.compare_digest(got, expected_sha256.lower()):
+        with opener(url) as response:
+            headers = getattr(response, "headers", None)
+            length = headers.get("Content-Length") if headers is not None else None
+            if length:
+                needed = int(length)
+                free = shutil.disk_usage(dest.parent).free if free_bytes is None else free_bytes
+                if needed > free:
+                    raise DatasetRefused("Not enough free disk to keep this file.")
+            with partial.open("wb") as handle:
+                while True:
+                    block = response.read(1024 * 1024)
+                    if not block:
+                        break
+                    digest.update(block)
+                    md5.update(block)
+                    handle.write(block)
+        if expected_sha256 and not hmac.compare_digest(digest.hexdigest(), expected_sha256.lower()):
+            raise DatasetRefused("Checksum did not match the Zenodo record.")
+        if expected_md5 and not hmac.compare_digest(md5.hexdigest(), expected_md5.lower()):
             raise DatasetRefused("Checksum did not match the Zenodo record.")
         partial.replace(dest)
     finally:
@@ -136,7 +159,13 @@ def run(root: Path, env: Mapping[str, str] | None = None, opener=urlopen) -> lis
     written: list[Path] = []
     for item in files:
         target = folder / item["name"]
-        download(item["url"], target, item["sha256"], opener=opener)
+        download(
+            item["url"],
+            target,
+            item.get("sha256") or "",
+            opener=opener,
+            expected_md5=item.get("md5") or "",
+        )
         if _is_archive(target):
             extract(target, folder / "extracted")
         written.append(target)
