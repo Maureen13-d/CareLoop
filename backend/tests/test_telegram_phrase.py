@@ -74,3 +74,40 @@ def test_route_returns_a_known_key(monkeypatch):
 def test_route_without_a_key_does_not_guess(monkeypatch):
     monkeypatch.setenv("CARELOOP_LLM_API_KEY", "")
     assert phrase.route("what should I take?", {"visit_bring": "Bring your card."}) is None
+
+
+def test_a_reword_keeps_the_named_person_and_clinic(monkeypatch):
+    approved = (
+        "If you have any issue with it, ask Grace. "
+        "You can go to Hill clinic, Tue and Thu, 8 to 12, and ask."
+    )
+
+    def completer(system, user):
+        return "Ask Grace at Hill clinic between 8 and 12."
+
+    _use(monkeypatch, completer)
+    messages = [
+        {
+            "template_id": "refuse_diagnosis_both",
+            "text": approved,
+            "facts": ["Grace", "Hill clinic"],
+        }
+    ]
+    out = phrase.phrase_messages(messages, "en")
+    assert out[0]["phrased"] is True
+    assert "Grace" in out[0]["text"]
+    assert "Hill clinic" in out[0]["text"]
+
+
+def test_dropping_the_person_is_rejected(monkeypatch):
+    approved = "If you have any issue with it, ask Grace."
+    _use(monkeypatch, lambda system, user: "If you have any issue with it, ask at the clinic.")
+    messages = [{"template_id": "refuse_diagnosis_person", "text": approved, "facts": ["Grace"]}]
+    assert phrase.phrase_messages(messages, "en")[0]["text"] == approved
+
+
+def test_a_new_hospital_name_is_rejected(monkeypatch):
+    approved = "If you have any issue with it, ask Grace."
+    _use(monkeypatch, lambda system, user: "If you have any issue with it, ask Grace at Kenyatta.")
+    messages = [{"template_id": "refuse_diagnosis_person", "text": approved, "facts": ["Grace"]}]
+    assert phrase.phrase_messages(messages, "en")[0]["text"] == approved

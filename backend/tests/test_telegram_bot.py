@@ -254,6 +254,58 @@ def test_telegram_strings_are_discreet_and_urgent_lines_are_plain():
             assert "👋" not in text
 
 
+def test_a_diagnosis_question_names_the_person_and_the_demo_clinic(client, auth, monkeypatch):
+    monkeypatch.setenv("CARELOOP_LLM_API_KEY", "")
+    _bind(client, auth, "tg-diagnosis-person")
+    reply = _post(client, "tg-diagnosis-person", 6, "But what if the diagnosis is wrong")["reply_text"]
+    assert "Chw" in reply
+    assert "Market clinic" in reply
+    assert "8 to 4" in reply
+    assert "you are fine" not in reply.lower()
+    again = _post(client, "tg-diagnosis-person", 7, "The diagnosis is whack")["reply_text"]
+    assert again == reply
+
+
+def test_a_diagnosis_question_names_the_clinic_when_the_area_has_one(client, auth, monkeypatch):
+    import os
+
+    monkeypatch.setenv("CARELOOP_LLM_API_KEY", "")
+    os.environ["CARELOOP_EXPOSE_SIMULATED_CODES"] = "true"
+    opened = enrol(client, auth, channel="telegram", area_label="East")
+    chat = "tg-diagnosis-east"
+    _post(client, chat, 1, "/start")
+    _post(client, chat, 2, "1")
+    _post(client, chat, 3, "OK")
+    asked = _post(client, chat, 4, opened["public_id"])["reply_text"]
+    code = asked.split("SIMULATED code:", 1)[1].strip().split()[0]
+    _post(client, chat, 5, code)
+    reply = _post(client, chat, 6, "But what if the diagnosis is wrong")["reply_text"]
+    assert "Chw" in reply
+    assert "Hill clinic" in reply
+    assert "8 to 12" in reply
+
+
+def test_the_model_can_choose_the_ask_line(client, auth, monkeypatch):
+    from app.modules.followup import telegram_phrase as phrase
+
+    monkeypatch.setenv("CARELOOP_LLM_API_KEY", "test-key")
+
+    def completer(system, user):
+        if system.startswith("Choose"):
+            return "ask_person"
+        return "You are fine. Go to Kenyatta."
+
+    phrase.set_complete(completer)
+    try:
+        _bind(client, auth, "tg-diagnosis-route")
+        reply = _post(client, "tg-diagnosis-route", 6, "what if they got it wrong")["reply_text"]
+    finally:
+        phrase.set_complete(None)
+    assert "Chw" in reply
+    assert "Kenyatta" not in reply
+    assert "you are fine" not in reply.lower()
+
+
 def test_group_and_non_text_do_not_error(client):
     first = _post(client, "tg-group", 1, "hello", chat_type="group")
     assert "private" in first["reply_text"].lower()
