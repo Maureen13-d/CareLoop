@@ -5,13 +5,19 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.deps import require_roles
 from app.core.errors import DomainError
-from app.modules.auth.models import ROLE_CHW, ROLE_CLINICIAN, ROLE_COUNSELLOR, ROLE_NAVIGATOR
+from app.modules.auth.models import (
+    ROLE_ADMIN,
+    ROLE_CHW,
+    ROLE_CLINICIAN,
+    ROLE_COUNSELLOR,
+    ROLE_NAVIGATOR,
+)
 from app.modules.tasks import service
 from app.modules.tasks.models import NavigatorTask
 from app.modules.tasks.schemas import TaskOut, TaskUpdate
 
 router = APIRouter(prefix="/navigator/tasks", tags=["tasks"])
-readers = require_roles(ROLE_NAVIGATOR, ROLE_COUNSELLOR, ROLE_CLINICIAN, ROLE_CHW)
+readers = require_roles(ROLE_NAVIGATOR, ROLE_COUNSELLOR, ROLE_CLINICIAN, ROLE_CHW, ROLE_ADMIN)
 staff = require_roles(ROLE_NAVIGATOR, ROLE_COUNSELLOR, ROLE_CLINICIAN)
 
 

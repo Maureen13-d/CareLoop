@@ -85,7 +85,7 @@ type AuditRow = {
 };
 
 const CASE_ROLES = new Set(["navigator", "clinician"]);
-const TASK_ROLES = new Set(["navigator", "clinician", "counsellor"]);
+const TASK_ROLES = new Set(["navigator", "clinician", "counsellor", "admin"]);
 const CHASE_ROLES = new Set(["navigator", "clinician", "admin", "program_manager"]);
 const AUDIT_ROLES = new Set(["admin", "program_manager"]);
 const MATERNAL_ROLES = new Set(["navigator", "clinician", "program_manager", "admin"]);

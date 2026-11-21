@@ -29,6 +29,14 @@ def test_manager_cannot_read_the_task_list(client, auth):
     assert client.get("/api/v1/navigator/tasks", headers=auth["manager"]).status_code == 403
 
 
+def test_admin_can_read_the_cases_handed_over(client, auth):
+    assert client.get("/api/v1/navigator/tasks", headers=auth["admin"]).status_code == 200
+    assert client.get("/api/v1/escalations?resolved=false", headers=auth["admin"]).status_code == 200
+    assert client.get("/api/v1/cases?status=open", headers=auth["admin"]).status_code == 200
+    claim = client.post("/api/v1/cases/1/claim", headers=auth["admin"])
+    assert claim.status_code == 403
+
+
 def test_confirming_a_worry_opens_a_task(client, auth):
     resp = client.post(
         "/api/v1/assistant/message",

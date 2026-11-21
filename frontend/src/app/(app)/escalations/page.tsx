@@ -12,10 +12,10 @@ import { getSession } from "@/lib/session";
 
 export const instant = false;
 
-const NAMED = new Set(["navigator", "clinician", "counsellor", "chw"]);
+const NAMED = new Set(["navigator", "clinician", "counsellor", "chw", "admin"]);
 const CASE_ROLES = new Set(["navigator", "clinician"]);
 const CAN_COMPLETE = new Set(["navigator", "clinician", "counsellor"]);
-const COUNTS = new Set(["admin", "program_manager"]);
+const COUNTS = new Set(["program_manager"]);
 
 /** The guide opens these. Seeded demo handoffs use "system" for the same kind of task. */
 const GUIDE_SOURCES = new Set(["assistant", "followup", "telegram", "channel", "checkin", "system"]);
@@ -73,6 +73,7 @@ export default async function EscalationsPage({
   if (user.role === "patient") redirect("/chat");
   const { error } = await searchParams;
   const canOpen = CASE_ROLES.has(user.role);
+  const canList = canOpen || user.role === "admin";
   const canComplete = CAN_COMPLETE.has(user.role);
 
   if (COUNTS.has(user.role)) {
@@ -134,7 +135,7 @@ export default async function EscalationsPage({
   let escalations: Escalation[] = [];
   let problem: string | null = null;
   try {
-    if (canOpen) {
+    if (canList) {
       [tasks, cases, escalations] = await Promise.all([
         api<NavigatorTask[]>("/navigator/tasks?status=open&limit=100"),
         api<CaseRow[]>("/cases?status=open&limit=100"),

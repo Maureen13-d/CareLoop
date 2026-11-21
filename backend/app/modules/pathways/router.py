@@ -30,6 +30,7 @@ from app.modules.pathways.schemas import (
 )
 
 staff = require_roles(ROLE_NAVIGATOR, ROLE_CLINICIAN)
+readers = require_roles(ROLE_NAVIGATOR, ROLE_CLINICIAN, ROLE_ADMIN)
 movers = require_roles(ROLE_NAVIGATOR, ROLE_CLINICIAN, ROLE_CHW)
 
 router = APIRouter(prefix="/cases", tags=["cases"])
@@ -50,7 +51,7 @@ def list_cases(
     limit: int = Query(25, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
-    user=Depends(staff),
+    user=Depends(readers),
 ):
     cases = service.list_cases(
         db,
@@ -143,7 +144,7 @@ def list_escalations(
     limit: int = Query(25, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
-    _=Depends(staff),
+    _=Depends(readers),
 ):
     stmt = select(Escalation).order_by(Escalation.level.desc(), Escalation.raised_at)
     if resolved is True:
