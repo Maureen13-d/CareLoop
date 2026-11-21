@@ -45,6 +45,7 @@ export const ROLE_LABEL: Record<string, string> = {
   admin: "Admin",
   patient: "Patient",
   chw: "Community health promoter",
+  ksl_reviewer: "Sign language reviewer",
 };
 
 export function stageShort(state: string): string {

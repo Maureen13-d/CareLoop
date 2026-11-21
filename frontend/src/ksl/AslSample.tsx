@@ -9,7 +9,8 @@ const HAIR = "#3a2a22";
 const SHIRT = "#1a6b63";
 const PANTS = "#2c3338";
 const SHOE = "#1b2428";
-const INK = "#102027";
+const INK = "#183b38";
+const STAGE = "#e7f5f1";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -26,6 +27,16 @@ type Clip = {
   sentence: string;
   fps: number;
   frames: Frame[];
+  label?: string;
+  citation?: string;
+};
+
+/** What the screen around the player needs to know about the line on show. */
+export type SignedLine = {
+  id: string;
+  sentence: string;
+  label: string;
+  citation: string;
 };
 
 function paint(canvas: HTMLCanvasElement | null, clip: Clip | null, index: number) {
@@ -35,7 +46,7 @@ function paint(canvas: HTMLCanvasElement | null, clip: Clip | null, index: numbe
   const width = canvas.width;
   const height = canvas.height;
   context.clearRect(0, 0, width, height);
-  context.fillStyle = "#f7f1e6";
+  context.fillStyle = STAGE;
   context.fillRect(0, 0, width, height);
   const frame = clip?.frames[index];
   if (!frame) return;
@@ -50,7 +61,8 @@ function paint(canvas: HTMLCanvasElement | null, clip: Clip | null, index: numbe
     maxX = Math.max(maxX, point[0]);
     maxY = Math.max(maxY, point[1]);
   }
-  const caption = Math.round(height * 0.08);
+  // the sentence is shown as page text under the canvas, not painted into it
+  const caption = 0;
   const scale = Math.min(
     (width * 0.78) / Math.max(maxX - minX, 1),
     ((height - caption) * 0.86) / Math.max(maxY - minY, 1),
@@ -173,18 +185,28 @@ function paint(canvas: HTMLCanvasElement | null, clip: Clip | null, index: numbe
   };
   hand(20, 25, frame.left_hand);
   hand(21, 40, frame.right_hand);
-  context.fillStyle = INK;
-  context.font = `${Math.max(32, Math.round(width / 18))}px sans-serif`;
-  context.textAlign = "center";
-  context.fillText(clip?.sentence ?? "", width / 2, height - caption / 3);
 }
 
 export function AslSample({
   step,
   onLines,
+  onLine,
+  onProblem,
+  paused = false,
+  speed = 1,
+  replay = 0,
 }: {
   step: number;
   onLines?: (ids: string[]) => void;
+  /** called whenever the line on show changes */
+  onLine?: (line: SignedLine | null) => void;
+  /** called when no line could be loaded, so the screen can offer captions instead */
+  onProblem?: (message: string) => void;
+  paused?: boolean;
+  /** 1 is the recorded speed; 0.75 is slower */
+  speed?: number;
+  /** change this number to start the line again from its first frame */
+  replay?: number;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [clips, setClips] = useState<Clip[]>([]);
@@ -205,22 +227,36 @@ export function AslSample({
         const ready = body.filter((item): item is Clip => item !== null);
         setClips(ready);
         onLines?.(ready.map((item) => item.id));
-        if (!ready.length) setProblem("The ASL sentences could not load.");
+        if (!ready.length) {
+          setProblem("The signed lines could not load.");
+          onProblem?.("The signed lines could not load.");
+        }
       })
       .catch((error: unknown) => {
-        if (!cancelled) setProblem(error instanceof Error ? error.message : "The ASL sentence could not load.");
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : "The signed lines could not load.";
+        setProblem(message);
+        onProblem?.(message);
       });
     return () => {
       cancelled = true;
     };
-  }, [onLines]);
+  }, [onLines, onProblem]);
+
+  useEffect(() => {
+    onLine?.(
+      clip
+        ? { id: clip.id, sentence: clip.sentence, label: clip.label ?? "", citation: clip.citation ?? "" }
+        : null,
+    );
+  }, [clip, onLine]);
 
   useEffect(() => {
     const frames = clip?.frames ?? [];
     let index = 0;
     let last = 0;
     let handle = 0;
-    const rate = clip?.fps || 24;
+    const rate = (clip?.fps || 24) * speed;
     const draw = (now: number) => {
       const node = canvas.current;
       if (node) {
@@ -236,18 +272,25 @@ export function AslSample({
       if (!last || now - last >= 1000 / rate) {
         last = now;
         paint(canvas.current, clip, frames.length ? index % frames.length : 0);
-        if (frames.length) index = (index + 1) % frames.length;
+        if (frames.length && !paused) index = (index + 1) % frames.length;
       }
       handle = requestAnimationFrame(draw);
     };
     handle = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(handle);
-  }, [clip]);
+  }, [clip, paused, speed, replay]);
 
   return (
-    <section className="relative min-h-0 flex-1">
-      <canvas ref={canvas} className="block h-full w-full" />
-      {problem ? <p className="absolute inset-x-4 bottom-4 text-center text-sm">{problem}</p> : null}
-    </section>
+    <div className="relative h-full w-full">
+      <canvas
+        ref={canvas}
+        role="img"
+        aria-label={clip ? `Signing figure: ${clip.sentence}` : "Signing figure"}
+        className="block h-full w-full"
+      />
+      {problem ? (
+        <p className="absolute inset-x-4 top-1/2 -translate-y-1/2 text-center text-[0.9375rem] text-ink-2">{problem}</p>
+      ) : null}
+    </div>
   );
 }

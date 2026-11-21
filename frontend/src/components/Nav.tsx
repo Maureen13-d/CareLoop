@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Hand,
   Activity,
   BellRing,
   DoorOpen,
@@ -46,6 +47,7 @@ const GROUPS: { title: string; links: NavLink[] }[] = [
       { href: "/telegram", label: "Telegram", icon: Send, roles: ["clinician", "navigator", "admin", "chw"] },
       { href: "/voice", label: "Voice", icon: Mic, roles: ["clinician", "navigator", "admin", "chw"] },
       { href: "/hub", label: "Cuff hub", icon: Activity, roles: ["chw", "navigator", "clinician", "program_manager", "admin"] },
+      { href: "/ksl", label: "Sign language", icon: Hand, roles: ["admin", "program_manager", "ksl_reviewer", "navigator", "clinician"] },
     ],
   },
   {
