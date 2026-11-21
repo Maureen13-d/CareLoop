@@ -2,14 +2,15 @@
 
 import { CircleExclamationPoint, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Wordmark } from "@/components/ui/brand";
 import { controlClass, cx } from "@/components/ui";
+import { DEMO_CARD_ID } from "@/lib/demoCard";
 import { SIGN_ORDER, SIGN_REPLIES } from "@/ksl/signReplies.js";
 import { SignSession, type SignAnswer } from "./SignSession";
-import { simulatedCode } from "./actions";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const CARD_ID = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]$/i;
 const button =
   "min-h-14 w-full rounded-full bg-deep px-5 text-lg font-medium text-white transition-colors hover:bg-emerald disabled:opacity-55";
 const choice =
@@ -86,43 +87,52 @@ function Speak({ text, muted }: { text: string; muted: boolean }) {
 }
 
 export function EnterFlow() {
-  const [publicId, setPublicId] = useState("");
+  const [publicId, setPublicId] = useState(DEMO_CARD_ID);
   const [code, setCode] = useState("");
   const [token, setToken] = useState("");
   const [hint, setHint] = useState("");
   const [reply, setReply] = useState<Reply | null>(null);
   const [error, setError] = useState("");
-  const [language, setLanguage] = useState<Language>("en");
+  const [language, setLanguage] = useState<Language>("ksl");
   const [busy, setBusy] = useState(false);
   const [signStep, setSignStep] = useState(0);
   const [lineIds, setLineIds] = useState(SIGN_ORDER);
+  const requestSeq = useRef(0);
   const linesReady = useCallback((ids: string[]) => {
     if (ids.length) setLineIds(ids);
   }, []);
 
-  async function start() {
+  const requestCode = useCallback(async (cardId: string) => {
+    const id = cardId.trim();
+    if (!id) return;
+    const seq = ++requestSeq.current;
     setError("");
     setHint("");
     try {
       const res = await fetch(`${API}/api/v1/followup/access/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ public_id: publicId, client_key: "web-demo" }),
+        body: JSON.stringify({ public_id: id, client_key: "web-demo" }),
       });
+      const payload = (await res.json()) as { simulated_code?: string };
+      if (seq !== requestSeq.current) return;
       if (!res.ok) {
         setError("That ID was not accepted.");
         return;
       }
-      const dev = await simulatedCode(publicId);
-      setHint(
-        dev
-          ? `SIMULATED code: ${dev.simulated_code}`
-          : "Sign in on the login page first, then send the code again.",
-      );
+      if (payload.simulated_code) {
+        setCode(payload.simulated_code);
+        setHint(`SIMULATED code: ${payload.simulated_code}`);
+      }
     } catch {
-      setError("The card could not reach the server.");
+      if (seq === requestSeq.current) setError("The card could not reach the server.");
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (!CARD_ID.test(publicId.trim())) return;
+    void requestCode(publicId);
+  }, [publicId, requestCode]);
 
   async function check() {
     setError("");
@@ -236,8 +246,8 @@ export function EnterFlow() {
               </div>
             </fieldset>
             <p className="text-lg leading-relaxed text-ink-2">
-              Type the ID printed on your card, then ask for a code. In sign language, a figure signs one line at a
-              time and you answer underneath with a tap.
+              The demo card is filled in. It is the same ID you type in Telegram. In sign language, a figure signs
+              one line at a time and you answer underneath with a tap.
             </p>
             <div className="space-y-3">
               <label htmlFor="card-id" className="block text-lg font-medium">
@@ -254,7 +264,7 @@ export function EnterFlow() {
                 autoCapitalize="characters"
                 className={cx(controlClass({ size: "lg" }), "tracking-wider")}
               />
-              <button className={button} type="button" onClick={() => void start()} disabled={!publicId.trim()}>
+              <button className={button} type="button" onClick={() => void requestCode(publicId)} disabled={!publicId.trim()}>
                 Send a code
               </button>
               {hint ? (

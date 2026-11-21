@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   Badge,
+  ButtonLink,
   Card,
   EmptyState,
   Notice,
@@ -53,8 +54,31 @@ function labelTone(label: string): Tone {
 export default async function KslReviewPage() {
   const user = await getSession();
   if (!user) redirect("/login");
-  const allowed = ["admin", "program_manager", "ksl_reviewer", "navigator", "clinician"];
-  if (!allowed.includes(user.role)) redirect("/");
+  if (user.role === "patient") {
+    return (
+      <Page>
+        <PageHeader
+          title="Sign language"
+          description="Signed lines play on your card and in Telegram. This screen does not watch you sign, and it does not guess what a sign means."
+        />
+        <Card as="section" aria-labelledby="sign-heading">
+          <SectionHeader
+            id="sign-heading"
+            title="Your card speaks in sign"
+            description="Open the card from the sign-in page. A signing figure plays each line, and the words are written underneath."
+          />
+          <p className="mt-4 text-sm text-ink-2">
+            Clips stay off until a reviewer approves them. Until then the card says the sample is research, not a message about you.
+          </p>
+          <div className="mt-5">
+            <ButtonLink href="/enter">Open the card</ButtonLink>
+          </div>
+        </Card>
+      </Page>
+    );
+  }
+  const allowed = ["admin", "program_manager", "ksl_reviewer"];
+  if (!allowed.includes(user.role)) redirect("/escalations");
 
   let rows: ClipRow[] = [];
   let problem: string | null = null;

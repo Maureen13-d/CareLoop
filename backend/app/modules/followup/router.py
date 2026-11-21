@@ -14,6 +14,7 @@ from app.modules.auth.models import (
     ROLE_CLINICIAN,
     ROLE_COUNSELLOR,
     ROLE_NAVIGATOR,
+    ROLE_PATIENT,
     ROLE_PROGRAM_MANAGER,
 )
 from app.modules.followup import access, checkins, facility, register, telegram, voice, worklist
@@ -42,6 +43,9 @@ router = APIRouter(prefix="/followup", tags=["followup"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 screener = require_roles(ROLE_CLINICIAN)
 staff = require_roles(ROLE_CLINICIAN, ROLE_NAVIGATOR, ROLE_ADMIN, ROLE_PROGRAM_MANAGER, ROLE_CHW)
+voice_user = require_roles(
+    ROLE_CLINICIAN, ROLE_NAVIGATOR, ROLE_ADMIN, ROLE_PROGRAM_MANAGER, ROLE_CHW, ROLE_PATIENT
+)
 facility_reader = require_roles(ROLE_CLINICIAN, ROLE_NAVIGATOR, ROLE_ADMIN, ROLE_PROGRAM_MANAGER)
 dev_reader = require_roles(
     ROLE_ADMIN,
@@ -102,10 +106,14 @@ def start_access(data: CheckIn, db: Session = Depends(get_db)):
     found = None
     if canonical:
         found = db.scalar(select(Enrolment).where(Enrolment.public_id == canonical))
+    body = {"status": "sent", "synthetic": True}
     if found is not None:
         access.issue_code(db, found.public_id)
         db.commit()
-    return {"status": "sent", "synthetic": True}
+        code = access.dev_code(found.public_id)
+        if code:
+            body["simulated_code"] = code
+    return body
 
 
 @router.post("/access/check")
@@ -154,8 +162,31 @@ def talk(data: TalkIn, public_id: str = Depends(_patient_id), db: Session = Depe
         raise DomainError(401, "not_authenticated", REJECTED)
     result = respond(db, enrolment, data.channel, data.language, data.message)
     result["spoken_text"] = guide_speaks(result["reply_text"])
+    if data.speak:
+        voice.speak_reply(result)
     db.commit()
     return result
+
+
+@router.post("/hear")
+async def patient_hear(
+    file: UploadFile = File(),
+    language: str = Form("en"),
+    public_id: str = Depends(_patient_id),
+    db: Session = Depends(get_db),
+):
+    enrolment = db.scalar(select(Enrolment).where(Enrolment.public_id == public_id))
+    if enrolment is None:
+        raise DomainError(401, "not_authenticated", REJECTED)
+    content = await file.read()
+    return voice.hear_patient(
+        db,
+        enrolment,
+        content,
+        file.filename or "turn.wav",
+        file.content_type or "audio/wav",
+        language,
+    )
 
 
 @router.post("/ussd")
@@ -252,12 +283,12 @@ def telegram_webhook(
 
 
 @router.get("/voice/cases")
-def get_voice_cases(db: Session = Depends(get_db), _user=Depends(staff)):
+def get_voice_cases(db: Session = Depends(get_db), _user=Depends(voice_user)):
     return voice.list_cases(db)
 
 
 @router.post("/voice/turn")
-def post_voice_turn(data: VoiceTurnIn, db: Session = Depends(get_db), _user=Depends(staff)):
+def post_voice_turn(data: VoiceTurnIn, db: Session = Depends(get_db), _user=Depends(voice_user)):
     return voice.turn(db, data.public_id, data.text)
 
 
@@ -266,7 +297,7 @@ async def post_voice_hear(
     public_id: str = Form(),
     file: UploadFile = File(),
     db: Session = Depends(get_db),
-    _user=Depends(staff),
+    _user=Depends(voice_user),
 ):
     content = await file.read()
     return voice.turn(

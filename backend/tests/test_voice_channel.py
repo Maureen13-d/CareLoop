@@ -22,6 +22,55 @@ def _cases(client, auth):
     return response.json()["cases"]
 
 
+def test_the_patient_card_speaks_only_the_approved_line(client, auth, monkeypatch):
+    from tests.test_followup_loop import enrol, unlock
+
+    said = []
+
+    def speak(text):
+        said.append(text)
+        return b"RIFF"
+
+    monkeypatch.setattr(msingi, "configured", lambda: True)
+    monkeypatch.setattr(msingi, "speak", speak)
+    opened = enrol(client, auth, channel="web")
+    headers = unlock(client, auth, opened["public_id"])
+    quiet = client.post(
+        "/api/v1/followup/talk",
+        json={"message": "not yet", "speak": False},
+        headers=headers,
+    )
+    assert quiet.status_code == 200, quiet.text
+    assert "audio_base64" not in quiet.json()
+    aloud = client.post(
+        "/api/v1/followup/talk",
+        json={"message": "not yet", "speak": True},
+        headers=headers,
+    )
+    assert aloud.status_code == 200, aloud.text
+    assert aloud.json()["audio_base64"]
+    assert said[-1] == aloud.json()["spoken_text"]
+    assert "you are fine" not in said[-1].lower()
+
+
+def test_a_patient_recording_is_transcribed_then_answered(client, auth):
+    from tests.test_followup_loop import enrol, unlock
+
+    opened = enrol(client, auth, channel="web")
+    headers = unlock(client, auth, opened["public_id"])
+    heard = client.post(
+        "/api/v1/followup/hear",
+        files={"file": ("turn.wav", b"RIFF", "audio/wav")},
+        data={"language": "en"},
+        headers=headers,
+    )
+    assert heard.status_code == 200, heard.text
+    body = heard.json()
+    assert body["heard_text"] == "worse"
+    assert body["audio_base64"]
+    assert "nearest clinic" in body["reply_text"].lower()
+
+
 def test_voice_cases_seed_suggestive_symptoms_once(client, auth, db_session):
     first = _cases(client, auth)
     assert len(first) == 7

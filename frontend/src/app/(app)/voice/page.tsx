@@ -9,6 +9,7 @@ export const instant = false;
 export default async function VoicePage() {
   const user = await getSession();
   if (!user) redirect("/login");
+  if (user.role !== "patient") redirect("/escalations");
   let cases: Awaited<ReturnType<typeof loadVoiceCases>> = [];
   let error = "";
   try {

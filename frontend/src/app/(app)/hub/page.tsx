@@ -1,30 +1,19 @@
 import { redirect } from "next/navigation";
 import { HubSim } from "./HubSim";
 import { Badge, Page, PageHeader } from "@/components/ui";
-import { api } from "@/lib/api";
 import { getSession } from "@/lib/session";
 
 export const instant = false;
 
-const ALLOWED = new Set(["chw", "navigator", "clinician", "admin", "program_manager"]);
-
-type Woman = { patient_ref: string; display_name: string };
-
 export default async function HubPage() {
   const user = await getSession();
   if (!user) redirect("/login");
-  if (!ALLOWED.has(user.role)) redirect("/");
-  let booklets: Woman[] = [];
-  try {
-    booklets = await api<Woman[]>("/maternal/pregnancies");
-  } catch {
-    booklets = [];
-  }
+  if (user.role !== "patient") redirect("/escalations");
   return (
     <Page>
       <PageHeader
         title="Cuff hub"
-        description="A synthetic demo of hub HUB-0007. The light always has a word beside it, and the server recomputes the label. Not a diagnostic device."
+        description="The light always has a word beside it. A colour is a label, not a diagnosis. Booklets stay with the community health promoter, so this screen does not list anyone else."
         meta={
           <>
             <Badge tone="outline">Synthetic</Badge>
@@ -32,7 +21,7 @@ export default async function HubPage() {
           </>
         }
       />
-      <HubSim booklets={booklets.map((item) => ({ ref: item.patient_ref, name: item.display_name }))} />
+      <HubSim booklets={[]} />
     </Page>
   );
 }

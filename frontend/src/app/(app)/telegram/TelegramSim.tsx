@@ -3,8 +3,10 @@
 import { SendHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Badge, BrandMark, controlClass, cx } from "@/components/ui";
+import { DEMO_CARD_ID } from "@/lib/demoCard";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const ASKS_FOR_CARD = /id on your card/i;
 
 type Button = { id?: string; label?: string };
 type Turn = { who: "you" | "guide"; text: string };
@@ -24,6 +26,13 @@ export function TelegramSim() {
   useEffect(() => {
     if (turns.length) endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [turns.length]);
+
+  useEffect(() => {
+    const last = turns.at(-1);
+    if (last?.who === "guide" && ASKS_FOR_CARD.test(last.text)) {
+      setText((current) => current || DEMO_CARD_ID);
+    }
+  }, [turns]);
 
   async function send(value: string, callback?: string) {
     const mine = value.trim();
@@ -69,7 +78,8 @@ export function TelegramSim() {
       <ol aria-live="polite" className="min-h-80 flex-1 space-y-3 bg-canvas/70 px-4 py-5">
         {turns.length === 0 ? (
           <li className="py-10 text-center text-sm text-ink-2">
-            Say hello, or try “not yet”, “transport” or “I feel worse” to see the follow-up guide reply.
+            Say hello. When the guide asks for a card, {DEMO_CARD_ID} is filled in. That is the same ID as the
+            sign-language card.
           </li>
         ) : null}
         {turns.map((turn, index) => (

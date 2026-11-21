@@ -30,6 +30,7 @@ class TalkIn(BaseModel):
     language: Language = "en"
     message: str = ""
     channel: Channel = "web"
+    speak: bool = False
 
 
 class OutcomeIn(BaseModel):

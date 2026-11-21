@@ -662,7 +662,14 @@ def turn(db: Session, session: ChannelSession, event: dict, chat_id: str) -> dic
     if command == "/stop" or low in STOP_WORDS or callback == "set:stop":
         return {"messages": _stop(db, session, enrolment, language), "delete_message_ids": []}
 
-    if enrolment is not None and enrolment.messages_stopped and low not in START_WORDS and command != "/start":
+    verifying = session.step in {"id", "code"}
+    if (
+        enrolment is not None
+        and enrolment.messages_stopped
+        and not verifying
+        and low not in START_WORDS
+        and command != "/start"
+    ):
         return {"messages": [_msg("stop_ack", language)], "delete_message_ids": []}
 
     if command == "/start" or low in START_WORDS:

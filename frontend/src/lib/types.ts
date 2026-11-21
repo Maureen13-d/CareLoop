@@ -10,6 +10,8 @@ export type NavigatorTask = {
   title: string;
   summary: string;
   status?: string;
+  source?: string;
+  created_at?: string;
   contact_ref?: string | null;
 };
 

@@ -18,6 +18,7 @@ from app.modules.auth.models import (
     ROLE_NAVIGATOR,
     ROLE_PROGRAM_MANAGER,
 )
+from app.modules.followup import voice
 from app.modules.followup.access import REJECTED, read_token
 from app.modules.followup.conversation import guide_speaks, respond
 from app.modules.followup.models import Enrolment
@@ -71,6 +72,7 @@ class FlagIn(BaseModel):
 class TalkIn(BaseModel):
     message: str = ""
     channel: Literal["web", "telegram", "sms", "ussd"] = "web"
+    speak: bool = False
 
 
 class GuidedIn(BaseModel):
@@ -191,6 +193,8 @@ def talk(data: TalkIn, public_id: str = Depends(_patient_id), db: Session = Depe
     enrolment.language = "ksl"
     result = respond(db, enrolment, data.channel, "ksl", data.message)
     result["spoken_text"] = guide_speaks(result["reply_text"])
+    if data.speak:
+        voice.speak_reply(result)
     db.commit()
     return result
 

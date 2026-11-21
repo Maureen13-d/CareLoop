@@ -7,6 +7,7 @@ import {
   DoorOpen,
   FilePlus,
   FolderOpen,
+  HeartHandshake,
   House,
   IdCard,
   ListChecks,
@@ -25,13 +26,15 @@ import { cx } from "@/components/ui/cx";
 
 type NavLink = { href: string; label: string; icon: LucideIcon; roles: string[] };
 
-// Role lists are unchanged from the original navigation: a link only appears for
-// roles that the page itself admits. The pages still check the role on the server.
+// A link only appears for roles the page itself admits. The pages still check the role.
+const STAFF = ["navigator", "clinician", "counsellor", "program_manager", "admin", "chw", "ksl_reviewer"];
+
 const GROUPS: { title: string; links: NavLink[] }[] = [
   {
     title: "Work",
     links: [
       { href: "/", label: "Today", icon: House, roles: ["navigator", "clinician", "counsellor", "program_manager", "admin", "chw"] },
+      { href: "/escalations", label: "Escalated cases", icon: HeartHandshake, roles: STAFF },
       { href: "/desk", label: "Cases", icon: FolderOpen, roles: ["navigator", "clinician"] },
       { href: "/worklist", label: "Who to chase", icon: ListChecks, roles: ["chw", "navigator", "clinician", "admin", "program_manager"] },
       { href: "/facility", label: "Arrivals", icon: DoorOpen, roles: ["clinician", "navigator", "program_manager", "admin"] },
@@ -42,18 +45,19 @@ const GROUPS: { title: string; links: NavLink[] }[] = [
   {
     title: "Patient channels",
     links: [
-      { href: "/chat", label: "Support chat", icon: MessagesSquare, roles: ["navigator", "clinician", "counsellor", "admin", "patient"] },
-      { href: "/phone", label: "Basic phone", icon: Smartphone, roles: ["navigator", "clinician", "counsellor", "program_manager", "admin", "patient"] },
-      { href: "/telegram", label: "Telegram", icon: Send, roles: ["clinician", "navigator", "admin", "chw"] },
-      { href: "/voice", label: "Voice", icon: Mic, roles: ["clinician", "navigator", "admin", "chw"] },
-      { href: "/hub", label: "Cuff hub", icon: Activity, roles: ["chw", "navigator", "clinician", "program_manager", "admin"] },
-      { href: "/ksl", label: "Sign language", icon: Hand, roles: ["admin", "program_manager", "ksl_reviewer", "navigator", "clinician"] },
+      { href: "/chat", label: "Support chat", icon: MessagesSquare, roles: ["patient"] },
+      { href: "/phone", label: "Basic phone", icon: Smartphone, roles: ["patient"] },
+      { href: "/telegram", label: "Telegram", icon: Send, roles: ["patient"] },
+      { href: "/voice", label: "Voice", icon: Mic, roles: ["patient"] },
+      { href: "/hub", label: "Cuff hub", icon: Activity, roles: ["patient"] },
+      { href: "/ksl", label: "Sign language", icon: Hand, roles: ["patient"] },
     ],
   },
   {
     title: "Oversight",
     links: [
       { href: "/outreach", label: "Follow-up ladder", icon: BellRing, roles: ["navigator", "clinician", "program_manager", "admin"] },
+      { href: "/ksl", label: "Clip review", icon: Hand, roles: ["admin", "program_manager", "ksl_reviewer"] },
       { href: "/audit", label: "Audit trail", icon: ScrollText, roles: ["program_manager", "admin"] },
     ],
   },

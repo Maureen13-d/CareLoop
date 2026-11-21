@@ -18,5 +18,6 @@ export async function completeTask(formData: FormData) {
   }
   revalidatePath("/");
   revalidatePath("/desk");
+  revalidatePath("/escalations");
   redirect(back);
 }

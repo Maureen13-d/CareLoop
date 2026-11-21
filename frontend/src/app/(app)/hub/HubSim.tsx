@@ -84,7 +84,11 @@ export function HubSim({ booklets }: { booklets: Booklet[] }) {
     setError(null);
     setResult(null);
     if (!booklet) {
-      setError("Choose a booklet. Delete backend/careloop.db and restart the API if the list is empty.");
+      setError(
+        booklets.length === 0
+          ? "The light on this screen is the label. Booklets stay with the community health promoter, so this reading is not sent."
+          : "Choose a booklet.",
+      );
       return;
     }
     const id = reuse ? Math.max(1, seq - 1) : seq;
@@ -134,24 +138,27 @@ export function HubSim({ booklets }: { booklets: Booklet[] }) {
         <h2 id="reading-heading" className="text-lg">
           The reading
         </h2>
-        <div className="space-y-1.5">
-          <label htmlFor="hub-booklet" className="block text-sm font-medium text-ink">
-            Booklet
-          </label>
-          <select
-            id="hub-booklet"
-            className={controlClasses}
-            value={booklet}
-            onChange={(event) => setBooklet(event.target.value)}
-          >
-            {booklets.length === 0 ? <option value="">No booklet seeded</option> : null}
-            {booklets.map((item) => (
-              <option key={item.ref} value={item.ref}>
-                {item.ref}, {item.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {booklets.length > 0 ? (
+          <div className="space-y-1.5">
+            <label htmlFor="hub-booklet" className="block text-sm font-medium text-ink">
+              Booklet
+            </label>
+            <select
+              id="hub-booklet"
+              className={controlClasses}
+              value={booklet}
+              onChange={(event) => setBooklet(event.target.value)}
+            >
+              {booklets.map((item) => (
+                <option key={item.ref} value={item.ref}>
+                  {item.ref}, {item.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <p className="text-sm text-ink-2">The light updates as you move the reading. A booklet is not listed here.</p>
+        )}
 
         <div className="grid gap-5 sm:grid-cols-3">
           <Slider label="Systolic" unit="mmHg" value={sys} min={80} max={200} onChange={setSys} />

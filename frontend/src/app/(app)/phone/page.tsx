@@ -10,6 +10,7 @@ export const instant = false;
 export default async function PhonePage() {
   const user = await getSession();
   if (!user) redirect("/login");
+  if (user.role !== "patient") redirect("/escalations");
   const messages = await loadInbox();
 
   return (

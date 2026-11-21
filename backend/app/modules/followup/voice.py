@@ -118,6 +118,45 @@ def _enrolment(db: Session, public_id: str) -> Enrolment:
     return found
 
 
+def speak_reply(result: dict) -> dict:
+    """Speak the approved line already chosen for this reply. Never a client sentence."""
+    text = str(result.get("spoken_text") or result.get("reply_text") or "").strip()
+    result["audio_base64"] = None
+    result["audio_type"] = "audio/wav"
+    result["audio_error"] = None
+    if not text:
+        return result
+    if not msingi.configured():
+        result["audio_error"] = "Voice is not configured."
+        return result
+    try:
+        wav = msingi.speak(text)
+    except msingi.MsingiError as exc:
+        result["audio_error"] = str(exc)
+        return result
+    result["audio_base64"] = base64.b64encode(wav).decode("ascii")
+    return result
+
+
+def hear_patient(db: Session, enrolment: Enrolment, content: bytes, filename: str, content_type: str, language: str) -> dict:
+    """Transcribe a patient's recording, then answer with the same guide as a typed turn."""
+    if not content or len(content) > MAX_AUDIO:
+        raise DomainError(422, "not_heard", "No speech was heard. Say it again.")
+    try:
+        heard = msingi.hear(content, filename, content_type)
+    except msingi.MsingiError as exc:
+        raise DomainError(502, "voice_unavailable", str(exc)) from exc
+    if not heard:
+        raise DomainError(422, "not_heard", "No speech was heard. Say it again.")
+    chosen = language if language in {"en", "sw", "ksl"} else "en"
+    result = respond(db, enrolment, "web", chosen, heard)
+    result["spoken_text"] = result["reply_text"]
+    result["heard_text"] = heard
+    speak_reply(result)
+    db.commit()
+    return result
+
+
 def turn(
     db: Session,
     public_id: str,

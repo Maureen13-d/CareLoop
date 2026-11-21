@@ -18,6 +18,7 @@ const STEPS = [
 export default async function ChatPage() {
   const user = await getSession();
   if (!user) redirect("/login");
+  if (user.role !== "patient") redirect("/escalations");
 
   return (
     <Page>

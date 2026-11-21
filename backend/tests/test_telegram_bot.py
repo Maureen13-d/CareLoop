@@ -306,6 +306,22 @@ def test_the_model_can_choose_the_ask_line(client, auth, monkeypatch):
     assert "you are fine" not in reply.lower()
 
 
+def test_a_stopped_chat_can_enter_the_new_code(client, auth, db_session):
+    opened, chat = _bind(client, auth, "tg-chat-restart")
+    stopped = _post(client, chat, 6, "/stop")
+    assert stopped["reply_text"] == "Messages stopped."
+    restart = _post(client, chat, 7, "/start")
+    assert "card" in restart["reply_text"].lower()
+    asked = _post(client, chat, 8, opened["public_id"])["reply_text"]
+    code = asked.split("SIMULATED code:", 1)[1].strip().split()[0]
+    done = _post(client, chat, 9, code)
+    assert "messages stopped" not in done["reply_text"].lower()
+    assert "menu" in done["reply_text"].lower()
+    row = db_session.scalar(select(Enrolment).where(Enrolment.public_id == opened["public_id"]))
+    db_session.refresh(row)
+    assert row.messages_stopped is False
+
+
 def test_group_and_non_text_do_not_error(client):
     first = _post(client, "tg-group", 1, "hello", chat_type="group")
     assert "private" in first["reply_text"].lower()

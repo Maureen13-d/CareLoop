@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from app.core import clock
 from app.modules.audit.models import AuditLog
 from app.modules.auth.models import User
-from app.modules.followup.access import reset_limits
+from app.modules.followup.access import expose_codes, reset_limits
 from app.modules.followup.checkins import run_checkins
 from app.modules.followup.cohort import build_cohort, report
 from app.modules.followup.conversation import guide_speaks
@@ -106,7 +106,13 @@ def test_access_hides_unknown_ids_and_locks_out(client, auth):
         json={"public_id": "AAAA-BBBB-CCCC-D", "client_key": "k"},
     )
     assert known.status_code == unknown.status_code == 200
-    assert known.json() == unknown.json()
+    assert known.json()["status"] == unknown.json()["status"] == "sent"
+    assert unknown.json() == {"status": "sent", "synthetic": True}
+    if expose_codes():
+        assert known.json()["simulated_code"].isdigit()
+        assert len(known.json()["simulated_code"]) == 6
+    else:
+        assert "simulated_code" not in known.json()
     wrong = client.post(
         "/api/v1/followup/access/check",
         json={"public_id": public_id, "code": "000000", "client_key": "k"},
