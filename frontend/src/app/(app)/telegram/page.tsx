@@ -9,7 +9,7 @@ export default async function TelegramPage() {
   if (!user) redirect("/login");
   return (
     <main className="px-4 py-6">
-      <h1 className="mb-4 text-4xl">Telegram simulator</h1>
+      <h1 className="mb-4 text-4xl">Telegram</h1>
       <TelegramSim />
     </main>
   );

@@ -4,8 +4,11 @@
 - Deadlines, the check-in gap (every 2 days), and quiet hours are **assumed**. They are not a national guideline.
 - Arrival is confirmed by a person or by the simulated clinic. The bot cannot mark someone arrived.
 - Lost to follow-up is a human decision, and only after an escalation exists.
-- The one-time code is simulated. There is no real SMS or Telegram delivery in this build.
-- Telegram is a signature check plus a simulator. There is no live bot.
+- The one-time code is simulated. In the prototype the bot can show that code in the chat. It is not a real SMS gateway.
+- A Telegram chat with a bot is not end-to-end encrypted. The bot must not promise secrecy.
+- English and Kiswahili bot copy is marked PENDING CLINICAL REVIEW. Kiswahili still needs a native speaker.
+- The staff page at `/telegram` uses the same menus as the bot and does not send to Telegram. A live bot needs a token that is never committed. A bot cannot message someone before they open the chat.
+- Clinics in the bot are synthetic examples. Arrival is still confirmed by a person, not by the patient.
 - USSD is a contract and the existing simulator. There is no Africa's Talking connection.
 - The guide speaks with the browser's voice, if the device has one. Kiswahili voices are often missing. Captions are always on.
 - The contact split is pseudonymisation. It is not anonymisation and it is not a Data Protection Act compliance pack.
