@@ -43,6 +43,10 @@ def reasons(rel: str, size: int, head: bytes) -> list[str]:
     found: list[str] = []
     if parts & RAW_PARTS:
         found.append("raw capture path")
+    if rel.startswith("data/external/"):
+        found.append("external dataset")
+    if ext in {".npy", ".npz"}:
+        found.append("numpy dataset file")
     if ext in MOCAP:
         found.append("raw mocap")
     if rel.startswith("assets/ksl/") and ext in SIGNER_PHOTO:

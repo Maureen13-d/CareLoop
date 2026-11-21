@@ -60,6 +60,12 @@ def test_oversized_binary_is_refused_unless_it_is_an_lfs_pointer():
     assert policy.reasons("rigs/avatar.glb", policy.MAX_BYTES + 1, LFS) == []
 
 
+def test_dataset_files_are_refused():
+    pose = policy.reasons("data/external/ksl_pose/word.npy", 100, b"\x93NUMPY")
+    assert "external dataset" in pose
+    assert "numpy dataset file" in pose
+
+
 def test_gitignore_blocks_raw_video_and_keeps_placeholder_notes():
     ignored = subprocess.run(
         ["git", "check-ignore", "-q", "capture/take1.mp4"],
@@ -71,8 +77,14 @@ def test_gitignore_blocks_raw_video_and_keeps_placeholder_notes():
         cwd=ROOT,
         check=False,
     )
+    dataset = subprocess.run(
+        ["git", "check-ignore", "-q", "data/external/ksl_pose/sample.npy"],
+        cwd=ROOT,
+        check=False,
+    )
     assert ignored.returncode == 0
     assert note.returncode == 1
+    assert dataset.returncode == 0
 
 
 def test_tracked_tree_passes_the_policy():

@@ -18,7 +18,7 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: ruff check .
-      - run: pytest -q tests/test_api.py tests/test_pathway.py tests/test_interop.py tests/test_ksl_kmp.py tests/test_ksl_manifest.py tests/test_ksl_registry.py tests/test_ksl_followup.py
+      - run: pytest -q tests/test_api.py tests/test_pathway.py tests/test_interop.py tests/test_ksl_kmp.py tests/test_ksl_manifest.py tests/test_ksl_registry.py tests/test_ksl_followup.py tests/test_ksl_research_policy.py
       - name: Mock hospital tests
         working-directory: .
         run: python -m pytest -q integrations
@@ -37,7 +37,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
-      - run: node --test src/ksl/engine.test.js
+      - run: node --test src/ksl/engine.test.js src/ksl/researchLabel.test.js
       - run: npm run build
 
   ksl-assets:
