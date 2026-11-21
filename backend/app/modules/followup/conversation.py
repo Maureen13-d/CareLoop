@@ -6,6 +6,7 @@ Nothing here is generated. Patient text is never written to the audit log.
 
 import re
 from datetime import timedelta
+from functools import wraps
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -45,8 +46,15 @@ MENU = {
     "aibu": "stigma",
     "where": "where",
     "wapi": "where",
+    "interpreter": "interpreter",
+    "need interpreter": "interpreter",
+    "need help": "need_help",
+    "cant go": "cant_go",
+    "can't go": "cant_go",
 }
 BARRIERS = {"fear", "cost", "transport", "stigma", "where"}
+_active_db: Session | None = None
+_active_enrolment: Enrolment | None = None
 READY_REPLIES = [
     {"id": "been", "label": "I have been"},
     {"id": "not_yet", "label": "Not yet"},
@@ -131,18 +139,55 @@ def _task(db, enrolment: Enrolment | None, task_type: str, priority: str):
     )
 
 
+def _with_db(fn):
+    @wraps(fn)
+    def wrapped(db: Session, *args, **kwargs):
+        global _active_db
+        previous = _active_db
+        _active_db = db
+        try:
+            return fn(db, *args, **kwargs)
+        finally:
+            _active_db = previous
+
+    return wrapped
+
+
+def _attach(result: dict, channel: str, language: str) -> dict:
+    db = _active_db
+    if db is None:
+        result["ksl"] = {
+            "available": False,
+            "fallback": "captions",
+            "caption": result["reply_text"],
+        }
+        return result
+    from app.modules.ksl.registry import for_channel
+
+    result["ksl"] = for_channel(db, result["template_id"], result["reply_text"], channel)
+    if language == "ksl" and channel == "telegram" and not result["ksl"].get("available"):
+        _task(db, _active_enrolment, "followup_ksl", "high")
+    return result
+
+
 def _pack(reply_key: str, language: str, channel: str, escalation: str | None, actions: list):
     replies = (
         READY_REPLIES if reply_key in {"status", "not_yet", "same", "better", "start_ack"} else []
     )
     if reply_key == "ask_language":
-        replies = [{"id": "en", "label": "English"}, {"id": "sw", "label": "Kiswahili"}]
-    return {
+        replies = [
+            {"id": "en", "label": "English"},
+            {"id": "sw", "label": "Kiswahili"},
+            {"id": "ksl", "label": "Kenyan Sign Language"},
+        ]
+    result = {
         "reply_text": fit(line(reply_key, language), channel),
         "quick_replies": replies,
         "actions": actions,
         "escalation_label": escalation,
+        "template_id": reply_key,
     }
+    return _attach(result, channel, language)
 
 
 def log_outbound(db, public_id, channel, purpose, mode, body):
@@ -158,8 +203,13 @@ def log_outbound(db, public_id, channel, purpose, mode, body):
     )
 
 
+@_with_db
 def respond(db: Session, enrolment: Enrolment, channel: str, language: str, message: str) -> dict:
     """Safety, then a fixed menu. Web may add one approved line. No generation."""
+    global _active_enrolment
+    _active_enrolment = enrolment
+    if language == "ksl":
+        enrolment.language = "ksl"
     enrolment.window_open_until = clock.now() + timedelta(hours=24)
     text = (message or "").strip()
     if text:
@@ -220,6 +270,13 @@ def respond(db: Session, enrolment: Enrolment, channel: str, language: str, mess
         enrolment.barrier_label = choice
         _task(db, enrolment, "followup_barrier", "normal")
         result = _pack(choice, language, channel, None, ["barrier_confirmed"])
+    elif choice == "interpreter":
+        enrolment.barrier_label = "interpreter"
+        _task(db, enrolment, "followup_barrier", "normal")
+        result = _pack("interpreter", language, channel, None, ["barrier_confirmed"])
+    elif choice in {"need_help", "cant_go"}:
+        _task(db, enrolment, "followup_review", "high")
+        result = _pack(choice, language, channel, "needs_person", ["open_task"])
     elif text == "":
         result = _pack("status", language, channel, None, [])
     else:
@@ -240,14 +297,17 @@ def respond(db: Session, enrolment: Enrolment, channel: str, language: str, mess
     return result
 
 
+@_with_db
 def handle(db: Session, session: ChannelSession, message: str) -> dict:
     """Opening flow, then the same core. Language, then ID, then the code, then status."""
     from app.modules.followup.access import code_ok, issue_code
     from app.modules.followup.ids import parse_public_id
 
+    global _active_enrolment
     text = (message or "").strip()
     safety = classify(text)
     enrolment = _enrolment(db, session.public_id)
+    _active_enrolment = enrolment
     low = _norm(text)
     if low in {"stop", "simama"}:
         if enrolment:
@@ -275,6 +335,10 @@ def handle(db: Session, session: ChannelSession, message: str) -> dict:
             session.language = "sw"
             session.step = "id"
             return _pack("ask_id", "sw", session.channel, None, [])
+        if low in {"3", "ksl", "kenyan sign language"}:
+            session.language = "ksl"
+            session.step = "id"
+            return _pack("ask_id", "ksl", session.channel, None, [])
         return _pack("ask_language", "en", session.channel, None, [])
 
     if session.step == "id":

@@ -3,7 +3,7 @@
 # Do not use the mapping keys off, on, yes, or no. YAML 1.1 reads those as booleans.
 
 en:
-  ask_language: "CareLoop\n1 English\n2 Kiswahili"
+  ask_language: "CareLoop\n1 English\n2 Kiswahili\n3 Kenyan Sign Language"
   ask_id: "Enter the ID on your card."
   ask_code: "Enter the code that was sent to you."
   id_rejected: "That ID or code was not accepted."
@@ -29,9 +29,12 @@ en:
   slip_2: "A person from the clinic may contact you."
   slip_3: "If you feel worse, go to the nearest clinic."
   guide_label: "I am a guide, not a doctor. I help you get to care."
+  interpreter: "A sign language interpreter can be booked. Please still go to the clinic."
+  need_help: "A person will follow up. If you feel worse, go to the nearest clinic."
+  cant_go: "A person will follow up to help you get to the clinic. If you feel worse, go to the nearest clinic."
 
 sw:
-  ask_language: "CareLoop\n1 English\n2 Kiswahili"
+  ask_language: "CareLoop\n1 English\n2 Kiswahili\n3 Kenyan Sign Language"
   ask_id: "Andika nambari iliyo kwenye kadi yako."
   ask_code: "Andika nambari fupi uliyopewa."
   id_rejected: "Nambari hiyo haijakubaliwa."
@@ -57,3 +60,6 @@ sw:
   slip_2: "Mtu kutoka kliniki anaweza kuwasiliana nawe."
   slip_3: "Ukihisi mbaya zaidi, nenda kliniki iliyo karibu."
   guide_label: "Mimi ni mwongozo, si daktari. Ninakusaidia kufika kwa huduma."
+  interpreter: "Mkalimani wa lugha ya alama anaweza kupangwa. Tafadhali nenda kliniki."
+  need_help: "Mtu atakufuata. Ukihisi mbaya zaidi, nenda kliniki iliyo karibu."
+  cant_go: "Mtu atakufuata ili kusaidia kufika kliniki. Ukihisi mbaya zaidi, nenda kliniki iliyo karibu."
