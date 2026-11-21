@@ -9,6 +9,11 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 type Button = { id?: string; label?: string };
 type Turn = { who: "you" | "guide"; text: string };
 
+/** A fresh id for each simulated Telegram update; kept outside the component so render stays pure. */
+function nextUpdateId() {
+  return `${Date.now()}`;
+}
+
 export function TelegramSim() {
   const [text, setText] = useState("");
   const [buttons, setButtons] = useState<Button[]>([]);
@@ -34,7 +39,7 @@ export function TelegramSim() {
           chat_id: "demo-chat",
           text: callback ? "" : mine,
           callback,
-          update_id: `${Date.now()}`,
+          update_id: nextUpdateId(),
         }),
       });
       const body = (await res.json()) as { reply_text?: string; buttons?: Button[] };

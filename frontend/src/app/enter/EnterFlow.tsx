@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Wordmark } from "@/components/ui/brand";
 import { controlClass, cx } from "@/components/ui";
-import { AslSample } from "@/ksl/AslSample";
 import { SIGN_ORDER, SIGN_REPLIES } from "@/ksl/signReplies.js";
+import { SignSession, type SignAnswer } from "./SignSession";
 import { simulatedCode } from "./actions";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -14,7 +14,19 @@ const button =
   "min-h-14 w-full rounded-full bg-deep px-5 text-lg font-medium text-white transition-colors hover:bg-emerald disabled:opacity-55";
 const choice =
   "min-h-14 w-full rounded-2xl border border-line bg-surface px-5 text-left text-lg font-medium text-ink transition-colors hover:border-teal hover:bg-mint";
-const answerButton = "min-h-12 rounded-2xl bg-deep px-3 text-base font-medium text-white";
+// The signed-reply table is a plain JS module; give its rows a type here.
+const SIGNED_ANSWERS = SIGN_REPLIES as Record<string, SignAnswer[]>;
+
+type Language = "en" | "ksl";
+
+const LANGUAGES: { id: Language; title: string; line: string }[] = [
+  { id: "en", title: "English", line: "A spoken guide with captions." },
+  {
+    id: "ksl",
+    title: "American Sign Language",
+    line: "A signing figure with captions. A research sample, not Kenyan Sign Language.",
+  },
+];
 
 type Reply = {
   reply_text: string;
@@ -80,7 +92,8 @@ export function EnterFlow() {
   const [hint, setHint] = useState("");
   const [reply, setReply] = useState<Reply | null>(null);
   const [error, setError] = useState("");
-  const [language, setLanguage] = useState<"en" | "ksl">("en");
+  const [language, setLanguage] = useState<Language>("en");
+  const [busy, setBusy] = useState(false);
   const [signStep, setSignStep] = useState(0);
   const [lineIds, setLineIds] = useState(SIGN_ORDER);
   const linesReady = useCallback((ids: string[]) => {
@@ -127,29 +140,42 @@ export function EnterFlow() {
     await say(body.access_token, "");
   }
 
-  async function say(bearer: string, message: string) {
-    const path = language === "ksl" ? "/api/v1/ksl/talk" : "/api/v1/followup/talk";
-    const body =
-      language === "ksl" ? { message, channel: "web" } : { message, channel: "web", language: "en" };
-    const res = await fetch(`${API}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${bearer}` },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      setError("That answer was not accepted.");
+  async function say(bearer: string, message: string, lang: Language = language) {
+    const path = lang === "ksl" ? "/api/v1/ksl/talk" : "/api/v1/followup/talk";
+    const body = lang === "ksl" ? { message, channel: "web" } : { message, channel: "web", language: "en" };
+    setBusy(true);
+    try {
+      const res = await fetch(`${API}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${bearer}` },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        setError("That answer was not accepted. Try again, or go to the nearest clinic if you feel worse.");
+        return false;
+      }
+      const payload = (await res.json()) as Reply;
+      setReply(payload);
+      setError("");
+      return true;
+    } catch {
+      setError("The card could not reach the server. If you feel worse, go to the nearest clinic.");
       return false;
+    } finally {
+      setBusy(false);
     }
-    const payload = (await res.json()) as Reply;
-    setReply(payload);
-    setError("");
-    return true;
+  }
+
+  /** Leave sign language for the English guide without signing out. */
+  async function switchToEnglish() {
+    setLanguage("en");
+    await say(token, "", "en");
   }
 
   const danger = reply?.escalation_label === "danger_sign" || reply?.escalation_label === "worse";
   const signing = Boolean(token) && language === "ksl";
   const lineId = lineIds[Math.min(signStep, Math.max(lineIds.length - 1, 0))] ?? SIGN_ORDER[0];
-  const answers = SIGN_REPLIES[lineId] ?? SIGN_REPLIES[SIGN_ORDER[0]];
+  const answers = SIGNED_ANSWERS[lineId] ?? SIGNED_ANSWERS[SIGN_ORDER[0]];
 
   async function answer(id: string) {
     const accepted = await say(token, id);
@@ -158,22 +184,18 @@ export function EnterFlow() {
 
   if (signing) {
     return (
-      <main className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-canvas text-ink">
-        <AslSample step={signStep} onLines={linesReady} />
-        <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-line bg-surface px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          {answers.map((item, index) => (
-            <button
-              key={item.id}
-              className={cx(answerButton, index === answers.length - 1 && answers.length % 2 === 1 ? "col-span-2" : "")}
-              type="button"
-              onClick={() => void answer(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-          {error ? <p className="col-span-2 text-sm text-danger">{error}</p> : null}
-        </div>
-      </main>
+      <SignSession
+        step={signStep}
+        total={lineIds.length}
+        answers={answers}
+        reply={reply?.reply_text ?? null}
+        danger={Boolean(danger)}
+        busy={busy}
+        error={error}
+        onLines={linesReady}
+        onAnswer={(id) => void answer(id)}
+        onLeave={() => void switchToEnglish()}
+      />
     );
   }
 
@@ -189,17 +211,33 @@ export function EnterFlow() {
         <h1 className="text-[1.75rem]">Your card</h1>
         {!token ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-2">
-              <button className={choice} type="button" onClick={() => setLanguage("en")}>
-                {language === "en" ? "English selected" : "English"}
-              </button>
-              <button className={choice} type="button" onClick={() => setLanguage("ksl")}>
-                {language === "ksl" ? "American Sign Language selected" : "American Sign Language"}
-              </button>
-            </div>
+            <fieldset>
+              <legend className="text-lg font-medium">How should the guide talk to you?</legend>
+              <div className="mt-3 grid grid-cols-1 gap-2">
+                {LANGUAGES.map((option) => (
+                  <label
+                    key={option.id}
+                    className="flex cursor-pointer items-start gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 transition-colors hover:border-teal has-[:checked]:border-teal has-[:checked]:bg-mint has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-teal"
+                  >
+                    <input
+                      type="radio"
+                      name="language"
+                      value={option.id}
+                      checked={language === option.id}
+                      onChange={() => setLanguage(option.id)}
+                      className="mt-1 size-5 shrink-0 accent-deep"
+                    />
+                    <span>
+                      <span className="block text-lg font-medium text-ink">{option.title}</span>
+                      <span className="mt-0.5 block text-[0.9375rem] text-ink-2">{option.line}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <p className="text-lg leading-relaxed text-ink-2">
-              Type the ID printed on your card, then ask for a code. In sign language, the avatar signs one line and
-              you answer underneath.
+              Type the ID printed on your card, then ask for a code. In sign language, a figure signs one line at a
+              time and you answer underneath with a tap.
             </p>
             <div className="space-y-3">
               <label htmlFor="card-id" className="block text-lg font-medium">

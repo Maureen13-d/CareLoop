@@ -1,6 +1,9 @@
 "use client";
 
+import { ArrowLeft, FlaskConical } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { Wordmark } from "@/components/ui/brand";
 import { ResearchAttribution } from "@/ksl/ResearchAttribution";
 import { RESEARCH_LABEL } from "@/ksl/researchLabel.js";
 import {
@@ -46,7 +49,7 @@ function paint(
   const width = canvas.width;
   const height = canvas.height;
   context.clearRect(0, 0, width, height);
-  context.fillStyle = "#f7f1e6";
+  context.fillStyle = "#e7f5f1";
   context.fillRect(0, 0, width, height);
   context.fillStyle = BANNER_COLOR;
   context.fillRect(0, 0, width, 48);
@@ -55,7 +58,7 @@ function paint(
   context.fillText(RESEARCH_LABEL, 12, 30);
   if (!frame) return;
   const lines = kind === "stick" ? stickSegments(frame) : avatarSegments(frame);
-  context.strokeStyle = "#102027";
+  context.strokeStyle = "#183b38";
   context.lineWidth = 4;
   context.lineCap = "round";
   context.beginPath();
@@ -72,7 +75,7 @@ function paint(
     context.beginPath();
     context.arc(width / 2, 150, 22, 0, Math.PI * 2);
     context.stroke();
-    context.fillStyle = "#102027";
+    context.fillStyle = "#183b38";
     context.fillRect(width / 2 - 10, 146, 4, Math.max(2, 6 * (1 - blink)));
     context.fillRect(width / 2 + 6, 146, 4, Math.max(2, 6 * (1 - blink)));
     context.fillRect(width / 2 - 6, 158, 12, 2 + jaw * 8);
@@ -124,28 +127,49 @@ export default function ResearchSamplePage() {
   }, [clip]);
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-      <header>
-        <p className="text-sm text-clay">Kenyan Sign Language research sample. Not American Sign Language.</p>
-        <h1 className="mt-1 font-serif text-4xl">One dataset word</h1>
-        <p className="mt-2 max-w-2xl text-ink-soft">
-          {clip
-            ? `${clip.word_label} from ${clip.source_id}. The archive has no frame rate, so this plays at ${clip.playback_fps} frames per second for display.`
-            : "A single gloss from the public pose archive. It is not a sentence and it is not a patient message."}
-        </p>
+    <div className="min-h-dvh bg-canvas text-ink">
+      <header className="bg-emerald">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4">
+          <Wordmark tone="light" />
+          <Link
+            href="/ksl"
+            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/30 px-4 text-sm font-medium text-white hover:bg-white/10"
+          >
+            <ArrowLeft aria-hidden="true" className="size-4" />
+            Sign language clips
+          </Link>
+        </div>
       </header>
-      {problem ? <p className="text-lg">{problem}</p> : null}
-      <div className="grid gap-4 md:grid-cols-2">
-        <figure className="space-y-2">
-          <figcaption className="text-sm">Landmark stickman</figcaption>
-          <canvas ref={stick} width={640} height={360} className="w-full rounded-2xl border border-line" />
-        </figure>
-        <figure className="space-y-2">
-          <figcaption className="text-sm">Fixed-bone avatar</figcaption>
-          <canvas ref={avatar} width={640} height={360} className="w-full rounded-2xl border border-line" />
-        </figure>
-      </div>
-      <ResearchAttribution />
-    </main>
+      <main id="content" className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+        <div>
+          <p className="inline-flex items-center gap-2 rounded-full bg-warn-bg px-3 py-1 text-[0.8125rem] font-medium text-warn">
+            <FlaskConical aria-hidden="true" className="size-4" />
+            Kenyan Sign Language research sample. Not American Sign Language.
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">One dataset word</h1>
+          <p className="mt-2 max-w-2xl text-ink-2">
+            {clip
+              ? `${clip.word_label} from ${clip.source_id}. The archive has no frame rate, so this plays at ${clip.playback_fps} frames per second for display.`
+              : "A single gloss from the public pose archive. It is not a sentence and it is not a patient message. Development servers only."}
+          </p>
+        </div>
+        {problem ? (
+          <p role="status" className="rounded-xl border border-line bg-surface px-4 py-3 text-[0.9375rem] text-ink-2">
+            {problem} The archive loads only after someone has verified its licence and fetched it locally.
+          </p>
+        ) : null}
+        <div className="grid gap-4 md:grid-cols-2">
+          <figure className="overflow-hidden rounded-2xl border border-line bg-surface shadow-raised">
+            <canvas ref={stick} width={640} height={360} className="block w-full" aria-label="Landmark stickman signing the research word" role="img" />
+            <figcaption className="border-t border-line px-4 py-2.5 text-sm font-medium">Landmark stickman</figcaption>
+          </figure>
+          <figure className="overflow-hidden rounded-2xl border border-line bg-surface shadow-raised">
+            <canvas ref={avatar} width={640} height={360} className="block w-full" aria-label="Fixed-bone avatar signing the research word" role="img" />
+            <figcaption className="border-t border-line px-4 py-2.5 text-sm font-medium">Fixed-bone avatar</figcaption>
+          </figure>
+        </div>
+        <ResearchAttribution />
+      </main>
+    </div>
   );
 }
