@@ -6,7 +6,7 @@ Feature commits on `feat/ksl-avatar`. Search with `git log --grep "Feature: K00"
 |---|---|---|---|---|---|
 | K00 | Audit and plan | done | e53e9bf | none (docs only) | docs/AUDIT_KSL.md |
 | K01 | Asset policy | done | 9c7494f | scripts/test_ksl_asset_policy.py | .gitignore, .gitattributes, scripts/check_ksl_assets.py, .github/workflows/ci.yml, assets/ksl/ |
-| K02 | Motion packet spec | not started | | | |
+| K02 | Motion packet spec | done | | backend/tests/test_ksl_kmp.py | backend/app/modules/ksl/kmp.py, docs/KMP_SPEC.md, schemas/kmp-1.schema.json, assets/ksl/placeholders/test_motion.json |
 | K03 | Clip tables and manifest | not started | | | |
 | K04 | Clip registry API | not started | | | |
 | K05 | Review workflow | not started | | | |

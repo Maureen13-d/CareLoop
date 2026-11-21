@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://careloop.local/kmp-1.schema.json",
+  "title": "KSL Motion Packet",
+  "type": "object",
+  "required": [
+    "clip_id",
+    "template_id",
+    "source_text_hash",
+    "signer_pseudonym",
+    "capture_method",
+    "label",
+    "fps",
+    "frame_count",
+    "duration_ms",
+    "rig_version",
+    "encoding",
+    "payload_b64"
+  ],
+  "properties": {
+    "fps": { "const": 30 },
+    "encoding": { "const": "delta-int16-v1" },
+    "label": { "type": "string" },
+    "frame_count": { "type": "integer", "minimum": 1 },
+    "payload_b64": { "type": "string" }
+  },
+  "additionalProperties": true
+}
