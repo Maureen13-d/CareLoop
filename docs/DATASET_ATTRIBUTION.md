@@ -19,4 +19,4 @@ CareLoop may download the files into `data/external/ksl_pose/` with `scripts/fet
 
 The words are research samples. They are not patient messages, they are not reviewed clinical lines, and they must not be served by `/ksl/clip`, a conversation template, the patient card, or Telegram.
 
-This repository does not contain the dataset. The licence checklist in `docs/DATASET_LICENSE_CHECK.md` is blank until a person fills it. Faces and identities must not be reconstructed from the landmarks, and the pose data must not be combined with other data to re-identify signers.
+This repository does not contain the dataset. The cited record `10.5281/zenodo.14974973` is restricted and lists no public files. The open file is version `10.5281/zenodo.14338329`. What that file contains is in `docs/KSL_DATASET_INSPECTION.md`. Faces and identities must not be reconstructed from the landmarks, and the pose data must not be combined with other data to re-identify signers.
