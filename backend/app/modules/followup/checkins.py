@@ -51,7 +51,11 @@ def run_checkins(db: Session, now=None) -> int:
         enrolment.checkin_attempts += 1
         enrolment.missed_replies = enrolment.checkin_attempts
         enrolment.last_checkin_at = now
-        if enrolment.missed_replies >= unreached_after:
+        if enrolment.language == "ksl":
+            threshold = int(rules.get("ksl_unreached_after", 1))
+        else:
+            threshold = unreached_after
+        if enrolment.missed_replies >= threshold:
             create_task(
                 db,
                 task_type="followup_unreached",
