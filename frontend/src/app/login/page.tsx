@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { signIn } from "@/app/login/actions";
 import { JourneyLoop } from "@/components/JourneyLoop";
 import { MedicalFloaters } from "@/components/MedicalFloaters";
+import { UpdateShowcase } from "@/components/UpdateShowcase";
 import { Avatar, Wordmark, buttonClasses } from "@/components/ui";
 import { getSession } from "@/lib/session";
 
@@ -110,6 +111,7 @@ export default async function LoginPage({
             CareLoop helps a person who needs a closer look get there: a calm conversation, a named worry,
             a navigator, a reminder that never mentions the check. The hospital takes over once they arrive.
           </p>
+          <UpdateShowcase className="mt-8" />
         </div>
         <JourneyLoop className="mx-auto mt-10 hidden w-full max-w-[34rem] lg:block" />
         <p className="mt-8 max-w-lg text-sm leading-relaxed text-on-dark-2 lg:mt-auto">
